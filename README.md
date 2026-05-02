@@ -1,6 +1,8 @@
 <div style="text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
 
-  <img src="monkey.png" alt="Moglie Mascot" width="200" style="margin-bottom: 20px;">
+  <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
+    <img src="monkey.png" alt="Moglie Mascot" width="200" style="margin-bottom: 20px;">
+  </div>
   
   <h1 style="border-bottom: none;">Moglie HA</h1>
   
