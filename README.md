@@ -1,56 +1,46 @@
-<div align="center">
+<div style="text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
 
-<img src="monkey.png" alt="Monkey Mascot" width="250" style="margin-bottom: 15px;">
+  <img src="https://raw.githubusercontent.com/jordanazulay-maker/moglie-ha/main/custom_components/moglie/monkey.png" alt="Moglie Mascot" width="200" style="margin-bottom: 20px;">
+  
+  <h1 style="border-bottom: none;">Moglie HA</h1>
+  
+  <p style="font-size: 1.2em; max-width: 600px; margin: 0 auto 20px auto; line-height: 1.5;">
+    <b>You can put this primate right on your dashboard!</b><br>
+    Moglie monitors your WAN status and lets you know if Home Assistant loses its connection to the pack.
+  </p>
 
-<table>
-  <tr>
-    <td align="center" style="padding: 15px;">
-      <b>You can put this primate right on your Home Assistant dashboard!<br>
-      I can let you know if Home Assistant loses connection.</b>
-    </td>
-  </tr>
-</table>
+  <a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=jordanazulay-maker&repository=moglie-ha&category=integration" target="_blank" rel="noreferrer">
+    <img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Add Repository to HACS" style="margin-bottom: 30px;">
+  </a>
 
-<br>
-
-[![Add Repository to HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=jordanazulay-maker&repository=moglie-ha&category=integration)
+  <hr style="border: 0; height: 1px; background: #eee; margin: 40px 0;">
 
 </div>
 
----
+<div style="max-width: 800px; margin: 0 auto; line-height: 1.6;">
 
-### 🛠️ 1. Prerequisites (Button Card)
-To use this card, you first need to install **custom:button-card** via HACS.
+  <h3>🛠️ 1. Prerequisites</h3>
+  <p>To use this card, you first need to install <b>custom:button-card</b> via HACS:</p>
+  <ul>
+    <li>Open <b>HACS</b> → <b>Frontend</b>.</li>
+    <li>Click <b>Explore & Download Repositories</b>.</li>
+    <li>Search for <b>Button Card</b> (by <i>Thomas Loven</i>) and download it.</li>
+    <li>Restart Home Assistant.</li>
+  </ul>
 
-1. Open **HACS** in Home Assistant.
-2. Go to **Frontend**.
-3. Click **Explore & Download Repositories**.
-4. Search for **Button Card** (by *Thomas Loven*).
-5. Click it and select **Download**.
-6. Restart Home Assistant.
+  <h3>🚀 2. Installation</h3>
+  <p><b>Option A: 1-Click (Recommended)</b><br>Click the blue badge at the top of this page to automatically add the repository to HACS.</p>
+  <p><b>Option B: Manual</b><br>Download the <code>custom_components/moglie</code> folder and place it in your <code>/config/custom_components/</code> directory, then restart.</p>
 
-> **Note:** After installation, add the resource if it wasn’t added automatically by going to `Settings` → `Dashboards` → `Resources` → `Add Resource`:
-> * **URL:** `/hacsfiles/button-card/button-card.js`
-> * **Type:** JavaScript Module
+  <h3>⚙️ 3. Dashboard Configuration</h3>
+  <ol>
+    <li><b>Get the Code:</b> Open the <code>card.yml</code> file in this repository and copy the contents.</li>
+    <li><b>Set your Sensor:</b> Replace <code>INPUT</code> in the code with your actual WAN status entity (e.g., <code>binary_sensor.be25_wan_status</code>).</li>
+    <li><b>Add to Dashboard:</b> Go to your Home Assistant dashboard, add a <b>Bubble Card</b> (or Manual Card), and paste your updated code.</li>
+  </ol>
 
----
+  <p style="background-color: #f6f8fa; padding: 15px; border-left: 5px solid #238636; border-radius: 6px;">
+    <b>💡 Pro-Tip:</b> Because the image is hosted on GitHub, you don't need to move any files to your <code>/www</code> folder. Moglie will appear automatically!
+  </p>
 
-### 🚀 2. Install Moglie HA
-
-**Option A: 1-Click via HACS (Recommended)**
-Click the button below to instantly open your Home Assistant and add the repository:
-
-[![Add Repository to HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=jordanazulay-maker&repository=moglie-ha&category=integration)
-
-**Option B: Manual Installation**
-1. Download the `custom_components/moglie` folder from this repository.
-2. Place it inside your Home Assistant's `config/custom_components/` directory.
-3. Restart Home Assistant.
-
----
-
-### ⚙️ 3. Dashboard Configuration
-
-1. **Move the Image:** Place the `monkey.png` file from `custom_components/moglie` in the `/www` folder inside your Home Assistant configuration directory. *(If you don't already have a `www` folder, create it manually).*
-2. **Set your Sensor:** Replace `INPUT` in the card template with your actual WAN status entity (for example: `binary_sensor.be25_wan_status`).
-3. **Add to Dashboard:** Go to your Home Assistant dashboard, add a **Bubble Card**, and paste the code provided in the `card.yml` file from this repository.
+</div>
