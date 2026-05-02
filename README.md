@@ -1,6 +1,6 @@
 <div style="text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
 
-  <img src="https://raw.githubusercontent.com/jordanazulay-maker/moglie-ha/main/custom_components/moglie/monkey.png" alt="Moglie Mascot" width="200" style="margin-bottom: 20px;">
+  <img src="monkey.png" alt="Moglie Mascot" width="200" style="margin-bottom: 20px;">
   
   <h1 style="border-bottom: none;">Moglie HA</h1>
   
@@ -40,7 +40,7 @@
   </ol>
 
   <p style="background-color: #f6f8fa; padding: 15px; border-left: 5px solid #238636; border-radius: 6px;">
-    <b>💡 Pro-Tip:</b> Because the image is hosted on GitHub, you don't need to move any files to your <code>/www</code> folder. Moglie will appear automatically!
+    <b>💡 Pro-Tip:</b> Because the card links directly to your GitHub assets, you don't need to move any files to your <code>/www</code> folder. Moglie will appear automatically!
   </p>
 
 </div>
