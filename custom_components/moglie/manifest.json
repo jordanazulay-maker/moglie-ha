@@ -1,0 +1,7 @@
+{
+  "domain": "moglie",
+  "name": "Moglie HA",
+  "version": "1.0.0",  // This line is mandatory
+  "codeowners": ["@jordanazulay-maker"],
+  "documentation": "https://github.com/jordanazulay-maker/moglie-ha"
+}
