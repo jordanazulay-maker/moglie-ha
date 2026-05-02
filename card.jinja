@@ -1,0 +1,19 @@
+{# 
+  Moglie HA Utility Macros
+  Save this as /config/custom_templates/moglie_utils.jinja 
+#}
+
+{% macro format_status(state) -%}
+  {% if state == 'on' %}
+    Moglie is Active
+  {% elif state == 'off' %}
+    Moglie is Idle
+  {% else %}
+    Status Unknown
+  {% endif %}
+{%- endmacro %}
+
+{% macro battery_level(entity_id) -%}
+  {% set level = states(entity_id) | int(0) %}
+  {{ level }}% - {{ 'Low' if level < 20 else 'Healthy' }}
+{%- endmacro %}
