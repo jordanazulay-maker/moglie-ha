@@ -51,6 +51,6 @@ Click the button below to instantly open your Home Assistant and add the reposit
 
 ### ⚙️ 3. Dashboard Configuration
 
-1. **Move the Image:** Place the `monkey.png` file in the `/www` folder inside your Home Assistant configuration directory. *(If you don't already have a `www` folder, create it manually).*
+1. **Move the Image:** Place the `monkey.png` file from `custom_components/moglie` in the `/www` folder inside your Home Assistant configuration directory. *(If you don't already have a `www` folder, create it manually).*
 2. **Set your Sensor:** Replace `INPUT` in the card template with your actual WAN status entity (for example: `binary_sensor.be25_wan_status`).
 3. **Add to Dashboard:** Go to your Home Assistant dashboard, add a **Bubble Card**, and paste the code provided in the `card.yml` file from this repository.
