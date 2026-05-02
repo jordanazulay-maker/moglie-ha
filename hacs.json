@@ -1,6 +1,7 @@
 {
   "name": "Moglie HA",
   "content_in_root": true,
+  "file_name": "mycard.jinja"
   "zip_release": false,
   "homeassistant": "2024.1.0"
 }
