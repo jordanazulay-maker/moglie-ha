@@ -35,3 +35,7 @@ Finally, go to your Home Assistant dashboard, add a <b>button card</b>, and past
 </table>
 
 <br>
+
+<img src="monkey.png" alt="Monkey Mascot" width="300" style="display: block; margin-left: auto; margin-right: auto;">
+
+</div>
