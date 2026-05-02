@@ -1,14 +1,18 @@
 type: custom:button-card
-entity: INPUT  # Your Routers WAN status.
+entity: binary_sensor.be25_wan_status
 show_icon: false
 show_name: false
 show_state: false
 tap_action:
   action: navigate
-  navigation_path: /history?entity_id=[[[ return entity.entity_id ]]]
+  navigation_path: |
+    [[[ 
+      return `/history?entity_id=${entity.entity_id}` 
+    ]]]
 custom_fields:
   content: |
     [[[
+      const img = "https://raw.githubusercontent.com/jordanazulay-maker/moglie-ha/refs/heads/main/monkey.png";
       if (entity.state === 'on') {
         return `
           <div class="text">
@@ -19,18 +23,18 @@ custom_fields:
             brought us more bananas!
           </div>
           <div class="img">
-            <img src="https://raw.githubusercontent.com/jordanazulay-maker/moglie-ha/main/custom_components/moglie/monkey.png">
+            <img src="${img}">
           </div>
         `;
       } else {
         return `
-          <div class="text">
+          <div class="text" style="color: #e74c3c; font-weight: bold;">
             Moglie is stranded.<br>
             He can't find the<br>
             rest of the pack!
           </div>
           <div class="img">
-            <img src="https://raw.githubusercontent.com/jordanazulay-maker/moglie-ha/main/custom_components/moglie/monkey.png">
+            <img src="${img}">
           </div>
         `;
       }
