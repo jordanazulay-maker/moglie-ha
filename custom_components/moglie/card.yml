@@ -1,5 +1,5 @@
 type: custom:button-card
-entity: #Your WAN Status
+entity: INPUT
 show_icon: false
 show_name: false
 show_state: false
