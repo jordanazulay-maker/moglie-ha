@@ -1,5 +1,9 @@
 <div style="text-align: center;">
 
+<a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=jordanazulay-maker&repository=moglie-ha&category=integration" target="_blank" rel="noreferrer">
+  <img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Add Repository to HACS" style="margin-bottom: 15px;" />
+</a><br><br>
+
 To use this card, you first need to install <b>custom:button-card</b> via HACS.<br><br>
 
 1. Open <b>HACS</b> in Home Assistant.<br>
