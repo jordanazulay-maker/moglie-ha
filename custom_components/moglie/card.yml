@@ -19,7 +19,7 @@ custom_fields:
             brought us more bananas!
           </div>
           <div class="img">
-            <img src="/local/monkey.png">
+            <img src="https://raw.githubusercontent.com/jordanazulay-maker/moglie-ha/main/custom_components/moglie/monkey.png">
           </div>
         `;
       } else {
@@ -30,7 +30,7 @@ custom_fields:
             rest of the pack!
           </div>
           <div class="img">
-            <img src="/local/monkey.png">
+            <img src="https://raw.githubusercontent.com/jordanazulay-maker/moglie-ha/main/custom_components/moglie/monkey.png">
           </div>
         `;
       }
