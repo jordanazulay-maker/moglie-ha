@@ -89,31 +89,38 @@ class MoglieHaCard extends HTMLElement {
 class MoglieHaCardEditor extends HTMLElement {
   setConfig(config) {
     this._config = config;
+    if (this._hass) this._render(); // Force render if Hass is already there
   }
 
   set hass(hass) {
     this._hass = hass;
-    this._render();
+    if (this._config) this._render(); // Force render if Config is already there
   }
 
   _render() {
-    if (!this._config || !this._hass) return;
+    // This check is the most important part!
+    if (!this._config || !this._hass) {
+      return; 
+    }
     
     this.innerHTML = `
-      <div class="card-config">
+      <div class="card-config" style="padding: 10px;">
         <ha-entity-picker
-          .label="WAN Status (Primary Entity)"
+          label="WAN Status (Primary Entity)"
           .hass=${this._hass}
           .value=${this._config.entity}
           .configValue=${"entity"}
           @value-changed=${this._valueChanged}
+          allow-custom-entity
         ></ha-entity-picker>
+        <br>
         <ha-entity-picker
-          .label="Alarm System (Secondary Entity)"
+          label="Alarm System (Secondary Entity)"
           .hass=${this._hass}
           .value=${this._config.alarm_entity}
           .configValue=${"alarm_entity"}
           @value-changed=${this._valueChanged}
+          allow-custom-entity
         ></ha-entity-picker>
       </div>
     `;
@@ -124,7 +131,6 @@ class MoglieHaCardEditor extends HTMLElement {
     const target = ev.target;
     if (this[`_${target.configValue}`] === target.value) return;
     
-    // This creates a new config object with the updated value while keeping the others
     const newConfig = {
       ...this._config,
       [target.configValue]: ev.detail.value,
