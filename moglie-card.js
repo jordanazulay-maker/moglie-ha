@@ -2,7 +2,9 @@ class MoglieHaCard extends HTMLElement {
   static getStubConfig() {
     return {
       wan_entity: "binary_sensor.wan_status",
-      alarm_entity: "alarm_control_panel.home_alarm"
+      alarm_entity: "alarm_control_panel.home_alarm",
+      action_type: "navigate",
+      action_path: "/history?entity_id=binary_sensor.wan_status"
     };
   }
 
@@ -28,7 +30,6 @@ class MoglieHaCard extends HTMLElement {
     const isWanActive = (wanState === 'on' || wanState === 'connected' || wanState === 'home' || wanState === 'up');
     const isOnPatrol = (alarmState === 'armed_away');
 
-    // PERFORMANCE GUARD: Only update the DOM if the state actually changed
     const statusKey = `${wanState}-${alarmState}`;
     if (this._lastStatus === statusKey) return; 
     this._lastStatus = statusKey;
@@ -39,7 +40,7 @@ class MoglieHaCard extends HTMLElement {
           <style>
             .moglie-container { padding: 20px; text-align: center; cursor: pointer; transition: background 0.3s; border-radius: var(--ha-card-border-radius, 12px); }
             .moglie-container:hover { background: rgba(var(--rgb-primary-text-color), 0.05); }
-            .text-box { line-height: 1.5; margin-bottom: 10px; font-size: 1.1em; min-height: 80px; transition: color 0.3s; }
+            .text-box { line-height: 1.5; margin-bottom: 10px; font-size: 1.1em; min-height: 80px; }
             .img-container img { width: 110px; transition: all 0.5s ease; pointer-events: none; }
             .status-warning { color: #e74c3c; font-weight: bold; }
             .status-grayscale { filter: grayscale(100%) opacity(0.6); transform: scale(0.95); }
@@ -55,14 +56,19 @@ class MoglieHaCard extends HTMLElement {
       this.content = this.querySelector(".text-box");
       this.image = this.querySelector(".img-container img");
 
-      // FIX: CLICK ACTION (Fires the navigation event to Home Assistant)
+      // DYNAMIC CLICK HANDLER
       this.querySelector(".moglie-container").addEventListener("click", () => {
+        const action = this.config.action_type || "navigate";
+        const path = this.config.action_path;
+        
+        let detail = { config: this.config, action: action };
+        
+        if (action === "navigate") detail.navigation_path = path;
+        if (action === "url") detail.url_path = path;
+        if (action === "toggle") detail.entity_id = path; // In toggle mode, path = entity_id
+
         const event = new CustomEvent("hass-action", {
-          detail: {
-            config: this.config,
-            action: "navigate",
-            navigation_path: `/history?entity_id=${wanId}`
-          },
+          detail: detail,
           bubbles: true,
           composed: true,
         });
@@ -70,7 +76,6 @@ class MoglieHaCard extends HTMLElement {
       });
     }
 
-    // UPDATE UI BASED ON STATE
     if (!isWanActive) {
       this.content.innerHTML = `Moglie is stranded.<br>The WAN connection<br>has been lost!`;
       this.content.className = "text-box status-warning";
@@ -89,7 +94,6 @@ class MoglieHaCard extends HTMLElement {
 
 customElements.define("moglie-ha-card", MoglieHaCard);
 
-// Register card in the Helper picker
 window.customCards = window.customCards || [];
 if (!window.customCards.some(card => card.type === 'moglie-ha-card')) {
   window.customCards.push({
@@ -99,7 +103,7 @@ if (!window.customCards.some(card => card.type === 'moglie-ha-card')) {
   });
 }
 
-// Visual Editor Code
+// UPDATED EDITOR WITH ACTION BOXES
 class MoglieHaCardEditor extends HTMLElement {
   setConfig(config) { this._config = config; }
   set hass(hass) { this._hass = hass; this.renderForm(); }
@@ -109,10 +113,27 @@ class MoglieHaCardEditor extends HTMLElement {
     if (!this.formElement) {
       this.innerHTML = `<ha-form></ha-form>`;
       this.formElement = this.querySelector("ha-form");
+      
       this.formElement.schema = [
         { name: "wan_entity", label: "WAN Status Entity", selector: { entity: {} } },
-        { name: "alarm_entity", label: "Alarm Control Panel", selector: { entity: { domain: "alarm_control_panel" } } }
+        { name: "alarm_entity", label: "Alarm Control Panel", selector: { entity: { domain: "alarm_control_panel" } } },
+        { 
+          name: "action_type", 
+          label: "Click Action Type", 
+          selector: { 
+            select: { 
+              options: [
+                { value: "navigate", label: "Navigate (Internal)" },
+                { value: "url", label: "URL (External)" },
+                { value: "toggle", label: "Toggle Entity" },
+                { value: "none", label: "No Action" }
+              ] 
+            } 
+          } 
+        },
+        { name: "action_path", label: "Action Path / Entity ID", selector: { text: {} } }
       ];
+
       this.formElement.addEventListener("value-changed", (ev) => {
         const event = new CustomEvent("config-changed", {
           detail: { config: ev.detail.value },
