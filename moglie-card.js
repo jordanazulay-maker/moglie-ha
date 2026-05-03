@@ -88,7 +88,7 @@ class MoglieHaCard extends HTMLElement {
   getCardSize() { return 3; }
 }
 
-// 2. The Visual Editor UI
+// 2. The Visual Editor UI with Safety Checks
 class MoglieHaCardEditor extends HTMLElement {
   setConfig(config) {
     this._config = config;
@@ -100,6 +100,8 @@ class MoglieHaCardEditor extends HTMLElement {
   }
 
   _render() {
+    if (!this._config || !this._hass) return; // Fixes "config is undefined" error
+    
     this._initialized = true;
     this.innerHTML = `
       <div class="card-config">
