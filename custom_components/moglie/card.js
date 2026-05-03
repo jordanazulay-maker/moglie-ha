@@ -7,6 +7,11 @@ class MoglieHaCard extends HTMLElement {
     };
   }
 
+  // LINK THE EDITOR: Tell HA to use our custom visual editor
+  static getConfigElement() {
+    return document.createElement("moglie-ha-card-editor");
+  }
+
   // 2. Set the configuration from UI/YAML
   setConfig(config) {
     if (!config.entity) {
@@ -104,7 +109,7 @@ class MoglieHaCard extends HTMLElement {
   }
 }
 
-// 4. Register the element
+// 4. Register the main card element
 customElements.define("moglie-ha-card", MoglieHaCard);
 
 // 5. Add to Home Assistant Card Picker
@@ -117,3 +122,50 @@ if (!window.customCards.some(card => card.type === 'moglie-ha-card')) {
     description: "The official Moglie-HA dashboard card with dynamic mascot feedback."
   });
 }
+
+// =========================================
+// 6. NEW: The Visual Editor Class
+// =========================================
+class MoglieHaCardEditor extends HTMLElement {
+  setConfig(config) {
+    this._config = config;
+  }
+
+  set hass(hass) {
+    this._hass = hass;
+    this.renderForm();
+  }
+
+  renderForm() {
+    if (!this._hass || !this._config) return;
+
+    // Build the form only once
+    if (!this.formElement) {
+      this.innerHTML = `<ha-form></ha-form>`;
+      this.formElement = this.querySelector("ha-form");
+
+      // Define what shows up in the UI (Entity picker & Header text box)
+      this.formElement.schema = [
+        { name: "entity", selector: { entity: {} } },
+        { name: "header", selector: { text: {} } }
+      ];
+
+      // Listen for changes in the UI and update the card's YAML under the hood
+      this.formElement.addEventListener("value-changed", (ev) => {
+        const event = new CustomEvent("config-changed", {
+          detail: { config: ev.detail.value },
+          bubbles: true,
+          composed: true,
+        });
+        this.dispatchEvent(event);
+      });
+    }
+
+    // Keep the form updated with current states
+    this.formElement.hass = this._hass;
+    this.formElement.data = this._config;
+  }
+}
+
+// Register the editor element
+customElements.define("moglie-ha-card-editor", MoglieHaCardEditor);
