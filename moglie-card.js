@@ -24,9 +24,10 @@ class MoglieHaCard extends HTMLElement {
     const alarmEntity = hass.states[alarmId];
     
     const wanState = wanEntity ? wanEntity.state : 'unavailable';
-    const alarmState = alarmEntity ? alarmEntity.state : 'disarmed';
+    // Use .toLowerCase() to prevent "Armed_Away" vs "armed_away" mismatches
+    const alarmState = alarmEntity ? alarmEntity.state.toLowerCase() : 'disarmed';
     
-    const isWanActive = (wanState === 'on' || wanState === 'connected' || wanState === 'home');
+    const isWanActive = (wanState === 'on' || wanState === 'connected' || wanState === 'home' || wanState === 'up');
 
     if (!this.content) {
       this.innerHTML = `
@@ -50,15 +51,20 @@ class MoglieHaCard extends HTMLElement {
       this.image = this.querySelector(".img-container img");
     }
 
+    // 1. Check WAN First (Priority)
     if (!isWanActive) {
       this.content.innerHTML = `Moglie is stranded.<br>The WAN connection<br>has been lost!`;
       this.content.classList.add("status-warning");
       this.image.classList.add("status-grayscale");
-    } else if (alarmState === 'armed_away' || alarmState === 'armed_home') {
+    } 
+    // 2. Check Alarm Status (Normalizing the strings)
+    else if (alarmState.includes('armed')) {
       this.content.innerHTML = `The rest of the primates are<br>on patrol. I'll watch the trees<br>until they get back!`;
       this.content.classList.remove("status-warning");
       this.image.classList.remove("status-grayscale");
-    } else {
+    } 
+    // 3. Default: Welcome Home
+    else {
       this.content.innerHTML = `Welcome Home!<br>The WAN is strong.<br>Tell me you brought<br>more bananas!`;
       this.content.classList.remove("status-warning");
       this.image.classList.remove("status-grayscale");
@@ -68,7 +74,6 @@ class MoglieHaCard extends HTMLElement {
 
 customElements.define("moglie-ha-card", MoglieHaCard);
 
-// Register card for the UI picker
 window.customCards = window.customCards || [];
 if (!window.customCards.some(card => card.type === 'moglie-ha-card')) {
   window.customCards.push({
@@ -78,7 +83,6 @@ if (!window.customCards.some(card => card.type === 'moglie-ha-card')) {
   });
 }
 
-// THE EDITOR - Fixed to ONLY show the two entity pickers
 class MoglieHaCardEditor extends HTMLElement {
   setConfig(config) {
     this._config = config;
@@ -96,7 +100,6 @@ class MoglieHaCardEditor extends HTMLElement {
       this.innerHTML = `<ha-form></ha-form>`;
       this.formElement = this.querySelector("ha-form");
 
-      // Removed 'header' and generic 'entity'. Added specific named entities.
       this.formElement.schema = [
         { name: "wan_entity", label: "WAN Status Entity", selector: { entity: {} } },
         { name: "alarm_entity", label: "Alarm Control Panel", selector: { entity: { domain: "alarm_control_panel" } } }
