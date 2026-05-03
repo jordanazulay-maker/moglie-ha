@@ -8,7 +8,7 @@
   
   <p style="font-size: 1.2em; max-width: 600px; margin: 0 auto 20px auto; line-height: 1.5;">
     <b>You can put this primate right on your dashboard!</b><br>
-    Moglie monitors your WAN status and lets you know if Home Assistant loses its connection to the pack.
+    Moglie monitors your WAN status and security state to let you know if the pack is safe or if he's lost his connection.
   </p>
 
   <a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=jordanazulay-maker&repository=moglie-ha&category=integration" target="_blank" rel="noreferrer">
@@ -21,12 +21,19 @@
 
 <div style="max-width: 800px; margin: 0 auto; line-height: 1.6;">
 
+  <h3>🌟 Features</h3>
+  <ul>
+    <li><b>Connectivity Watchdog:</b> Instant visual feedback if your WAN (internet) goes offline.</li>
+    <li><b>Security Awareness:</b> Dynamic messaging based on your Alarm Control Panel status (Armed Away vs. Home).</li>
+    <li><b>Zero-Asset Install:</b> Links directly to GitHub images so you don't have to manage local files.</li>
+  </ul>
+
   <h3>🛠️ 1. Prerequisites</h3>
   <p>To use this card, you first need to install <b>custom:button-card</b> via HACS:</p>
   <ul>
     <li>Open <b>HACS</b> → <b>Frontend</b>.</li>
     <li>Click <b>Explore & Download Repositories</b>.</li>
-    <li>Search for <b>Button Card</b> (by <i>Thomas Loven</i>) and download it.</li>
+    <li>Search for <b>Button Card</b> and download it.</li>
     <li>Restart Home Assistant.</li>
   </ul>
 
@@ -37,12 +44,17 @@
   <h3>⚙️ 3. Dashboard Configuration</h3>
   <ol>
     <li><b>Get the Code:</b> Open the <code>card.yml</code> file in this repository and copy the contents.</li>
-    <li><b>Set your Sensor:</b> Replace <code>INPUT</code> in the code with your actual WAN status entity (e.g., <code>binary_sensor.be25_wan_status</code>).</li>
-    <li><b>Add to Dashboard:</b> Go to your Home Assistant dashboard, add a <b>Manual Card</b> (search for "Manual" in the card picker), and paste your updated code.</li>
+    <li><b>Set your Entities:</b> 
+      <ul>
+        <li>Replace the main <code>entity</code> with your WAN status (e.g., <code>binary_sensor.wan_status</code>).</li>
+        <li>Update the <code>alarmState</code> variable in the JavaScript section with your alarm entity (e.g., <code>alarm_control_panel.home_alarm</code>).</li>
+      </ul>
+    </li>
+    <li><b>Add to Dashboard:</b> Go to your Home Assistant dashboard, add a <b>Manual Card</b>, and paste your updated code.</li>
   </ol>
 
   <p style="background-color: #f6f8fa; padding: 15px; border-left: 5px solid #238636; border-radius: 6px;">
-    <b>💡 Pro-Tip:</b> Because the card links directly to the GitHub assets, you don't need to move any files to your <code>/www</code> folder. Moglie will appear automatically!
+    <b>💡 Pro-Tip:</b> Moglie is interactive! Tapping the card will take you directly to the connection history so you can see exactly when the "pack" went offline.
   </p>
 
 </div>
