@@ -46,7 +46,7 @@
     <li><b>Get the Code:</b> Open the <code>card.yml</code> file in this repository and copy the contents.</li>
     <li><b>Set your Entities:</b> 
       <ul>
-        <li>Replace the main <code>entity</code> with your WAN status (e.g., <code>binary_sensor.wan_status</code>).</li>
+        <li>Replace the main <code>INPUT</code> with your WAN status (e.g., <code>binary_sensor.wan_status</code>).</li>
         <li>Update the <code>alarmState</code> variable in the JavaScript section with your alarm entity (e.g., <code>alarm_control_panel.home_alarm</code>).</li>
       </ul>
     </li>
