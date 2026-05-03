@@ -29,21 +29,9 @@ class MoglieHaCard extends HTMLElement {
       this.innerHTML = `
         <ha-card>
           <style>
-            .moglie-container {
-              padding: 20px;
-              text-align: center;
-              cursor: pointer;
-              transition: background 0.3s ease;
-            }
-            .text-box {
-              line-height: 1.5;
-              margin-bottom: 15px;
-              font-size: 1.1em;
-            }
-            .img-container img {
-              width: 110px;
-              transition: filter 0.5s ease, transform 0.3s ease;
-            }
+            .moglie-container { padding: 20px; text-align: center; cursor: pointer; transition: background 0.3s ease; }
+            .text-box { line-height: 1.5; margin-bottom: 15px; font-size: 1.1em; }
+            .img-container img { width: 110px; transition: filter 0.5s ease, transform 0.3s ease; }
             .status-warning { color: #e74c3c; font-weight: bold; }
             .status-grayscale { filter: grayscale(100%) opacity(0.6); transform: scale(0.95); }
           </style>
@@ -89,24 +77,20 @@ class MoglieHaCard extends HTMLElement {
 class MoglieHaCardEditor extends HTMLElement {
   setConfig(config) {
     this._config = config;
-    if (this._hass) this._render(); // Force render if Hass is already there
   }
 
   set hass(hass) {
     this._hass = hass;
-    if (this._config) this._render(); // Force render if Config is already there
+    if (this._config) this._render();
   }
 
   _render() {
-    // This check is the most important part!
-    if (!this._config || !this._hass) {
-      return; 
-    }
+    if (!this._config || !this._hass) return;
     
     this.innerHTML = `
       <div class="card-config" style="padding: 10px;">
         <ha-entity-picker
-          label="WAN Status (Primary Entity)"
+          .label="WAN Status Entity"
           .hass=${this._hass}
           .value=${this._config.entity}
           .configValue=${"entity"}
@@ -115,7 +99,7 @@ class MoglieHaCardEditor extends HTMLElement {
         ></ha-entity-picker>
         <br>
         <ha-entity-picker
-          label="Alarm System (Secondary Entity)"
+          .label="Alarm System Entity"
           .hass=${this._hass}
           .value=${this._config.alarm_entity}
           .configValue=${"alarm_entity"}
@@ -129,18 +113,8 @@ class MoglieHaCardEditor extends HTMLElement {
   _valueChanged(ev) {
     if (!this._config || !this._hass) return;
     const target = ev.target;
-    if (this[`_${target.configValue}`] === target.value) return;
-    
-    const newConfig = {
-      ...this._config,
-      [target.configValue]: ev.detail.value,
-    };
-
-    const event = new CustomEvent("config-changed", {
-      detail: { config: newConfig },
-      bubbles: true,
-      composed: true,
-    });
+    const newConfig = { ...this._config, [target.configValue]: ev.detail.value };
+    const event = new CustomEvent("config-changed", { detail: { config: newConfig }, bubbles: true, composed: true });
     this.dispatchEvent(event);
   }
 }
@@ -153,5 +127,5 @@ window.customCards.push({
   type: "moglie-ha-card",
   name: "Moglie HA",
   preview: true,
-  description: "Set your WAN and Alarm entities via the UI."
+  description: "Dynamic WAN and Alarm status card."
 });
