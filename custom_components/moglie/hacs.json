@@ -1,5 +1,6 @@
 {
   "name": "Moglie HA",
+  "type": "plugin",
   "render_readme": true,
   "homeassistant": "2026.4.1"
 }
