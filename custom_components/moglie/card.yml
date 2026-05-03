@@ -15,7 +15,7 @@ custom_fields:
       const img = "https://raw.githubusercontent.com/jordanazulay-maker/moglie-ha/refs/heads/main/monkey.png";
       
       // Entity 2: Monitored for the "Patrol" vs "Welcome" logic
-      const alarmState = Alarm Control Panel Entity
+      const alarmState = INPUT
       
       let message = "";
       let style = "";
