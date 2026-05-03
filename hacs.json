@@ -1,6 +1,5 @@
 {
   "name": "Moglie HA",
-  "content_type": "plugin",
   "render_readme": true,
   "filename": "moglie-card.js"
 }
