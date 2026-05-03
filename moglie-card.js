@@ -1,5 +1,4 @@
 class MoglieHaCard extends HTMLElement {
-  // 1. Link the Visual Editor
   static getConfigElement() {
     return document.createElement("moglie-ha-card-editor");
   }
@@ -70,7 +69,6 @@ class MoglieHaCard extends HTMLElement {
       };
     }
 
-    // Logic for WAN and Alarm Status
     if (isAlarmArmed) {
         this.content.innerHTML = `Moglie is on high alert!<br>The pack is protected.<br>Watching for intruders!`;
         this.image.classList.remove("status-grayscale");
@@ -88,7 +86,6 @@ class MoglieHaCard extends HTMLElement {
   getCardSize() { return 3; }
 }
 
-// 2. The Visual Editor UI with Safety Checks
 class MoglieHaCardEditor extends HTMLElement {
   setConfig(config) {
     this._config = config;
@@ -96,24 +93,23 @@ class MoglieHaCardEditor extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
-    if (!this._initialized) this._render();
+    this._render();
   }
 
   _render() {
-    if (!this._config || !this._hass) return; // Fixes "config is undefined" error
+    if (!this._config || !this._hass) return;
     
-    this._initialized = true;
     this.innerHTML = `
       <div class="card-config">
         <ha-entity-picker
-          .label="WAN Status Entity"
+          .label="WAN Status (Primary Entity)"
           .hass=${this._hass}
           .value=${this._config.entity}
           .configValue=${"entity"}
           @value-changed=${this._valueChanged}
         ></ha-entity-picker>
         <ha-entity-picker
-          .label="Alarm System Entity"
+          .label="Alarm System (Secondary Entity)"
           .hass=${this._hass}
           .value=${this._config.alarm_entity}
           .configValue=${"alarm_entity"}
@@ -126,7 +122,14 @@ class MoglieHaCardEditor extends HTMLElement {
   _valueChanged(ev) {
     if (!this._config || !this._hass) return;
     const target = ev.target;
-    const newConfig = { ...this._config, [target.configValue]: ev.detail.value };
+    if (this[`_${target.configValue}`] === target.value) return;
+    
+    // This creates a new config object with the updated value while keeping the others
+    const newConfig = {
+      ...this._config,
+      [target.configValue]: ev.detail.value,
+    };
+
     const event = new CustomEvent("config-changed", {
       detail: { config: newConfig },
       bubbles: true,
@@ -136,7 +139,6 @@ class MoglieHaCardEditor extends HTMLElement {
   }
 }
 
-// 3. Official Registration
 customElements.define("moglie-ha-card", MoglieHaCard);
 customElements.define("moglie-ha-card-editor", MoglieHaCardEditor);
 
@@ -145,5 +147,5 @@ window.customCards.push({
   type: "moglie-ha-card",
   name: "Moglie HA",
   preview: true,
-  description: "Dynamic feedback card for WAN and Alarm status."
+  description: "Set your WAN and Alarm entities via the UI."
 });
