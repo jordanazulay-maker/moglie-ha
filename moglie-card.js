@@ -1,9 +1,6 @@
 class MoglieHaCard extends HTMLElement {
   static getStubConfig() {
-    return {
-      wan_entity: "",
-      alarm_entity: ""
-    };
+    return { wan_entity: "", alarm_entity: "" };
   }
 
   static getConfigElement() {
@@ -11,10 +8,13 @@ class MoglieHaCard extends HTMLElement {
   }
 
   setConfig(config) {
+    if (!config.wan_entity) throw new Error("Please define a WAN entity");
     this.config = config;
   }
 
   set hass(hass) {
+    if (!this.config) return;
+
     const wanId = this.config.wan_entity;
     const alarmId = this.config.alarm_entity;
     const wanEntity = hass.states[wanId];
@@ -24,16 +24,19 @@ class MoglieHaCard extends HTMLElement {
     const alarmState = alarmEntity ? alarmEntity.state : 'unknown';
     
     const isWanActive = (wanState === 'on' || wanState === 'connected' || wanState === 'home' || wanState === 'up');
-    
-    // UPDATED LOGIC: Only "Patrol" if specifically armed_away. 
-    // armed_home will now show the Welcome message.
     const isOnPatrol = (alarmState === 'armed_away');
+
+    // Logic: Only update the DOM if the values actually changed
+    const statusKey = `${wanState}-${alarmState}`;
+    if (this._lastStatus === statusKey) return; 
+    this._lastStatus = statusKey;
 
     if (!this.content) {
       this.innerHTML = `
         <ha-card>
           <style>
-            .moglie-container { padding: 20px; text-align: center; cursor: pointer; }
+            .moglie-container { padding: 20px; text-align: center; cursor: pointer; transition: background 0.3s; }
+            .moglie-container:hover { background: rgba(255,255,255,0.05); }
             .text-box { line-height: 1.5; margin-bottom: 10px; font-size: 1.1em; min-height: 80px; }
             .img-container img { width: 110px; transition: all 0.5s ease; }
             .status-warning { color: #e74c3c; font-weight: bold; }
@@ -49,8 +52,23 @@ class MoglieHaCard extends HTMLElement {
       `;
       this.content = this.querySelector(".text-box");
       this.image = this.querySelector(".img-container img");
+
+      // RESTORE CLICK ACTION
+      this.querySelector(".moglie-container").addEventListener("click", () => {
+        const event = new CustomEvent("hass-action", {
+          detail: {
+            config: this.config,
+            action: "navigate",
+            navigation_path: `/history?entity_id=${wanId}`
+          },
+          bubbles: true,
+          composed: true,
+        });
+        this.dispatchEvent(event);
+      });
     }
 
+    // Update Content
     if (!isWanActive) {
       this.content.innerHTML = `Moglie is stranded.<br>The WAN connection<br>has been lost!`;
       this.content.className = "text-box status-warning";
@@ -60,48 +78,9 @@ class MoglieHaCard extends HTMLElement {
       this.content.className = "text-box";
       this.image.className = "";
     } else {
-      // This will now show for 'disarmed', 'armed_home', etc.
       this.content.innerHTML = `Welcome Home!<br>The WAN is strong.<br>Tell me you brought<br>more bananas!`;
       this.content.className = "text-box";
       this.image.className = "";
     }
   }
 }
-
-customElements.define("moglie-ha-card", MoglieHaCard);
-
-window.customCards = window.customCards || [];
-if (!window.customCards.some(card => card.type === 'moglie-ha-card')) {
-  window.customCards.push({
-    type: "moglie-ha-card",
-    name: "Moglie-HA",
-    description: "WAN and Alarm status monitoring."
-  });
-}
-
-class MoglieHaCardEditor extends HTMLElement {
-  setConfig(config) { this._config = config; }
-  set hass(hass) { this._hass = hass; this.renderForm(); }
-  renderForm() {
-    if (!this._hass || !this._config) return;
-    if (!this.formElement) {
-      this.innerHTML = `<ha-form></ha-form>`;
-      this.formElement = this.querySelector("ha-form");
-      this.formElement.schema = [
-        { name: "wan_entity", label: "WAN Status Entity", selector: { entity: {} } },
-        { name: "alarm_entity", label: "Alarm Control Panel", selector: { entity: { domain: "alarm_control_panel" } } }
-      ];
-      this.formElement.addEventListener("value-changed", (ev) => {
-        const event = new CustomEvent("config-changed", {
-          detail: { config: ev.detail.value },
-          bubbles: true,
-          composed: true,
-        });
-        this.dispatchEvent(event);
-      });
-    }
-    this.formElement.hass = this._hass;
-    this.formElement.data = this._config;
-  }
-}
-customElements.define("moglie-ha-card-editor", MoglieHaCardEditor);
