@@ -1,5 +1,8 @@
 type: custom:button-card
-entity: INPUT # WAN status entity.
+entity: binary_sensor.wan_status # Your WAN status entity
+# ADD THIS: Tells the card to refresh when the alarm changes
+triggers_update:
+  - alarm_control_panel.home_alarm # Replace with your actual alarm entity ID
 show_icon: false
 show_name: false
 show_state: false
@@ -14,26 +17,29 @@ custom_fields:
     [[[
       const img = "https://raw.githubusercontent.com/jordanazulay-maker/moglie-ha/refs/heads/main/monkey.png";
       
-      // Entity 2: Monitored for the "Patrol" vs "Welcome" logic
-      const alarmState = INPUT
+      // Access the alarm state via the states object
+      const alarmEntityId = 'alarm_control_panel.home_alarm'; // Replace with your actual alarm entity ID
+      const alarmState = states[alarmEntityId] ? states[alarmEntityId].state : 'unknown';
       
       let message = "";
       let style = "";
+      let imgStyle = "";
 
-      if (entity.state === 'off') {
+      if (entity.state === 'off' || entity.state === 'unavailable') {
         message = "Moglie is stranded.<br>He can't find the<br>rest of the pack!";
         style = "color: #e74c3c; font-weight: bold;";
-      } else if (alarmState === 'armed_away') {
+        imgStyle = "filter: grayscale(100%) opacity(0.6); transform: scale(0.95);";
+      } else if (alarmState === 'armed_away' || alarmState === 'armed_home') {
         message = "The rest of the primates have started<br>their patrol, I'll watch the trees<br>until someone comes back.";
       } else {
-        message = "Welcome Home!<br>We've checked all the trees,<br>no surprises here.<br>Please tell me you<br>brought us more bananas!";
+        message = "Welcome Home!<br>The WAN is strong.<br>Tell me you brought<br>more bananas!";
       }
 
       return `
         <div class="text" style="${style}">
           ${message}
         </div>
-        <div class="img">
+        <div class="img" style="${imgStyle}">
           <img src="${img}">
         </div>
       `;
@@ -60,6 +66,7 @@ extra_styles: |
   }
   .img img {
     width: 100px;
+    transition: all 0.5s ease;
   }
   ha-card:hover {
     background: rgba(var(--rgb-primary-text-color), 0.05);
