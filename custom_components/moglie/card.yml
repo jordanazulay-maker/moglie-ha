@@ -1,24 +1,9 @@
-type: custom:button-card
-entity: binary_sensor.wan_status # Your WAN status entity
-# ADD THIS: Tells the card to refresh when the alarm changes
-triggers_update:
-  - alarm_control_panel.home_alarm # Replace with your actual alarm entity ID
-show_icon: false
-show_name: false
-show_state: false
-tap_action:
-  action: navigate
-  navigation_path: |
-    [[[ 
-      return `/history?entity_id=${entity.entity_id}` 
-    ]]]
 custom_fields:
   content: |
     [[[
       const img = "https://raw.githubusercontent.com/jordanazulay-maker/moglie-ha/refs/heads/main/monkey.png";
       
-      // Access the alarm state via the states object
-      const alarmEntityId = 'alarm_control_panel.home_alarm'; // Replace with your actual alarm entity ID
+      const alarmEntityId = 'alarm_control_panel.home_alarm';
       const alarmState = states[alarmEntityId] ? states[alarmEntityId].state : 'unknown';
       
       let message = "";
@@ -32,7 +17,8 @@ custom_fields:
       } else if (alarmState === 'armed_away' || alarmState === 'armed_home') {
         message = "The rest of the primates have started<br>their patrol, I'll watch the trees<br>until someone comes back.";
       } else {
-        message = "Welcome Home!<br>The WAN is strong.<br>Tell me you brought<br>more bananas!";
+        // "The Slackers" variant
+        message = "System's off! The rest of the<br>primates ditched their post<br>for a banana run. Typical.";
       }
 
       return `
@@ -44,30 +30,3 @@ custom_fields:
         </div>
       `;
     ]]]
-styles:
-  card:
-    - padding: 16px
-    - border-radius: 16px
-    - text-align: center
-    - cursor: pointer
-    - transition: all 0.2s ease
-  custom_fields:
-    content:
-      - display: flex
-      - flex-direction: column
-      - align-items: center
-      - justify-content: center
-  grid:
-    - grid-template-areas: '"content"'
-extra_styles: |
-  .text {
-    line-height: 1.4;
-    margin-bottom: 12px;
-  }
-  .img img {
-    width: 100px;
-    transition: all 0.5s ease;
-  }
-  ha-card:hover {
-    background: rgba(var(--rgb-primary-text-color), 0.05);
-  }
