@@ -1,4 +1,21 @@
-set hass(hass) {
+class MoglieHaCard extends HTMLElement {
+  static getStubConfig() {
+    return {
+      wan_entity: "binary_sensor.wan_status",
+      alarm_entity: "alarm_control_panel.home_alarm",
+      click_entity: "" 
+    };
+  }
+
+  static getConfigElement() {
+    return document.createElement("moglie-ha-card-editor");
+  }
+
+  setConfig(config) {
+    this.config = config;
+  }
+
+  set hass(hass) {
     if (!this.config || !hass) return;
     
     this._hass = hass; 
@@ -11,11 +28,9 @@ set hass(hass) {
     const wanState = wanEntity ? wanEntity.state : 'unavailable';
     const alarmState = alarmEntity ? alarmEntity.state : 'unknown';
     
-    // Cleaner matching using arrays
+    // We define "Home" specifically. If it's not one of these, Moglie goes "On Patrol".
     const isWanActive = ['on', 'connected', 'home', 'up'].includes(wanState);
-    
-    // Group away, night, and transitional states into the patrol condition
-    const isOnPatrol = ['armed_away', 'armed_night', 'arming', 'pending'].includes(alarmState);
+    const isHomeState = ['disarmed', 'armed_home', 'off'].includes(alarmState);
 
     const statusKey = `${wanState}-${alarmState}`;
     if (this._lastStatus === statusKey) return; 
@@ -43,7 +58,6 @@ set hass(hass) {
       this.content = this.querySelector(".text-box");
       this.image = this.querySelector(".img-container img");
 
-      // CLICK HANDLER: Set to more-info to open the control panel
       this.querySelector(".moglie-container").addEventListener("click", () => {
         const clickEntity = this.config.click_entity;
         if (!clickEntity) return;
@@ -69,14 +83,58 @@ set hass(hass) {
       this.content.innerHTML = `Moglie is stranded.<br>The WAN connection<br>has been lost!`;
       this.content.className = "text-box status-warning";
       this.image.className = "status-grayscale";
-    } else if (isOnPatrol) {
-      this.content.innerHTML = `The rest of the primates are<br>on patrol. I'll watch the trees<br>until they get back!`;
+    } else if (isHomeState) {
+      // Triggered when system is disarmed or armed (home)
+      this.content.innerHTML = `Welcome Home!<br>The WAN is strong.<br>Tell me you brought<br>more bananas!`;
       this.content.className = "text-box";
       this.image.className = "";
     } else {
-      // This will now correctly trigger for 'disarmed' and 'armed_home'
-      this.content.innerHTML = `Welcome Home!<br>The WAN is strong.<br>Tell me you brought<br>more bananas!`;
+      // Triggered for armed_away, armed_night, arming, pending, etc.
+      this.content.innerHTML = `The rest of the primates are<br>on patrol. I'll watch the trees<br>until they get back!`;
       this.content.className = "text-box";
       this.image.className = "";
     }
   }
+}
+
+customElements.define("moglie-ha-card", MoglieHaCard);
+
+window.customCards = window.customCards || [];
+if (!window.customCards.some(card => card.type === 'moglie-ha-card')) {
+  window.customCards.push({
+    type: "moglie-ha-card",
+    name: "Moglie-HA",
+    description: "WAN and Alarm status monitoring with a friendly monkey."
+  });
+}
+
+class MoglieHaCardEditor extends HTMLElement {
+  setConfig(config) { this._config = config; }
+  set hass(hass) { this._hass = hass; this.renderForm(); }
+  
+  renderForm() {
+    if (!this._hass || !this._config) return;
+    if (!this.formElement) {
+      this.innerHTML = `<ha-form></ha-form>`;
+      this.formElement = this.querySelector("ha-form");
+      
+      this.formElement.schema = [
+        { name: "wan_entity", label: "WAN Status Entity", selector: { entity: {} } },
+        { name: "alarm_entity", label: "Alarm Control Panel", selector: { entity: { domain: "alarm_control_panel" } } },
+        { name: "click_entity", label: "Click Action Entity (Opens Dialog)", selector: { entity: {} } }
+      ];
+
+      this.formElement.addEventListener("value-changed", (ev) => {
+        const event = new CustomEvent("config-changed", {
+          detail: { config: ev.detail.value },
+          bubbles: true,
+          composed: true,
+        });
+        this.dispatchEvent(event);
+      });
+    }
+    this.formElement.hass = this._hass;
+    this.formElement.data = this._config;
+  }
+}
+customElements.define("moglie-ha-card-editor", MoglieHaCardEditor);
