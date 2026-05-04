@@ -1,8 +1,9 @@
 class MoglieHaCard extends HTMLElement {
   static getStubConfig() {
+    // Setting these to empty strings removes the "Unknown entity" red error box
     return {
-      wan_entity: "binary_sensor.wan_status",
-      alarm_entity: "alarm_control_panel.home_alarm",
+      wan_entity: "",
+      alarm_entity: "",
       click_entity: "" 
     };
   }
@@ -27,15 +28,8 @@ class MoglieHaCard extends HTMLElement {
     
     const wanState = wanEntity ? wanEntity.state : 'unavailable';
     const alarmState = alarmEntity ? alarmEntity.state : 'unknown';
-
-    // DEBUG: Uncomment the line below to see the exact state in your browser console (F12)
-    // console.log("Moglie Debug - WAN:", wanState, "Alarm:", alarmState);
     
-    // Define what "Active" and "Home" look like
     const isWanActive = ['on', 'connected', 'home', 'up'].includes(wanState);
-    
-    // We explicitly include 'armed_home' here so he says Welcome Home in stay mode.
-    // Also included 'disarmed' and 'off'.
     const isHomeState = ['disarmed', 'armed_home', 'off'].includes(alarmState);
 
     const statusKey = `${wanState}-${alarmState}`;
@@ -85,19 +79,15 @@ class MoglieHaCard extends HTMLElement {
       });
     }
 
-    // Logic Tree
     if (!isWanActive) {
-      // 1. WAN is down (Highest Priority)
       this.content.innerHTML = `Moglie is stranded.<br>The WAN connection<br>has been lost!`;
       this.content.className = "text-box status-warning";
       this.image.className = "status-grayscale";
     } else if (isHomeState) {
-      // 2. You are Home (Disarmed or Armed Home)
       this.content.innerHTML = `Welcome Home!<br>The WAN is strong.<br>Tell me you brought<br>more bananas!`;
       this.content.className = "text-box";
       this.image.className = "";
     } else {
-      // 3. Anything else (Armed Away, Night, Pending, etc.)
       this.content.innerHTML = `The rest of the primates are<br>on patrol. I'll watch the trees<br>until they get back!`;
       this.content.className = "text-box";
       this.image.className = "";
