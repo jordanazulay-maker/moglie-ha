@@ -1,6 +1,5 @@
 class MoglieHaCard extends HTMLElement {
   static getStubConfig() {
-    // Setting these to empty strings removes the "Unknown entity" red error box
     return {
       wan_entity: "",
       alarm_entity: "",
@@ -30,11 +29,7 @@ class MoglieHaCard extends HTMLElement {
     const alarmState = alarmEntity ? alarmEntity.state : 'unknown';
     
     const isWanActive = ['on', 'connected', 'home', 'up'].includes(wanState);
-    
-    // Removed 'off' and 'disarmed' from this array. Only 'armed_home' will trigger "Welcome Home"
     const isHomeState = ['armed_home'].includes(alarmState);
-    
-    // Added 'disarmed' here so it triggers the "Slackers" message along with 'off'
     const isOffState = ['off', 'disarmed'].includes(alarmState);
 
     const statusKey = `${wanState}-${alarmState}`;
@@ -45,7 +40,7 @@ class MoglieHaCard extends HTMLElement {
       this.innerHTML = `
         <ha-card>
           <style>
-            .moglie-container { padding: 20px; text-align: center; cursor: pointer; transition: background 0.3s; border-radius: var(--ha-card-border-radius, 12px); }
+            .moglie-container { padding: 20px; text-align: center; cursor: pointer; transition: all 0.3s ease; border-radius: var(--ha-card-border-radius, 12px); box-sizing: border-box; }
             .moglie-container:hover { background: rgba(var(--rgb-primary-text-color), 0.05); }
             .text-box { line-height: 1.5; margin-bottom: 10px; font-size: 1.1em; min-height: 80px; }
             .img-container img { width: 110px; transition: all 0.5s ease; pointer-events: none; }
@@ -60,10 +55,11 @@ class MoglieHaCard extends HTMLElement {
           </div>
         </ha-card>
       `;
+      this.container = this.querySelector(".moglie-container");
       this.content = this.querySelector(".text-box");
       this.image = this.querySelector(".img-container img");
 
-      this.querySelector(".moglie-container").addEventListener("click", () => {
+      this.container.addEventListener("click", () => {
         const clickEntity = this.config.click_entity;
         if (!clickEntity) return;
 
@@ -84,29 +80,26 @@ class MoglieHaCard extends HTMLElement {
       });
     }
 
-    // 1. Check WAN First (Overrides everything else)
     if (!isWanActive) {
       this.content.innerHTML = `Moglie is stranded.<br>The WAN connection<br>has been lost!`;
       this.content.className = "text-box status-warning";
       this.image.className = "status-grayscale";
-      
-    // 2. Check if the system is OFF or DISARMED (The "Slackers" message)
+      this.container.style.border = "2px solid #9e9e9e"; 
     } else if (isOffState) {
       this.content.innerHTML = `System's off! The rest of the<br>primates ditched their post<br>for a banana run. Typical.`;
       this.content.className = "text-box";
       this.image.className = "";
-      
-    // 3. Check if the system is Armed Home (The "Welcome Home" message)
+      this.container.style.border = "2px solid #ff9800"; 
     } else if (isHomeState) {
       this.content.innerHTML = `Welcome Home!<br>The WAN is strong.<br>Tell me you brought<br>more bananas!`;
       this.content.className = "text-box";
       this.image.className = "";
-      
-    // 4. Default for everything else (Armed Away, etc.)
+      this.container.style.border = "2px solid #4caf50"; 
     } else {
       this.content.innerHTML = `The rest of the primates are<br>on patrol. I'll watch the trees<br>until they get back!`;
       this.content.className = "text-box";
       this.image.className = "";
+      this.container.style.border = "2px solid #f44336"; 
     }
   }
 }
