@@ -31,11 +31,11 @@ class MoglieHaCard extends HTMLElement {
     
     const isWanActive = ['on', 'connected', 'home', 'up'].includes(wanState);
     
-    // Removed 'off' from this array so it doesn't trigger "Welcome Home"
-    const isHomeState = ['disarmed', 'armed_home'].includes(alarmState);
+    // Removed 'off' and 'disarmed' from this array. Only 'armed_home' will trigger "Welcome Home"
+    const isHomeState = ['armed_home'].includes(alarmState);
     
-    // Added a specific check for when the system is off
-    const isOffState = alarmState === 'off';
+    // Added 'disarmed' here so it triggers the "Slackers" message along with 'off'
+    const isOffState = ['off', 'disarmed'].includes(alarmState);
 
     const statusKey = `${wanState}-${alarmState}`;
     if (this._lastStatus === statusKey) return; 
@@ -90,13 +90,13 @@ class MoglieHaCard extends HTMLElement {
       this.content.className = "text-box status-warning";
       this.image.className = "status-grayscale";
       
-    // 2. Check if the system is completely OFF
+    // 2. Check if the system is OFF or DISARMED (The "Slackers" message)
     } else if (isOffState) {
       this.content.innerHTML = `System's off! The rest of the<br>primates ditched their post<br>for a banana run. Typical.`;
       this.content.className = "text-box";
       this.image.className = "";
       
-    // 3. Check if the system is Disarmed or Armed Home
+    // 3. Check if the system is Armed Home (The "Welcome Home" message)
     } else if (isHomeState) {
       this.content.innerHTML = `Welcome Home!<br>The WAN is strong.<br>Tell me you brought<br>more bananas!`;
       this.content.className = "text-box";
