@@ -17,6 +17,9 @@ class MoglieHaCard extends HTMLElement {
 
   set hass(hass) {
     if (!this.config || !hass) return;
+    
+    // It's good practice to store the hass object on the element
+    this._hass = hass; 
 
     const wanId = this.config.wan_entity;
     const alarmId = this.config.alarm_entity;
@@ -60,13 +63,13 @@ class MoglieHaCard extends HTMLElement {
         const clickEntity = this.config.click_entity;
         if (!clickEntity) return;
 
-        // Using the standard tap_action structure often fixes the "no entity" bug
+        // Fix: Provide the entity at the root of the config object
         const event = new CustomEvent("hass-action", {
           detail: {
             config: {
+              entity: clickEntity, // HA looks here for what to toggle/show info for
               tap_action: {
-                action: "toggle",
-                entity: clickEntity
+                action: "toggle" 
               }
             },
             action: "tap"
