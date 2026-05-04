@@ -18,7 +18,6 @@ class MoglieHaCard extends HTMLElement {
   set hass(hass) {
     if (!this.config || !hass) return;
     
-    // It's good practice to store the hass object on the element
     this._hass = hass; 
 
     const wanId = this.config.wan_entity;
@@ -30,7 +29,7 @@ class MoglieHaCard extends HTMLElement {
     const alarmState = alarmEntity ? alarmEntity.state : 'unknown';
     
     const isWanActive = (wanState === 'on' || wanState === 'connected' || wanState === 'home' || wanState === 'up');
-    const isOnPatrol = (alarmState === 'armed_away');
+    const isOnPatrol = (alarmState === 'armed_away' || alarmState === 'armed_home' || alarmState === 'armed_night');
 
     const statusKey = `${wanState}-${alarmState}`;
     if (this._lastStatus === statusKey) return; 
@@ -58,18 +57,17 @@ class MoglieHaCard extends HTMLElement {
       this.content = this.querySelector(".text-box");
       this.image = this.querySelector(".img-container img");
 
-      // REFINED CLICK HANDLER
+      // CLICK HANDLER: Set to more-info to open the control panel
       this.querySelector(".moglie-container").addEventListener("click", () => {
         const clickEntity = this.config.click_entity;
         if (!clickEntity) return;
 
-        // Fix: Provide the entity at the root of the config object
         const event = new CustomEvent("hass-action", {
           detail: {
             config: {
-              entity: clickEntity, // HA looks here for what to toggle/show info for
+              entity: clickEntity, 
               tap_action: {
-                action: "toggle" 
+                action: "more-info" 
               }
             },
             action: "tap"
@@ -121,7 +119,7 @@ class MoglieHaCardEditor extends HTMLElement {
       this.formElement.schema = [
         { name: "wan_entity", label: "WAN Status Entity", selector: { entity: {} } },
         { name: "alarm_entity", label: "Alarm Control Panel", selector: { entity: { domain: "alarm_control_panel" } } },
-        { name: "click_entity", label: "Click Action Entity (Toggle)", selector: { entity: {} } }
+        { name: "click_entity", label: "Click Action Entity (Opens Dialog)", selector: { entity: {} } }
       ];
 
       this.formElement.addEventListener("value-changed", (ev) => {
