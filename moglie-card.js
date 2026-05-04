@@ -30,7 +30,12 @@ class MoglieHaCard extends HTMLElement {
     const alarmState = alarmEntity ? alarmEntity.state : 'unknown';
     
     const isWanActive = ['on', 'connected', 'home', 'up'].includes(wanState);
-    const isHomeState = ['disarmed', 'armed_home', 'off'].includes(alarmState);
+    
+    // Removed 'off' from this array so it doesn't trigger "Welcome Home"
+    const isHomeState = ['disarmed', 'armed_home'].includes(alarmState);
+    
+    // Added a specific check for when the system is off
+    const isOffState = alarmState === 'off';
 
     const statusKey = `${wanState}-${alarmState}`;
     if (this._lastStatus === statusKey) return; 
@@ -79,14 +84,25 @@ class MoglieHaCard extends HTMLElement {
       });
     }
 
+    // 1. Check WAN First (Overrides everything else)
     if (!isWanActive) {
       this.content.innerHTML = `Moglie is stranded.<br>The WAN connection<br>has been lost!`;
       this.content.className = "text-box status-warning";
       this.image.className = "status-grayscale";
+      
+    // 2. Check if the system is completely OFF
+    } else if (isOffState) {
+      this.content.innerHTML = `System's off! The rest of the<br>primates ditched their post<br>for a banana run. Typical.`;
+      this.content.className = "text-box";
+      this.image.className = "";
+      
+    // 3. Check if the system is Disarmed or Armed Home
     } else if (isHomeState) {
       this.content.innerHTML = `Welcome Home!<br>The WAN is strong.<br>Tell me you brought<br>more bananas!`;
       this.content.className = "text-box";
       this.image.className = "";
+      
+    // 4. Default for everything else (Armed Away, etc.)
     } else {
       this.content.innerHTML = `The rest of the primates are<br>on patrol. I'll watch the trees<br>until they get back!`;
       this.content.className = "text-box";
