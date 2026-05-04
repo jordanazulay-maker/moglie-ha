@@ -3,8 +3,7 @@ class MoglieHaCard extends HTMLElement {
     return {
       wan_entity: "binary_sensor.wan_status",
       alarm_entity: "alarm_control_panel.home_alarm",
-      action_type: "navigate",
-      action_path: "/history?entity_id=binary_sensor.wan_status"
+      click_entity: "switch.some_switch" // Stub for the new click entity
     };
   }
 
@@ -58,17 +57,17 @@ class MoglieHaCard extends HTMLElement {
 
       // DYNAMIC CLICK HANDLER
       this.querySelector(".moglie-container").addEventListener("click", () => {
-        const action = this.config.action_type || "navigate";
-        const path = this.config.action_path;
+        const clickEntity = this.config.click_entity;
         
-        let detail = { config: this.config, action: action };
-        
-        if (action === "navigate") detail.navigation_path = path;
-        if (action === "url") detail.url_path = path;
-        if (action === "toggle") detail.entity_id = path; // In toggle mode, path = entity_id
+        // If no entity is selected for clicking, do nothing
+        if (!clickEntity) return;
 
         const event = new CustomEvent("hass-action", {
-          detail: detail,
+          detail: { 
+            config: this.config, 
+            action: "toggle", 
+            entity_id: clickEntity 
+          },
           bubbles: true,
           composed: true,
         });
@@ -114,24 +113,11 @@ class MoglieHaCardEditor extends HTMLElement {
       this.innerHTML = `<ha-form></ha-form>`;
       this.formElement = this.querySelector("ha-form");
       
+      // Updated schema with three entity pickers
       this.formElement.schema = [
         { name: "wan_entity", label: "WAN Status Entity", selector: { entity: {} } },
         { name: "alarm_entity", label: "Alarm Control Panel", selector: { entity: { domain: "alarm_control_panel" } } },
-        { 
-          name: "action_type", 
-          label: "Click Action Type", 
-          selector: { 
-            select: { 
-              options: [
-                { value: "navigate", label: "Navigate (Internal)" },
-                { value: "url", label: "URL (External)" },
-                { value: "toggle", label: "Toggle Entity" },
-                { value: "none", label: "No Action" }
-              ] 
-            } 
-          } 
-        },
-        { name: "action_path", label: "Action Path / Entity ID", selector: { text: {} } }
+        { name: "click_entity", label: "Click Action Entity (Toggle)", selector: { entity: {} } }
       ];
 
       this.formElement.addEventListener("value-changed", (ev) => {
