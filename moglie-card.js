@@ -3,7 +3,7 @@ class MoglieHaCard extends HTMLElement {
     return {
       wan_entity: "binary_sensor.wan_status",
       alarm_entity: "alarm_control_panel.home_alarm",
-      click_entity: "switch.some_switch" // Stub for the new click entity
+      click_entity: "" 
     };
   }
 
@@ -55,24 +55,21 @@ class MoglieHaCard extends HTMLElement {
       this.content = this.querySelector(".text-box");
       this.image = this.querySelector(".img-container img");
 
-      // DYNAMIC CLICK HANDLER
+      // REFINED CLICK HANDLER
       this.querySelector(".moglie-container").addEventListener("click", () => {
         const clickEntity = this.config.click_entity;
-        
-        // If no entity is selected for clicking, do nothing
         if (!clickEntity) return;
 
-        // HA's toggle action strictly looks for a property named 'entity'
-        // So we create a quick copy of the config and add it.
-        const actionConfig = {
-          ...this.config,
-          entity: clickEntity 
-        };
-
+        // Using the standard tap_action structure often fixes the "no entity" bug
         const event = new CustomEvent("hass-action", {
-          detail: { 
-            config: actionConfig, 
-            action: "toggle" 
+          detail: {
+            config: {
+              tap_action: {
+                action: "toggle",
+                entity: clickEntity
+              }
+            },
+            action: "tap"
           },
           bubbles: true,
           composed: true,
@@ -108,7 +105,6 @@ if (!window.customCards.some(card => card.type === 'moglie-ha-card')) {
   });
 }
 
-// UPDATED EDITOR WITH ACTION BOXES
 class MoglieHaCardEditor extends HTMLElement {
   setConfig(config) { this._config = config; }
   set hass(hass) { this._hass = hass; this.renderForm(); }
