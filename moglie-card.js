@@ -1,21 +1,4 @@
-class MoglieHaCard extends HTMLElement {
-  static getStubConfig() {
-    return {
-      wan_entity: "binary_sensor.wan_status",
-      alarm_entity: "alarm_control_panel.home_alarm",
-      click_entity: "" 
-    };
-  }
-
-  static getConfigElement() {
-    return document.createElement("moglie-ha-card-editor");
-  }
-
-  setConfig(config) {
-    this.config = config;
-  }
-
-  set hass(hass) {
+set hass(hass) {
     if (!this.config || !hass) return;
     
     this._hass = hass; 
@@ -28,8 +11,11 @@ class MoglieHaCard extends HTMLElement {
     const wanState = wanEntity ? wanEntity.state : 'unavailable';
     const alarmState = alarmEntity ? alarmEntity.state : 'unknown';
     
-    const isWanActive = (wanState === 'on' || wanState === 'connected' || wanState === 'home' || wanState === 'up');
-    const isOnPatrol = (alarmState === 'armed_away' || alarmState === 'armed_home' || alarmState === 'armed_night');
+    // Cleaner matching using arrays
+    const isWanActive = ['on', 'connected', 'home', 'up'].includes(wanState);
+    
+    // Group away, night, and transitional states into the patrol condition
+    const isOnPatrol = ['armed_away', 'armed_night', 'arming', 'pending'].includes(alarmState);
 
     const statusKey = `${wanState}-${alarmState}`;
     if (this._lastStatus === statusKey) return; 
@@ -88,51 +74,9 @@ class MoglieHaCard extends HTMLElement {
       this.content.className = "text-box";
       this.image.className = "";
     } else {
+      // This will now correctly trigger for 'disarmed' and 'armed_home'
       this.content.innerHTML = `Welcome Home!<br>The WAN is strong.<br>Tell me you brought<br>more bananas!`;
       this.content.className = "text-box";
       this.image.className = "";
     }
   }
-}
-
-customElements.define("moglie-ha-card", MoglieHaCard);
-
-window.customCards = window.customCards || [];
-if (!window.customCards.some(card => card.type === 'moglie-ha-card')) {
-  window.customCards.push({
-    type: "moglie-ha-card",
-    name: "Moglie-HA",
-    description: "WAN and Alarm status monitoring with a friendly monkey."
-  });
-}
-
-class MoglieHaCardEditor extends HTMLElement {
-  setConfig(config) { this._config = config; }
-  set hass(hass) { this._hass = hass; this.renderForm(); }
-  
-  renderForm() {
-    if (!this._hass || !this._config) return;
-    if (!this.formElement) {
-      this.innerHTML = `<ha-form></ha-form>`;
-      this.formElement = this.querySelector("ha-form");
-      
-      this.formElement.schema = [
-        { name: "wan_entity", label: "WAN Status Entity", selector: { entity: {} } },
-        { name: "alarm_entity", label: "Alarm Control Panel", selector: { entity: { domain: "alarm_control_panel" } } },
-        { name: "click_entity", label: "Click Action Entity (Opens Dialog)", selector: { entity: {} } }
-      ];
-
-      this.formElement.addEventListener("value-changed", (ev) => {
-        const event = new CustomEvent("config-changed", {
-          detail: { config: ev.detail.value },
-          bubbles: true,
-          composed: true,
-        });
-        this.dispatchEvent(event);
-      });
-    }
-    this.formElement.hass = this._hass;
-    this.formElement.data = this._config;
-  }
-}
-customElements.define("moglie-ha-card-editor", MoglieHaCardEditor);
