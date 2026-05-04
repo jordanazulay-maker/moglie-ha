@@ -62,11 +62,17 @@ class MoglieHaCard extends HTMLElement {
         // If no entity is selected for clicking, do nothing
         if (!clickEntity) return;
 
+        // HA's toggle action strictly looks for a property named 'entity'
+        // So we create a quick copy of the config and add it.
+        const actionConfig = {
+          ...this.config,
+          entity: clickEntity 
+        };
+
         const event = new CustomEvent("hass-action", {
           detail: { 
-            config: this.config, 
-            action: "toggle", 
-            entity_id: clickEntity 
+            config: actionConfig, 
+            action: "toggle" 
           },
           bubbles: true,
           composed: true,
@@ -113,7 +119,6 @@ class MoglieHaCardEditor extends HTMLElement {
       this.innerHTML = `<ha-form></ha-form>`;
       this.formElement = this.querySelector("ha-form");
       
-      // Updated schema with three entity pickers
       this.formElement.schema = [
         { name: "wan_entity", label: "WAN Status Entity", selector: { entity: {} } },
         { name: "alarm_entity", label: "Alarm Control Panel", selector: { entity: { domain: "alarm_control_panel" } } },
