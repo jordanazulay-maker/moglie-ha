@@ -1,7 +1,7 @@
 {
   "domain": "moglie-ha",
   "name": "Moglie HA",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "codeowners": ["@jordanazulay-maker"],
   "documentation": "https://github.com/jordanazulay-maker/moglie-ha",
   "issue_tracker": "https://github.com/jordanazulay-maker/moglie-ha/issues",
