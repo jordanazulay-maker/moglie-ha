@@ -1,4 +1,4 @@
-import { normal_monkey, sleepy_monkey, rainy_monkey, winter_monkey } from "./assets.js";
+import { normal_monkey } from "./normal-monkey.js";
 
 class MoglieHaCard extends HTMLElement {
   static getStubConfig() {
@@ -142,12 +142,13 @@ class MoglieHaCard extends HTMLElement {
     if (this._lastStatus === statusKey) return; 
     this._lastStatus = statusKey;
 
+    // --- TESTING OVERRIDE: Use normal_monkey for every state ---
     if (isNightMode) {
-      this.image.src = sleepy_monkey;
+      this.image.src = normal_monkey;
     } else if (isFreezing) {
-      this.image.src = winter_monkey;
+      this.image.src = normal_monkey;
     } else if (isRaining) {
-      this.image.src = rainy_monkey;
+      this.image.src = normal_monkey;
     } else {
       this.image.src = normal_monkey;
     }
