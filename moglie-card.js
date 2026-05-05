@@ -1,5 +1,6 @@
 import { normal_monkey } from "./normal-monkey.js";
 import { sleepy_monkey } from "./sleepy-monkey.js";
+import { rainy_monkey } from "./rainy-monkey.js";
 
 class MoglieHaCard extends HTMLElement {
   static getStubConfig() {
@@ -34,7 +35,7 @@ class MoglieHaCard extends HTMLElement {
             .moglie-container:hover { background: rgba(var(--rgb-primary-text-color), 0.05); }
             .text-box { line-height: 1.5; margin-bottom: 10px; font-size: 1.1em; min-height: 80px; color: var(--primary-text-color); }
             
-            /* THE FIX FOR THE BLUE TINT IS HERE */
+            /* Theme color fix */
             .img-container img { 
               width: 110px; 
               transition: all 0.5s ease; 
@@ -103,10 +104,6 @@ class MoglieHaCard extends HTMLElement {
       showWarning(`Moglie needs more information!<br>I can't find the Alarm entity:<br><span style="font-family:monospace;">${alarmId}</span>`);
       return;
     }
-    if (weatherId && !weatherEntity) {
-      showWarning(`Moglie needs more information!<br>I can't find the Weather entity:<br><span style="font-family:monospace;">${weatherId}</span>`);
-      return;
-    }
 
     const wanState = wanEntity.state;
     const alarmState = alarmEntity.state;
@@ -116,18 +113,6 @@ class MoglieHaCard extends HTMLElement {
     const isHomeState = ['armed_home'].includes(alarmState);
     const isOffState = ['off', 'disarmed'].includes(alarmState);
     const isRaining = ['rain', 'pouring', 'lightning-rainy', 'snowy-rainy'].includes(weatherState);
-
-    let isFreezing = false;
-    if (weatherEntity && weatherEntity.attributes.temperature !== undefined) {
-      const temp = weatherEntity.attributes.temperature;
-      const unit = weatherEntity.attributes.temperature_unit || (this._hass.config && this._hass.config.unit_system ? this._hass.config.unit_system.temperature : '°C');
-      
-      if (unit === '°F' || unit === 'F') {
-        isFreezing = temp <= 32;
-      } else {
-        isFreezing = temp <= 0;
-      }
-    }
 
     let isNightMode = false;
     const startStr = this.config.night_start || "22:00";
@@ -149,17 +134,15 @@ class MoglieHaCard extends HTMLElement {
       isNightMode = currentMins >= startMins && currentMins <= endMins;
     }
 
-    const statusKey = `${wanState}-${alarmState}-${isNightMode}-${isRaining}-${isFreezing}`;
+    const statusKey = `${wanState}-${alarmState}-${isNightMode}-${isRaining}`;
     if (this._lastStatus === statusKey) return; 
     this._lastStatus = statusKey;
 
-    // --- VISUAL OVERRIDES ---
+    // --- VISUAL LOGIC ---
     if (isNightMode) {
       this.image.src = sleepy_monkey;
-    } else if (isFreezing) {
-      this.image.src = normal_monkey;
     } else if (isRaining) {
-      this.image.src = normal_monkey;
+      this.image.src = rainy_monkey;
     } else {
       this.image.src = normal_monkey;
     }
@@ -170,7 +153,6 @@ class MoglieHaCard extends HTMLElement {
     const msgArmedAway = this.config.text_armed_away || `The rest of the primates are<br>on patrol. I'll watch the trees<br>until they get back!`;
     const msgNight = this.config.text_night || `The rest of the pack is sleeping.<br>Why aren't we?`;
     const msgRain = this.config.text_rain || `The rest of the primates are<br>on patrol in the rain. Glad<br>I have my raincoat!`;
-    const msgFreezing = this.config.text_freezing || `It's freezing out there!<br>Glad I brought my winter coat<br>for this patrol!`;
 
     if (!isWanActive) {
       this.content.innerHTML = msgWanOffline;
@@ -190,8 +172,6 @@ class MoglieHaCard extends HTMLElement {
     } else {
       if (isNightMode) {
         this.content.innerHTML = msgNight;
-      } else if (isFreezing) {
-        this.content.innerHTML = msgFreezing;
       } else if (isRaining) {
         this.content.innerHTML = msgRain;
       } else {
@@ -228,7 +208,7 @@ class MoglieHaCardEditor extends HTMLElement {
       this.formElement.schema = [
         { name: "wan_entity", label: "WAN Status Entity", selector: { entity: {} } },
         { name: "alarm_entity", label: "Alarm Control Panel", selector: { entity: { domain: "alarm_control_panel" } } },
-        { name: "weather_entity", label: "Weather Entity (For Raincoat/Winter Coat)", selector: { entity: { domain: "weather" } } },
+        { name: "weather_entity", label: "Weather Entity (For Raincoat)", selector: { entity: { domain: "weather" } } },
         { name: "tap_action", label: "Tap Action", selector: { ui_action: {} } },
         { name: "click_entity", label: "Legacy Click Entity (Fallback)", selector: { entity: {} } },
         { name: "night_start", label: "Night Mode Start", selector: { time: {} } },
@@ -238,8 +218,7 @@ class MoglieHaCardEditor extends HTMLElement {
         { name: "text_disarmed", label: "Custom Text: Disarmed", selector: { text: { multiline: true } } },
         { name: "text_armed_away", label: "Custom Text: Armed Away/Other", selector: { text: { multiline: true } } },
         { name: "text_night", label: "Custom Text: Night Mode", selector: { text: { multiline: true } } },
-        { name: "text_rain", label: "Custom Text: Raining", selector: { text: { multiline: true } } },
-        { name: "text_freezing", label: "Custom Text: Freezing", selector: { text: { multiline: true } } }
+        { name: "text_rain", label: "Custom Text: Raining", selector: { text: { multiline: true } } }
       ];
 
       this.formElement.addEventListener("value-changed", (ev) => {
