@@ -116,32 +116,36 @@ class MoglieHaCard extends HTMLElement {
       this.image.src = normal_monkey;
     }
 
+    // Grab custom text from config, or use default fallbacks
+    const msgWanOffline = this.config.text_wan_offline || `Moglie is stranded.<br>The WAN connection<br>has been lost!`;
+    const msgArmedHome = this.config.text_armed_home || `Welcome Home!<br>The WAN is strong.<br>Tell me you brought<br>more bananas!`;
+    const msgDisarmed = this.config.text_disarmed || `System's off! The rest of the<br>primates ditched their post<br>for a banana run. Typical.`;
+    const msgArmedAway = this.config.text_armed_away || `The rest of the primates are<br>on patrol. I'll watch the trees<br>until they get back!`;
+    const msgNight = this.config.text_night || `The rest of the pack is sleeping.<br>Why aren't we?`;
+    const msgRain = this.config.text_rain || `The rest of the primates are<br>on patrol in the rain. Glad<br>I have my raincoat!`;
+
     if (!isWanActive) {
-      this.content.innerHTML = `Moglie is stranded.<br>The WAN connection<br>has been lost!`;
+      this.content.innerHTML = msgWanOffline;
       this.content.className = "text-box status-warning";
       this.image.className = "status-grayscale";
       this.container.style.border = "2px solid var(--disabled-text-color, #9e9e9e)"; 
     } else if (isOffState) {
-      this.content.innerHTML = isNightMode 
-        ? `The rest of the pack is sleeping.<br>Why aren't we?` 
-        : `System's off! The rest of the<br>primates ditched their post<br>for a banana run. Typical.`;
+      this.content.innerHTML = isNightMode ? msgNight : msgDisarmed;
       this.content.className = "text-box";
       this.image.className = "";
       this.container.style.border = "2px solid var(--warning-color, #ff9800)"; 
     } else if (isHomeState) {
-      this.content.innerHTML = isNightMode 
-        ? `The rest of the pack is sleeping.<br>Why aren't we?` 
-        : `Welcome Home!<br>The WAN is strong.<br>Tell me you brought<br>more bananas!`;
+      this.content.innerHTML = isNightMode ? msgNight : msgArmedHome;
       this.content.className = "text-box";
       this.image.className = "";
       this.container.style.border = "2px solid var(--success-color, #4caf50)"; 
     } else {
       if (isNightMode) {
-        this.content.innerHTML = `The rest of the pack is sleeping.<br>Why aren't we?`;
+        this.content.innerHTML = msgNight;
       } else if (isRaining) {
-        this.content.innerHTML = `The rest of the primates are<br>on patrol in the rain. Glad<br>I have my raincoat!`;
+        this.content.innerHTML = msgRain;
       } else {
-        this.content.innerHTML = `The rest of the primates are<br>on patrol. I'll watch the trees<br>until they get back!`;
+        this.content.innerHTML = msgArmedAway;
       }
       this.content.className = "text-box";
       this.image.className = "";
@@ -177,7 +181,14 @@ class MoglieHaCardEditor extends HTMLElement {
         { name: "weather_entity", label: "Weather Entity (For Raincoat)", selector: { entity: { domain: "weather" } } },
         { name: "click_entity", label: "Click Action Entity (Opens Dialog)", selector: { entity: {} } },
         { name: "night_start", label: "Night Mode Start", selector: { time: {} } },
-        { name: "night_end", label: "Night Mode End", selector: { time: {} } }
+        { name: "night_end", label: "Night Mode End", selector: { time: {} } },
+        // New custom text fields
+        { name: "text_wan_offline", label: "Custom Text: WAN Offline", selector: { text: { multiline: true } } },
+        { name: "text_armed_home", label: "Custom Text: Armed Home", selector: { text: { multiline: true } } },
+        { name: "text_disarmed", label: "Custom Text: Disarmed", selector: { text: { multiline: true } } },
+        { name: "text_armed_away", label: "Custom Text: Armed Away/Other", selector: { text: { multiline: true } } },
+        { name: "text_night", label: "Custom Text: Night Mode", selector: { text: { multiline: true } } },
+        { name: "text_rain", label: "Custom Text: Raining", selector: { text: { multiline: true } } }
       ];
 
       this.formElement.addEventListener("value-changed", (ev) => {
