@@ -69,7 +69,7 @@ class MoglieHaCard extends HTMLElement {
             .moglie-container:hover { background: rgba(var(--rgb-primary-text-color), 0.05); }
             .text-box { line-height: 1.5; margin-bottom: 10px; font-size: 1.1em; min-height: 80px; }
             .img-container img { width: 110px; transition: all 0.5s ease; pointer-events: none; }
-            .status-warning { color: #e74c3c; font-weight: bold; }
+            .status-warning { color: var(--error-color, #e74c3c); font-weight: bold; }
             .status-grayscale { filter: grayscale(100%) opacity(0.6); transform: scale(0.95); }
           </style>
           <div class="moglie-container card-content">
@@ -121,21 +121,21 @@ class MoglieHaCard extends HTMLElement {
       this.content.innerHTML = `Moglie is stranded.<br>The WAN connection<br>has been lost!`;
       this.content.className = "text-box status-warning";
       this.image.className = "status-grayscale";
-      this.container.style.border = "2px solid #9e9e9e"; 
+      this.container.style.border = "2px solid var(--disabled-text-color, #9e9e9e)"; 
     } else if (isOffState) {
       this.content.innerHTML = isNightMode 
         ? `The rest of the pack is sleeping.<br>Why aren't we?` 
         : `System's off! The rest of the<br>primates ditched their post<br>for a banana run. Typical.`;
       this.content.className = "text-box";
       this.image.className = "";
-      this.container.style.border = "2px solid #ff9800"; 
+      this.container.style.border = "2px solid var(--warning-color, #ff9800)"; 
     } else if (isHomeState) {
       this.content.innerHTML = isNightMode 
         ? `The rest of the pack is sleeping.<br>Why aren't we?` 
         : `Welcome Home!<br>The WAN is strong.<br>Tell me you brought<br>more bananas!`;
       this.content.className = "text-box";
       this.image.className = "";
-      this.container.style.border = "2px solid #4caf50"; 
+      this.container.style.border = "2px solid var(--success-color, #4caf50)"; 
     } else {
       if (isNightMode) {
         this.content.innerHTML = `The rest of the pack is sleeping.<br>Why aren't we?`;
@@ -146,7 +146,7 @@ class MoglieHaCard extends HTMLElement {
       }
       this.content.className = "text-box";
       this.image.className = "";
-      this.container.style.border = "2px solid #f44336"; 
+      this.container.style.border = "2px solid var(--error-color, #f44336)"; 
     }
   }
 }
