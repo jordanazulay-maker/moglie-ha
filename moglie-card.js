@@ -25,17 +25,16 @@ class MoglieHaCard extends HTMLElement {
     
     this._hass = hass; 
 
-    // --- SETUP CARD DOM IF IT DOESN'T EXIST YET ---
     if (!this.content) {
       this.innerHTML = `
         <ha-card>
           <style>
             .moglie-container { padding: 20px; text-align: center; cursor: pointer; transition: all 0.3s ease; border-radius: var(--ha-card-border-radius, 12px); box-sizing: border-box; }
             .moglie-container:hover { background: rgba(var(--rgb-primary-text-color), 0.05); }
-            .text-box { line-height: 1.5; margin-bottom: 10px; font-size: 1.1em; min-height: 80px; }
+            .text-box { line-height: 1.5; margin-bottom: 10px; font-size: 1.1em; min-height: 80px; color: var(--primary-text-color); }
             .img-container img { width: 110px; transition: all 0.5s ease; pointer-events: none; }
-            .status-warning { color: var(--error-color, #e74c3c); font-weight: bold; }
-            .status-config-err { color: var(--warning-color, #ff9800); font-weight: bold; font-size: 0.9em; }
+            .status-warning { color: var(--error-color); font-weight: bold; }
+            .status-config-err { color: var(--warning-color); font-weight: bold; font-size: 0.9em; }
             .status-grayscale { filter: grayscale(100%) opacity(0.6); transform: scale(0.95); }
           </style>
           <div class="moglie-container card-content">
@@ -64,21 +63,18 @@ class MoglieHaCard extends HTMLElement {
       });
     }
 
-    // --- ENTITY VALIDATION ---
     const wanId = this.config.wan_entity;
     const alarmId = this.config.alarm_entity;
     const weatherId = this.config.weather_entity;
 
-    // Helper to show warnings
     const showWarning = (message) => {
-      this.image.src = normal_monkey; // Use standard monkey for warnings
+      this.image.src = normal_monkey; 
       this.image.className = "status-grayscale";
       this.content.innerHTML = message;
       this.content.className = "text-box status-config-err";
-      this.container.style.border = "2px dashed var(--warning-color, #ff9800)";
+      this.container.style.border = "2px dashed var(--warning-color)";
     };
 
-    // 1. Check if required entities are even configured
     if (!wanId || !alarmId) {
       showWarning(`Moglie needs more information to do his job!<br>The primates get antsy when I have nothing to say.<br><span style="font-size:0.8em; color:var(--secondary-text-color);">(Configure WAN & Alarm entities)</span>`);
       return;
@@ -88,7 +84,6 @@ class MoglieHaCard extends HTMLElement {
     const alarmEntity = hass.states[alarmId];
     const weatherEntity = weatherId ? hass.states[weatherId] : null;
 
-    // 2. Check if the configured entities actually exist in Home Assistant
     if (!wanEntity) {
       showWarning(`Moglie needs more information!<br>I can't find the WAN entity:<br><span style="font-family:monospace;">${wanId}</span>`);
       return;
@@ -102,7 +97,6 @@ class MoglieHaCard extends HTMLElement {
       return;
     }
 
-    // --- MAIN LOGIC (Only runs if entities are valid) ---
     const wanState = wanEntity.state;
     const alarmState = alarmEntity.state;
     const weatherState = weatherEntity ? weatherEntity.state : 'unknown';
@@ -113,24 +107,29 @@ class MoglieHaCard extends HTMLElement {
     const isRaining = ['rain', 'pouring', 'lightning-rainy', 'snowy-rainy'].includes(weatherState);
 
     let isNightMode = false;
-    const start = this.config.night_start || "22:00";
-    const end = this.config.night_end || "06:00";
+    const startStr = this.config.night_start || "22:00";
+    const endStr = this.config.night_end || "06:00";
     const now = new Date();
-    const currentHHMM = now.toTimeString().substring(0, 5); 
-    const startHHMM = start.substring(0, 5);
-    const endHHMM = end.substring(0, 5);
+    
+    const timeToMinutes = (timeString) => {
+      const parts = timeString.split(':');
+      return parseInt(parts[0] || 0, 10) * 60 + parseInt(parts[1] || 0, 10);
+    };
 
-    if (startHHMM > endHHMM) {
-      isNightMode = currentHHMM >= startHHMM || currentHHMM <= endHHMM;
+    const currentMins = now.getHours() * 60 + now.getMinutes();
+    const startMins = timeToMinutes(startStr);
+    const endMins = timeToMinutes(endStr);
+
+    if (startMins > endMins) {
+      isNightMode = currentMins >= startMins || currentMins <= endMins;
     } else {
-      isNightMode = currentHHMM >= startHHMM && currentHHMM <= endHHMM;
+      isNightMode = currentMins >= startMins && currentMins <= endMins;
     }
 
     const statusKey = `${wanState}-${alarmState}-${isNightMode}-${isRaining}`;
     if (this._lastStatus === statusKey) return; 
     this._lastStatus = statusKey;
 
-    // Set the image sources
     if (isNightMode) {
       this.image.src = sleepy_monkey;
     } else if (isRaining) {
@@ -139,7 +138,6 @@ class MoglieHaCard extends HTMLElement {
       this.image.src = normal_monkey;
     }
 
-    // Custom text overrides
     const msgWanOffline = this.config.text_wan_offline || `Moglie is stranded.<br>The WAN connection<br>has been lost!`;
     const msgArmedHome = this.config.text_armed_home || `Welcome Home!<br>The WAN is strong.<br>Tell me you brought<br>more bananas!`;
     const msgDisarmed = this.config.text_disarmed || `System's off! The rest of the<br>primates ditched their post<br>for a banana run. Typical.`;
@@ -147,22 +145,21 @@ class MoglieHaCard extends HTMLElement {
     const msgNight = this.config.text_night || `The rest of the pack is sleeping.<br>Why aren't we?`;
     const msgRain = this.config.text_rain || `The rest of the primates are<br>on patrol in the rain. Glad<br>I have my raincoat!`;
 
-    // Visual State Logic
     if (!isWanActive) {
       this.content.innerHTML = msgWanOffline;
       this.content.className = "text-box status-warning";
       this.image.className = "status-grayscale";
-      this.container.style.border = "2px solid var(--disabled-text-color, #9e9e9e)"; 
+      this.container.style.border = "2px solid var(--disabled-text-color)"; 
     } else if (isOffState) {
       this.content.innerHTML = isNightMode ? msgNight : msgDisarmed;
       this.content.className = "text-box";
       this.image.className = "";
-      this.container.style.border = "2px solid var(--warning-color, #ff9800)"; 
+      this.container.style.border = "2px solid var(--warning-color)"; 
     } else if (isHomeState) {
       this.content.innerHTML = isNightMode ? msgNight : msgArmedHome;
       this.content.className = "text-box";
       this.image.className = "";
-      this.container.style.border = "2px solid var(--success-color, #4caf50)"; 
+      this.container.style.border = "2px solid var(--success-color)"; 
     } else {
       if (isNightMode) {
         this.content.innerHTML = msgNight;
@@ -173,7 +170,7 @@ class MoglieHaCard extends HTMLElement {
       }
       this.content.className = "text-box";
       this.image.className = "";
-      this.container.style.border = "2px solid var(--error-color, #f44336)"; 
+      this.container.style.border = "2px solid var(--error-color)"; 
     }
   }
 }
