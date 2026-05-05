@@ -36,21 +36,23 @@ class MoglieHaCard extends HTMLElement {
 
     // --- Night Mode Logic ---
     let isNightMode = false;
-    if (this.config.night_start && this.config.night_end) {
-      const now = new Date();
-      // Format current time to HH:MM:SS to easily compare with HA's time selector string
-      const currentTimeStr = now.toTimeString().split(' ')[0]; 
-      
-      const start = this.config.night_start;
-      const end = this.config.night_end;
+    
+    // Fallback to 10PM and 6AM if the config hasn't been updated yet
+    const start = this.config.night_start || "22:00";
+    const end = this.config.night_end || "06:00";
 
-      if (start > end) {
-        // Time window wraps around midnight (e.g. 22:00:00 to 06:00:00)
-        isNightMode = currentTimeStr >= start || currentTimeStr <= end;
-      } else {
-        // Time window is within the same day (e.g. 01:00:00 to 05:00:00)
-        isNightMode = currentTimeStr >= start && currentTimeStr <= end;
-      }
+    const now = new Date();
+    // Grab just the HH:MM portion from the current time to ensure a clean comparison
+    const currentHHMM = now.toTimeString().substring(0, 5); 
+    const startHHMM = start.substring(0, 5);
+    const endHHMM = end.substring(0, 5);
+
+    if (startHHMM > endHHMM) {
+      // Time window wraps around midnight (e.g. 22:00 to 06:00)
+      isNightMode = currentHHMM >= startHHMM || currentHHMM <= endHHMM;
+    } else {
+      // Time window is within the same day (e.g. 01:00 to 05:00)
+      isNightMode = currentHHMM >= startHHMM && currentHHMM <= endHHMM;
     }
 
     // Include isNightMode in the statusKey so the card updates when the time crosses the threshold
@@ -104,4 +106,80 @@ class MoglieHaCard extends HTMLElement {
 
     // Dynamically assign the image source based on Night Mode
     const dayImage = "https://raw.githubusercontent.com/jordanazulay-maker/moglie-ha/refs/heads/main/monkey.png";
-    const nightImage = "
+    const nightImage = "https://raw.githubusercontent.com/jordanazulay-maker/moglie-ha/d14f9374713e0a9db8e85d1869a8f854daf81fa7/sleepy-monkey.png";
+    this.image.src = isNightMode ? nightImage : dayImage;
+
+    // Apply State Messaging and Styling
+    if (!isWanActive) {
+      this.content.innerHTML = `Moglie is stranded.<br>The WAN connection<br>has been lost!`;
+      this.content.className = "text-box status-warning";
+      this.image.className = "status-grayscale";
+      this.container.style.border = "2px solid #9e9e9e"; 
+    } else if (isOffState) {
+      this.content.innerHTML = isNightMode 
+        ? `The rest of the pack is sleeping.<br>Why aren't we?` 
+        : `System's off! The rest of the<br>primates ditched their post<br>for a banana run. Typical.`;
+      this.content.className = "text-box";
+      this.image.className = "";
+      this.container.style.border = "2px solid #ff9800"; 
+    } else if (isHomeState) {
+      this.content.innerHTML = isNightMode 
+        ? `The rest of the pack is sleeping.<br>Why aren't we?` 
+        : `Welcome Home!<br>The WAN is strong.<br>Tell me you brought<br>more bananas!`;
+      this.content.className = "text-box";
+      this.image.className = "";
+      this.container.style.border = "2px solid #4caf50"; 
+    } else {
+      this.content.innerHTML = isNightMode 
+        ? `The rest of the pack is sleeping.<br>Why aren't we?` 
+        : `The rest of the primates are<br>on patrol. I'll watch the trees<br>until they get back!`;
+      this.content.className = "text-box";
+      this.image.className = "";
+      this.container.style.border = "2px solid #f44336"; 
+    }
+  }
+}
+
+customElements.define("moglie-ha-card", MoglieHaCard);
+
+window.customCards = window.customCards || [];
+if (!window.customCards.some(card => card.type === 'moglie-ha-card')) {
+  window.customCards.push({
+    type: "moglie-ha-card",
+    name: "Moglie-HA",
+    description: "WAN and Alarm status monitoring with a friendly monkey."
+  });
+}
+
+class MoglieHaCardEditor extends HTMLElement {
+  setConfig(config) { this._config = config; }
+  set hass(hass) { this._hass = hass; this.renderForm(); }
+  
+  renderForm() {
+    if (!this._hass || !this._config) return;
+    if (!this.formElement) {
+      this.innerHTML = `<ha-form></ha-form>`;
+      this.formElement = this.querySelector("ha-form");
+      
+      this.formElement.schema = [
+        { name: "wan_entity", label: "WAN Status Entity", selector: { entity: {} } },
+        { name: "alarm_entity", label: "Alarm Control Panel", selector: { entity: { domain: "alarm_control_panel" } } },
+        { name: "click_entity", label: "Click Action Entity (Opens Dialog)", selector: { entity: {} } },
+        { name: "night_start", label: "Night Mode Start", selector: { time: {} } },
+        { name: "night_end", label: "Night Mode End", selector: { time: {} } }
+      ];
+
+      this.formElement.addEventListener("value-changed", (ev) => {
+        const event = new CustomEvent("config-changed", {
+          detail: { config: ev.detail.value },
+          bubbles: true,
+          composed: true,
+        });
+        this.dispatchEvent(event);
+      });
+    }
+    this.formElement.hass = this._hass;
+    this.formElement.data = this._config;
+  }
+}
+customElements.define("moglie-ha-card-editor", MoglieHaCardEditor);
