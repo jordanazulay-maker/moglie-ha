@@ -110,6 +110,7 @@ class MoglieHaCard extends HTMLElement {
     if (weatherEntity && weatherEntity.attributes.temperature !== undefined) {
       const temp = weatherEntity.attributes.temperature;
       const unit = weatherEntity.attributes.temperature_unit || (this._hass.config && this._hass.config.unit_system ? this._hass.config.unit_system.temperature : '°C');
+      
       if (unit === '°F' || unit === 'F') {
         isFreezing = temp <= 32;
       } else {
