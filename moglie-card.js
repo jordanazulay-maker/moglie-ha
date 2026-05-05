@@ -1,4 +1,3 @@
-// --- FAILSAFE TEST: Using a web URL instead of a local file ---
 const normal_monkey = "https://raw.githubusercontent.com/home-assistant/assets/master/logo/logo.png";
 
 class MoglieHaCard extends HTMLElement {
@@ -53,9 +52,7 @@ class MoglieHaCard extends HTMLElement {
       this.container.addEventListener("click", () => {
         const actionConfig = this.config.tap_action || { action: "more-info" };
         if (actionConfig.action === "none") return;
-
         const targetEntity = this.config.tap_action?.entity || this.config.click_entity || this.config.wan_entity;
-
         const event = new CustomEvent("hass-action", {
           detail: { config: { entity: targetEntity, tap_action: actionConfig }, action: "tap" },
           bubbles: true, composed: true,
@@ -83,114 +80,19 @@ class MoglieHaCard extends HTMLElement {
 
     const wanEntity = hass.states[wanId];
     const alarmEntity = hass.states[alarmId];
-    const weatherEntity = weatherId ? hass.states[weatherId] : null;
 
-    if (!wanEntity) {
-      showWarning(`Moglie needs more information!<br>I can't find the WAN entity:<br><span style="font-family:monospace;">${wanId}</span>`);
-      return;
-    }
-    if (!alarmEntity) {
-      showWarning(`Moglie needs more information!<br>I can't find the Alarm entity:<br><span style="font-family:monospace;">${alarmId}</span>`);
-      return;
-    }
-    if (weatherId && !weatherEntity) {
-      showWarning(`Moglie needs more information!<br>I can't find the Weather entity:<br><span style="font-family:monospace;">${weatherId}</span>`);
+    if (!wanEntity || !alarmEntity) {
+      showWarning(`Moglie needs more information!<br>Make sure your entities are correct.`);
       return;
     }
 
-    const wanState = wanEntity.state;
-    const alarmState = alarmEntity.state;
-    const weatherState = weatherEntity ? weatherEntity.state : 'unknown';
-    
-    const isWanActive = ['on', 'connected', 'home', 'up'].includes(wanState);
-    const isHomeState = ['armed_home'].includes(alarmState);
-    const isOffState = ['off', 'disarmed'].includes(alarmState);
-    const isRaining = ['rain', 'pouring', 'lightning-rainy', 'snowy-rainy'].includes(weatherState);
+    // Always use the HA logo for this test
+    this.image.src = normal_monkey;
 
-    let isFreezing = false;
-    if (weatherEntity && weatherEntity.attributes.temperature !== undefined) {
-      const temp = weatherEntity.attributes.temperature;
-      const unit = weatherEntity.attributes.temperature_unit || (this._hass.config && this._hass.config.unit_system ? this._hass.config.unit_system.temperature : '°C');
-      
-      if (unit === '°F' || unit === 'F') {
-        isFreezing = temp <= 32;
-      } else {
-        isFreezing = temp <= 0;
-      }
-    }
-
-    let isNightMode = false;
-    const startStr = this.config.night_start || "22:00";
-    const endStr = this.config.night_end || "06:00";
-    const now = new Date();
-    
-    const timeToMinutes = (timeString) => {
-      const parts = timeString.split(':');
-      return parseInt(parts[0] || 0, 10) * 60 + parseInt(parts[1] || 0, 10);
-    };
-
-    const currentMins = now.getHours() * 60 + now.getMinutes();
-    const startMins = timeToMinutes(startStr);
-    const endMins = timeToMinutes(endStr);
-
-    if (startMins > endMins) {
-      isNightMode = currentMins >= startMins || currentMins <= endMins;
-    } else {
-      isNightMode = currentMins >= startMins && currentMins <= endMins;
-    }
-
-    const statusKey = `${wanState}-${alarmState}-${isNightMode}-${isRaining}-${isFreezing}`;
-    if (this._lastStatus === statusKey) return; 
-    this._lastStatus = statusKey;
-
-    // --- TESTING OVERRIDE: ALWAYS USE THE WEB LOGO ---
-    if (isNightMode) {
-      this.image.src = normal_monkey;
-    } else if (isFreezing) {
-      this.image.src = normal_monkey;
-    } else if (isRaining) {
-      this.image.src = normal_monkey;
-    } else {
-      this.image.src = normal_monkey;
-    }
-
-    const msgWanOffline = this.config.text_wan_offline || `Moglie is stranded.<br>The WAN connection<br>has been lost!`;
-    const msgArmedHome = this.config.text_armed_home || `Welcome Home!<br>The WAN is strong.<br>Tell me you brought<br>more bananas!`;
-    const msgDisarmed = this.config.text_disarmed || `System's off! The rest of the<br>primates ditched their post<br>for a banana run. Typical.`;
-    const msgArmedAway = this.config.text_armed_away || `The rest of the primates are<br>on patrol. I'll watch the trees<br>until they get back!`;
-    const msgNight = this.config.text_night || `The rest of the pack is sleeping.<br>Why aren't we?`;
-    const msgRain = this.config.text_rain || `The rest of the primates are<br>on patrol in the rain. Glad<br>I have my raincoat!`;
-    const msgFreezing = this.config.text_freezing || `It's freezing out there!<br>Glad I brought my winter coat<br>for this patrol!`;
-
-    if (!isWanActive) {
-      this.content.innerHTML = msgWanOffline;
-      this.content.className = "text-box status-warning";
-      this.image.className = "status-grayscale";
-      this.container.style.border = "2px solid var(--disabled-text-color)"; 
-    } else if (isOffState) {
-      this.content.innerHTML = isNightMode ? msgNight : msgDisarmed;
-      this.content.className = "text-box";
-      this.image.className = "";
-      this.container.style.border = "2px solid var(--warning-color)"; 
-    } else if (isHomeState) {
-      this.content.innerHTML = isNightMode ? msgNight : msgArmedHome;
-      this.content.className = "text-box";
-      this.image.className = "";
-      this.container.style.border = "2px solid var(--success-color)"; 
-    } else {
-      if (isNightMode) {
-        this.content.innerHTML = msgNight;
-      } else if (isFreezing) {
-        this.content.innerHTML = msgFreezing;
-      } else if (isRaining) {
-        this.content.innerHTML = msgRain;
-      } else {
-        this.content.innerHTML = msgArmedAway;
-      }
-      this.content.className = "text-box";
-      this.image.className = "";
-      this.container.style.border = "2px solid var(--error-color)"; 
-    }
+    this.content.innerHTML = `This is a successful test!<br>The card logic works perfectly.`;
+    this.content.className = "text-box";
+    this.image.className = "";
+    this.container.style.border = "2px solid var(--success-color)"; 
   }
 }
 
@@ -201,26 +103,29 @@ if (!window.customCards.some(card => card.type === 'moglie-ha-card')) {
   window.customCards.push({
     type: "moglie-ha-card",
     name: "Moglie-HA",
-    description: "WAN, Alarm, and Weather status monitoring with a friendly monkey."
+    description: "Test Card"
   });
 }
 
 class MoglieHaCardEditor extends HTMLElement {
   setConfig(config) { this._config = config; }
   set hass(hass) { this._hass = hass; this.renderForm(); }
-  
   renderForm() {
     if (!this._hass || !this._config) return;
     if (!this.formElement) {
       this.innerHTML = `<ha-form></ha-form>`;
       this.formElement = this.querySelector("ha-form");
-      
       this.formElement.schema = [
         { name: "wan_entity", label: "WAN Status Entity", selector: { entity: {} } },
-        { name: "alarm_entity", label: "Alarm Control Panel", selector: { entity: { domain: "alarm_control_panel" } } },
-        { name: "weather_entity", label: "Weather Entity (For Raincoat/Winter Coat)", selector: { entity: { domain: "weather" } } },
-        { name: "tap_action", label: "Tap Action", selector: { ui_action: {} } },
-        { name: "click_entity", label: "Legacy Click Entity (Fallback)", selector: { entity: {} } },
-        { name: "night_start", label: "Night Mode Start", selector: { time: {} } },
-        { name: "night_end", label: "Night Mode End", selector: { time: {} } },
-        { name: "text_wan_offline", label: "Custom Text: WAN Offline",
+        { name: "alarm_entity", label: "Alarm Control Panel", selector: { entity: { domain: "alarm_control_panel" } } }
+      ];
+      this.formElement.addEventListener("value-changed", (ev) => {
+        const event = new CustomEvent("config-changed", { detail: { config: ev.detail.value }, bubbles: true, composed: true });
+        this.dispatchEvent(event);
+      });
+    }
+    this.formElement.hass = this._hass;
+    this.formElement.data = this._config;
+  }
+}
+customElements.define("moglie-ha-card-editor", MoglieHaCardEditor);
