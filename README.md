@@ -25,10 +25,11 @@
   <ul>
     <li><b>Connectivity Watchdog:</b> Instant visual feedback if your WAN (internet) goes offline.</li>
     <li><b>Security Awareness:</b> Dynamic messaging based on your Alarm Control Panel status.</li>
+    <li><b>🌙 Night Mode:</b> Set a custom sleep schedule! Moglie automatically changes into his pajamas during user-defined nighttime hours.</li>
     <li><b>Dynamic Visuals:</b> Card border colors shift dynamically based on status, and Moglie goes grayscale when stranded offline.</li>
     <li><b>Interactive Dialogs:</b> Tap the card to instantly bring up the more-info dialog for your designated entity.</li>
     <li><b>Zero Dependencies:</b> Built entirely as a standalone custom card.</li>
-    <li><b>Visual Editor:</b> Easily configure your entities right from the Home Assistant UI without writing any code.</li>
+    <li><b>Visual Editor:</b> Easily configure your entities and sleep schedule right from the Home Assistant UI without writing any code.</li>
   </ul>
 
   <h3>🐒 How Moglie Reacts</h3>
@@ -39,6 +40,7 @@
     <li>🟠 <b>Disarmed:</b> Orange border. <i>"System's off! The rest of the primates ditched their post for a banana run. Typical."</i></li>
     <li>🔴 <b>Armed Away / Other:</b> Red border. <i>"The rest of the primates are on patrol. I'll watch the trees until they get back!"</i></li>
   </ul>
+  <p><i>(Psst... no matter the status, if it's between your configured <code>night_start</code> and <code>night_end</code> times, Moglie will be rocking his PJs!)</i></p>
 
   <h3>🚀 1. Installation</h3>
   <p><b>Option A: HACS (Recommended)</b></p>
@@ -60,7 +62,7 @@
   <ol>
     <li>Edit your dashboard and click <b>Add Card</b>.</li>
     <li>Search for <b>Moglie-HA</b> in the card picker.</li>
-    <li>Select your WAN entity, Alarm entity, and Click action using the UI dropdowns.</li>
+    <li>Select your WAN entity, Alarm entity, Click action, and Night Mode times using the UI dropdowns.</li>
     <li>Click <b>Save</b>!</li>
   </ol>
 
@@ -69,7 +71,9 @@
   <pre><code>type: custom:moglie-ha-card
 wan_entity: binary_sensor.wan_status
 alarm_entity: alarm_control_panel.home_alarm
-click_entity: binary_sensor.wan_status</code></pre>
+click_entity: binary_sensor.wan_status
+night_start: '22:00:00'
+night_end: '06:00:00'</code></pre>
 
   <p style="background-color: #f6f8fa; padding: 15px; border-left: 5px solid #238636; border-radius: 6px;">
     <b>💡 Pro-Tip:</b> Moglie is interactive! Set the <code>click_entity</code> to your WAN sensor, and tapping the card will open a dialog so you can see exactly when the "pack" went offline.
