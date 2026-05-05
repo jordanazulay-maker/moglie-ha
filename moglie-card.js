@@ -4,7 +4,7 @@ class MoglieHaCard extends HTMLElement {
       wan_entity: "",
       alarm_entity: "",
       click_entity: "",
-      weather_entity: "", // New Weather Setting
+      weather_entity: "",
       night_start: "22:00:00",
       night_end: "06:00:00"
     };
@@ -25,11 +25,11 @@ class MoglieHaCard extends HTMLElement {
 
     const wanId = this.config.wan_entity;
     const alarmId = this.config.alarm_entity;
-    const weatherId = this.config.weather_entity; // Grab weather from config
+    const weatherId = this.config.weather_entity;
 
     const wanEntity = wanId ? hass.states[wanId] : null;
     const alarmEntity = alarmId ? hass.states[alarmId] : null;
-    const weatherEntity = weatherId ? hass.states[weatherId] : null; // Grab weather state
+    const weatherEntity = weatherId ? hass.states[weatherId] : null;
     
     const wanState = wanEntity ? wanEntity.state : 'unavailable';
     const alarmState = alarmEntity ? alarmEntity.state : 'unknown';
@@ -39,31 +39,24 @@ class MoglieHaCard extends HTMLElement {
     const isHomeState = ['armed_home'].includes(alarmState);
     const isOffState = ['off', 'disarmed'].includes(alarmState);
     
-    // Check if it's raining based on standard Home Assistant weather states
     const isRaining = ['rain', 'pouring', 'lightning-rainy', 'snowy-rainy'].includes(weatherState);
 
-    // --- Night Mode Logic ---
     let isNightMode = false;
     
-    // Fallback to 10PM and 6AM if the config hasn't been updated yet
     const start = this.config.night_start || "22:00";
     const end = this.config.night_end || "06:00";
 
     const now = new Date();
-    // Grab just the HH:MM portion from the current time to ensure a clean comparison
     const currentHHMM = now.toTimeString().substring(0, 5); 
     const startHHMM = start.substring(0, 5);
     const endHHMM = end.substring(0, 5);
 
     if (startHHMM > endHHMM) {
-      // Time window wraps around midnight (e.g. 22:00 to 06:00)
       isNightMode = currentHHMM >= startHHMM || currentHHMM <= endHHMM;
     } else {
-      // Time window is within the same day (e.g. 01:00 to 05:00)
       isNightMode = currentHHMM >= startHHMM && currentHHMM <= endHHMM;
     }
 
-    // Include isNightMode AND isRaining in the statusKey so the card updates instantly
     const statusKey = `${wanState}-${alarmState}-${isNightMode}-${isRaining}`;
     if (this._lastStatus === statusKey) return; 
     this._lastStatus = statusKey;
@@ -112,12 +105,10 @@ class MoglieHaCard extends HTMLElement {
       });
     }
 
-    // --- Dynamic Image Selection ---
     const dayImage = "/hacsfiles/moglie-ha/monkey.png";
     const nightImage = "/hacsfiles/moglie-ha/sleepy-monkey.png";
     const rainImage = "/hacsfiles/moglie-ha/rainy-monkey.png";
 
-    // Night mode takes priority (he's asleep inside). If day and raining, raincoat. Otherwise, normal.
     if (isNightMode) {
       this.image.src = nightImage;
     } else if (isRaining) {
@@ -126,7 +117,6 @@ class MoglieHaCard extends HTMLElement {
       this.image.src = dayImage;
     }
 
-    // Apply State Messaging and Styling
     if (!isWanActive) {
       this.content.innerHTML = `Moglie is stranded.<br>The WAN connection<br>has been lost!`;
       this.content.className = "text-box status-warning";
@@ -147,11 +137,9 @@ class MoglieHaCard extends HTMLElement {
       this.image.className = "";
       this.container.style.border = "2px solid #4caf50"; 
     } else {
-      // The default "Away / Patrol" state
       if (isNightMode) {
         this.content.innerHTML = `The rest of the pack is sleeping.<br>Why aren't we?`;
       } else if (isRaining) {
-        // Special quote if it's raining while on patrol!
         this.content.innerHTML = `The rest of the primates are<br>on patrol in the rain. Glad<br>I have my raincoat!`;
       } else {
         this.content.innerHTML = `The rest of the primates are<br>on patrol. I'll watch the trees<br>until they get back!`;
