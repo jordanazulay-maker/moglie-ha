@@ -114,12 +114,16 @@ class MoglieHaCard extends HTMLElement {
       this.image.className = "status-grayscale";
       this.container.style.border = "2px solid #9e9e9e"; 
     } else if (isOffState) {
-      this.content.innerHTML = `System's off! The rest of the<br>primates ditched their post<br>for a banana run. Typical.`;
+      this.content.innerHTML = isNightMode 
+        ? `The rest of the pack is sleeping.<br>Why aren't we?` 
+        : `System's off! The rest of the<br>primates ditched their post<br>for a banana run. Typical.`;
       this.content.className = "text-box";
       this.image.className = "";
       this.container.style.border = "2px solid #ff9800"; 
     } else if (isHomeState) {
-      this.content.innerHTML = `Welcome Home!<br>The WAN is strong.<br>Tell me you brought<br>more bananas!`;
+      this.content.innerHTML = isNightMode 
+        ? `The rest of the pack is sleeping.<br>Why aren't we?` 
+        : `Welcome Home!<br>The WAN is strong.<br>Tell me you brought<br>more bananas!`;
       this.content.className = "text-box";
       this.image.className = "";
       this.container.style.border = "2px solid #4caf50"; 
