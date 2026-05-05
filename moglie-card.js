@@ -1,4 +1,5 @@
-import { normal_monkey } from "./normal-monkey.js";
+// --- FAILSAFE TEST: Using a web URL instead of a local file ---
+const normal_monkey = "https://raw.githubusercontent.com/home-assistant/assets/master/logo/logo.png";
 
 class MoglieHaCard extends HTMLElement {
   static getStubConfig() {
@@ -142,7 +143,7 @@ class MoglieHaCard extends HTMLElement {
     if (this._lastStatus === statusKey) return; 
     this._lastStatus = statusKey;
 
-    // --- TESTING OVERRIDE: Use normal_monkey for every state ---
+    // --- TESTING OVERRIDE: ALWAYS USE THE WEB LOGO ---
     if (isNightMode) {
       this.image.src = normal_monkey;
     } else if (isFreezing) {
@@ -222,26 +223,4 @@ class MoglieHaCardEditor extends HTMLElement {
         { name: "click_entity", label: "Legacy Click Entity (Fallback)", selector: { entity: {} } },
         { name: "night_start", label: "Night Mode Start", selector: { time: {} } },
         { name: "night_end", label: "Night Mode End", selector: { time: {} } },
-        { name: "text_wan_offline", label: "Custom Text: WAN Offline", selector: { text: { multiline: true } } },
-        { name: "text_armed_home", label: "Custom Text: Armed Home", selector: { text: { multiline: true } } },
-        { name: "text_disarmed", label: "Custom Text: Disarmed", selector: { text: { multiline: true } } },
-        { name: "text_armed_away", label: "Custom Text: Armed Away/Other", selector: { text: { multiline: true } } },
-        { name: "text_night", label: "Custom Text: Night Mode", selector: { text: { multiline: true } } },
-        { name: "text_rain", label: "Custom Text: Raining", selector: { text: { multiline: true } } },
-        { name: "text_freezing", label: "Custom Text: Freezing", selector: { text: { multiline: true } } }
-      ];
-
-      this.formElement.addEventListener("value-changed", (ev) => {
-        const event = new CustomEvent("config-changed", {
-          detail: { config: ev.detail.value },
-          bubbles: true,
-          composed: true,
-        });
-        this.dispatchEvent(event);
-      });
-    }
-    this.formElement.hass = this._hass;
-    this.formElement.data = this._config;
-  }
-}
-customElements.define("moglie-ha-card-editor", MoglieHaCardEditor);
+        { name: "text_wan_offline", label: "Custom Text: WAN Offline",
