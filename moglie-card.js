@@ -1,4 +1,4 @@
-const normal_monkey = "https://raw.githubusercontent.com/home-assistant/assets/master/logo/logo.png";
+import { normal_monkey } from "./normal-monkey.js";
 
 class MoglieHaCard extends HTMLElement {
   static getStubConfig() {
@@ -32,7 +32,17 @@ class MoglieHaCard extends HTMLElement {
             .moglie-container { padding: 20px; text-align: center; cursor: pointer; transition: all 0.3s ease; border-radius: var(--ha-card-border-radius, 12px); box-sizing: border-box; }
             .moglie-container:hover { background: rgba(var(--rgb-primary-text-color), 0.05); }
             .text-box { line-height: 1.5; margin-bottom: 10px; font-size: 1.1em; min-height: 80px; color: var(--primary-text-color); }
-            .img-container img { width: 110px; transition: all 0.5s ease; pointer-events: none; }
+            
+            /* THE FIX FOR THE BLUE TINT IS HERE */
+            .img-container img { 
+              width: 110px; 
+              transition: all 0.5s ease; 
+              pointer-events: none; 
+              filter: none !important; 
+              background: transparent !important; 
+              color: unset !important;
+            }
+            
             .status-warning { color: var(--error-color); font-weight: bold; }
             .status-config-err { color: var(--warning-color); font-weight: bold; font-size: 0.9em; }
             .status-grayscale { filter: grayscale(100%) opacity(0.6); transform: scale(0.95); }
@@ -52,7 +62,9 @@ class MoglieHaCard extends HTMLElement {
       this.container.addEventListener("click", () => {
         const actionConfig = this.config.tap_action || { action: "more-info" };
         if (actionConfig.action === "none") return;
+
         const targetEntity = this.config.tap_action?.entity || this.config.click_entity || this.config.wan_entity;
+
         const event = new CustomEvent("hass-action", {
           detail: { config: { entity: targetEntity, tap_action: actionConfig }, action: "tap" },
           bubbles: true, composed: true,
@@ -86,10 +98,10 @@ class MoglieHaCard extends HTMLElement {
       return;
     }
 
-    // Always use the HA logo for this test
+    // Set the image from your normal-monkey.js file
     this.image.src = normal_monkey;
 
-    this.content.innerHTML = `This is a successful test!<br>The card logic works perfectly.`;
+    this.content.innerHTML = `Moglie has arrived!<br>And he is no longer blue!`;
     this.content.className = "text-box";
     this.image.className = "";
     this.container.style.border = "2px solid var(--success-color)"; 
@@ -103,24 +115,31 @@ if (!window.customCards.some(card => card.type === 'moglie-ha-card')) {
   window.customCards.push({
     type: "moglie-ha-card",
     name: "Moglie-HA",
-    description: "Test Card"
+    description: "WAN, Alarm, and Weather status monitoring with a friendly monkey."
   });
 }
 
 class MoglieHaCardEditor extends HTMLElement {
   setConfig(config) { this._config = config; }
   set hass(hass) { this._hass = hass; this.renderForm(); }
+  
   renderForm() {
     if (!this._hass || !this._config) return;
     if (!this.formElement) {
       this.innerHTML = `<ha-form></ha-form>`;
       this.formElement = this.querySelector("ha-form");
+      
       this.formElement.schema = [
         { name: "wan_entity", label: "WAN Status Entity", selector: { entity: {} } },
         { name: "alarm_entity", label: "Alarm Control Panel", selector: { entity: { domain: "alarm_control_panel" } } }
       ];
+
       this.formElement.addEventListener("value-changed", (ev) => {
-        const event = new CustomEvent("config-changed", { detail: { config: ev.detail.value }, bubbles: true, composed: true });
+        const event = new CustomEvent("config-changed", {
+          detail: { config: ev.detail.value },
+          bubbles: true,
+          composed: true,
+        });
         this.dispatchEvent(event);
       });
     }
