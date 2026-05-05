@@ -1,7 +1,7 @@
 <div style="text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
 
   <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
-    <img src="https://raw.githubusercontent.com/jordanazulay-maker/moglie-ha/refs/heads/main/monkey.png" alt="Moglie Mascot" width="200" style="margin-bottom: 20px;">
+    <img src="https://raw.githubusercontent.com/jordanazulay-maker/moglie-ha/main/monkey.png" alt="Moglie Mascot" width="200" style="margin-bottom: 20px;">
   </div>
   
   <h1 style="border-bottom: none;">Moglie HA</h1>
@@ -26,6 +26,7 @@
     <li><b>Connectivity Watchdog:</b> Instant visual feedback if your WAN (internet) goes offline.</li>
     <li><b>Security Awareness:</b> Dynamic messaging based on your Alarm Control Panel status.</li>
     <li><b>🌙 Night Mode:</b> Set a custom sleep schedule! Moglie automatically changes into his pajamas during user-defined nighttime hours.</li>
+    <li><b>🌧️ Weather Aware:</b> Pass in your local weather entity, and Moglie will throw on his raincoat if it starts pouring!</li>
     <li><b>Dynamic Visuals:</b> Card border colors shift dynamically based on status, and Moglie goes grayscale when stranded offline.</li>
     <li><b>Interactive Dialogs:</b> Tap the card to instantly bring up the more-info dialog for your designated entity.</li>
     <li><b>Zero Dependencies:</b> Built entirely as a standalone custom card.</li>
@@ -40,43 +41,4 @@
     <li>🟠 <b>Disarmed:</b> Orange border. <i>"System's off! The rest of the primates ditched their post for a banana run. Typical."</i></li>
     <li>🔴 <b>Armed Away / Other:</b> Red border. <i>"The rest of the primates are on patrol. I'll watch the trees until they get back!"</i></li>
   </ul>
-  <p><i>(Psst... no matter the status, if it's between your configured <code>night_start</code> and <code>night_end</code> times, Moglie will be rocking his PJs!)</i></p>
-
-  <h3>🚀 1. Installation</h3>
-  <p><b>Option A: HACS (Recommended)</b></p>
-  <ol>
-    <li>Click the blue badge at the top of this page to automatically add the repository to HACS (or add it manually as a <b>Frontend</b> repository).</li>
-    <li>Click <b>Download</b>.</li>
-    <li>Refresh your browser.</li>
-  </ol>
-
-  <p><b>Option B: Manual</b></p>
-  <ol>
-    <li>Download the <code>moglie-ha-card.js</code> file and place it in your Home Assistant <code>www/</code> (config/www) folder.</li>
-    <li>Go to <b>Settings</b> > <b>Dashboards</b> > <b>3 dots (top right)</b> > <b>Resources</b>.</li>
-    <li>Add a new resource: <code>/local/moglie-ha-card.js</code> and set the type to <b>JavaScript Module</b>.</li>
-  </ol>
-
-  <h3>⚙️ 2. Dashboard Configuration</h3>
-  <p>Thanks to the built-in visual editor, adding Moglie to your dashboard is easy!</p>
-  <ol>
-    <li>Edit your dashboard and click <b>Add Card</b>.</li>
-    <li>Search for <b>Moglie-HA</b> in the card picker.</li>
-    <li>Select your WAN entity, Alarm entity, Click action, and Night Mode times using the UI dropdowns.</li>
-    <li>Click <b>Save</b>!</li>
-  </ol>
-
-  <p><b>YAML Alternative:</b><br>
-  If you prefer to write YAML, you can use the following configuration in a Manual card:</p>
-  <pre><code>type: custom:moglie-ha-card
-wan_entity: binary_sensor.wan_status
-alarm_entity: alarm_control_panel.home_alarm
-click_entity: binary_sensor.wan_status
-night_start: '22:00:00'
-night_end: '06:00:00'</code></pre>
-
-  <p style="background-color: #f6f8fa; padding: 15px; border-left: 5px solid #238636; border-radius: 6px;">
-    <b>💡 Pro-Tip:</b> Moglie is interactive! Set the <code>click_entity</code> to your WAN sensor, and tapping the card will open a dialog so you can see exactly when the "pack" went offline.
-  </p>
-
-</div>
+  <p><i>(Psst... no matter the status, if it's between your configured <code>night
