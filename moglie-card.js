@@ -113,9 +113,9 @@ class MoglieHaCard extends HTMLElement {
     }
 
     // --- Dynamic Image Selection ---
-    const dayImage = "https://raw.githubusercontent.com/jordanazulay-maker/moglie-ha/main/monkey.png";
-    const nightImage = "https://raw.githubusercontent.com/jordanazulay-maker/moglie-ha/main/sleepy-monkey.png"; // Fixed URL
-    const rainImage = "https://raw.githubusercontent.com/jordanazulay-maker/moglie-ha/main/rainy-monkey.png"; 
+    const dayImage = "/hacsfiles/moglie-ha/monkey.png";
+    const nightImage = "/hacsfiles/moglie-ha/sleepy-monkey.png";
+    const rainImage = "/hacsfiles/moglie-ha/rainy-monkey.png";
 
     // Night mode takes priority (he's asleep inside). If day and raining, raincoat. Otherwise, normal.
     if (isNightMode) {
