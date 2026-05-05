@@ -1,4 +1,5 @@
 import { normal_monkey } from "./normal-monkey.js";
+import { sleepy_monkey } from "./sleepy-monkey.js";
 
 class MoglieHaCard extends HTMLElement {
   static getStubConfig() {
@@ -92,19 +93,114 @@ class MoglieHaCard extends HTMLElement {
 
     const wanEntity = hass.states[wanId];
     const alarmEntity = hass.states[alarmId];
+    const weatherEntity = weatherId ? hass.states[weatherId] : null;
 
-    if (!wanEntity || !alarmEntity) {
-      showWarning(`Moglie needs more information!<br>Make sure your entities are correct.`);
+    if (!wanEntity) {
+      showWarning(`Moglie needs more information!<br>I can't find the WAN entity:<br><span style="font-family:monospace;">${wanId}</span>`);
+      return;
+    }
+    if (!alarmEntity) {
+      showWarning(`Moglie needs more information!<br>I can't find the Alarm entity:<br><span style="font-family:monospace;">${alarmId}</span>`);
+      return;
+    }
+    if (weatherId && !weatherEntity) {
+      showWarning(`Moglie needs more information!<br>I can't find the Weather entity:<br><span style="font-family:monospace;">${weatherId}</span>`);
       return;
     }
 
-    // Set the image from your normal-monkey.js file
-    this.image.src = normal_monkey;
+    const wanState = wanEntity.state;
+    const alarmState = alarmEntity.state;
+    const weatherState = weatherEntity ? weatherEntity.state : 'unknown';
+    
+    const isWanActive = ['on', 'connected', 'home', 'up'].includes(wanState);
+    const isHomeState = ['armed_home'].includes(alarmState);
+    const isOffState = ['off', 'disarmed'].includes(alarmState);
+    const isRaining = ['rain', 'pouring', 'lightning-rainy', 'snowy-rainy'].includes(weatherState);
 
-    this.content.innerHTML = `Moglie has arrived!<br>And he is no longer blue!`;
-    this.content.className = "text-box";
-    this.image.className = "";
-    this.container.style.border = "2px solid var(--success-color)"; 
+    let isFreezing = false;
+    if (weatherEntity && weatherEntity.attributes.temperature !== undefined) {
+      const temp = weatherEntity.attributes.temperature;
+      const unit = weatherEntity.attributes.temperature_unit || (this._hass.config && this._hass.config.unit_system ? this._hass.config.unit_system.temperature : '°C');
+      
+      if (unit === '°F' || unit === 'F') {
+        isFreezing = temp <= 32;
+      } else {
+        isFreezing = temp <= 0;
+      }
+    }
+
+    let isNightMode = false;
+    const startStr = this.config.night_start || "22:00";
+    const endStr = this.config.night_end || "06:00";
+    const now = new Date();
+    
+    const timeToMinutes = (timeString) => {
+      const parts = timeString.split(':');
+      return parseInt(parts[0] || 0, 10) * 60 + parseInt(parts[1] || 0, 10);
+    };
+
+    const currentMins = now.getHours() * 60 + now.getMinutes();
+    const startMins = timeToMinutes(startStr);
+    const endMins = timeToMinutes(endStr);
+
+    if (startMins > endMins) {
+      isNightMode = currentMins >= startMins || currentMins <= endMins;
+    } else {
+      isNightMode = currentMins >= startMins && currentMins <= endMins;
+    }
+
+    const statusKey = `${wanState}-${alarmState}-${isNightMode}-${isRaining}-${isFreezing}`;
+    if (this._lastStatus === statusKey) return; 
+    this._lastStatus = statusKey;
+
+    // --- VISUAL OVERRIDES ---
+    if (isNightMode) {
+      this.image.src = sleepy_monkey;
+    } else if (isFreezing) {
+      this.image.src = normal_monkey;
+    } else if (isRaining) {
+      this.image.src = normal_monkey;
+    } else {
+      this.image.src = normal_monkey;
+    }
+
+    const msgWanOffline = this.config.text_wan_offline || `Moglie is stranded.<br>The WAN connection<br>has been lost!`;
+    const msgArmedHome = this.config.text_armed_home || `Welcome Home!<br>The WAN is strong.<br>Tell me you brought<br>more bananas!`;
+    const msgDisarmed = this.config.text_disarmed || `System's off! The rest of the<br>primates ditched their post<br>for a banana run. Typical.`;
+    const msgArmedAway = this.config.text_armed_away || `The rest of the primates are<br>on patrol. I'll watch the trees<br>until they get back!`;
+    const msgNight = this.config.text_night || `The rest of the pack is sleeping.<br>Why aren't we?`;
+    const msgRain = this.config.text_rain || `The rest of the primates are<br>on patrol in the rain. Glad<br>I have my raincoat!`;
+    const msgFreezing = this.config.text_freezing || `It's freezing out there!<br>Glad I brought my winter coat<br>for this patrol!`;
+
+    if (!isWanActive) {
+      this.content.innerHTML = msgWanOffline;
+      this.content.className = "text-box status-warning";
+      this.image.className = "status-grayscale";
+      this.container.style.border = "2px solid var(--disabled-text-color)"; 
+    } else if (isOffState) {
+      this.content.innerHTML = isNightMode ? msgNight : msgDisarmed;
+      this.content.className = "text-box";
+      this.image.className = "";
+      this.container.style.border = "2px solid var(--warning-color)"; 
+    } else if (isHomeState) {
+      this.content.innerHTML = isNightMode ? msgNight : msgArmedHome;
+      this.content.className = "text-box";
+      this.image.className = "";
+      this.container.style.border = "2px solid var(--success-color)"; 
+    } else {
+      if (isNightMode) {
+        this.content.innerHTML = msgNight;
+      } else if (isFreezing) {
+        this.content.innerHTML = msgFreezing;
+      } else if (isRaining) {
+        this.content.innerHTML = msgRain;
+      } else {
+        this.content.innerHTML = msgArmedAway;
+      }
+      this.content.className = "text-box";
+      this.image.className = "";
+      this.container.style.border = "2px solid var(--error-color)"; 
+    }
   }
 }
 
@@ -131,7 +227,19 @@ class MoglieHaCardEditor extends HTMLElement {
       
       this.formElement.schema = [
         { name: "wan_entity", label: "WAN Status Entity", selector: { entity: {} } },
-        { name: "alarm_entity", label: "Alarm Control Panel", selector: { entity: { domain: "alarm_control_panel" } } }
+        { name: "alarm_entity", label: "Alarm Control Panel", selector: { entity: { domain: "alarm_control_panel" } } },
+        { name: "weather_entity", label: "Weather Entity (For Raincoat/Winter Coat)", selector: { entity: { domain: "weather" } } },
+        { name: "tap_action", label: "Tap Action", selector: { ui_action: {} } },
+        { name: "click_entity", label: "Legacy Click Entity (Fallback)", selector: { entity: {} } },
+        { name: "night_start", label: "Night Mode Start", selector: { time: {} } },
+        { name: "night_end", label: "Night Mode End", selector: { time: {} } },
+        { name: "text_wan_offline", label: "Custom Text: WAN Offline", selector: { text: { multiline: true } } },
+        { name: "text_armed_home", label: "Custom Text: Armed Home", selector: { text: { multiline: true } } },
+        { name: "text_disarmed", label: "Custom Text: Disarmed", selector: { text: { multiline: true } } },
+        { name: "text_armed_away", label: "Custom Text: Armed Away/Other", selector: { text: { multiline: true } } },
+        { name: "text_night", label: "Custom Text: Night Mode", selector: { text: { multiline: true } } },
+        { name: "text_rain", label: "Custom Text: Raining", selector: { text: { multiline: true } } },
+        { name: "text_freezing", label: "Custom Text: Freezing", selector: { text: { multiline: true } } }
       ];
 
       this.formElement.addEventListener("value-changed", (ev) => {
