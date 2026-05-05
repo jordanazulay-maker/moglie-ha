@@ -4,6 +4,7 @@ class MoglieHaCard extends HTMLElement {
       wan_entity: "",
       alarm_entity: "",
       click_entity: "",
+      weather_entity: "", // New Weather Setting
       night_start: "22:00:00",
       night_end: "06:00:00"
     };
@@ -24,15 +25,22 @@ class MoglieHaCard extends HTMLElement {
 
     const wanId = this.config.wan_entity;
     const alarmId = this.config.alarm_entity;
-    const wanEntity = hass.states[wanId];
-    const alarmEntity = hass.states[alarmId];
+    const weatherId = this.config.weather_entity; // Grab weather from config
+
+    const wanEntity = wanId ? hass.states[wanId] : null;
+    const alarmEntity = alarmId ? hass.states[alarmId] : null;
+    const weatherEntity = weatherId ? hass.states[weatherId] : null; // Grab weather state
     
     const wanState = wanEntity ? wanEntity.state : 'unavailable';
     const alarmState = alarmEntity ? alarmEntity.state : 'unknown';
+    const weatherState = weatherEntity ? weatherEntity.state : 'unknown';
     
     const isWanActive = ['on', 'connected', 'home', 'up'].includes(wanState);
     const isHomeState = ['armed_home'].includes(alarmState);
     const isOffState = ['off', 'disarmed'].includes(alarmState);
+    
+    // Check if it's raining based on standard Home Assistant weather states
+    const isRaining = ['rain', 'pouring', 'lightning-rainy', 'snowy-rainy'].includes(weatherState);
 
     // --- Night Mode Logic ---
     let isNightMode = false;
@@ -55,8 +63,8 @@ class MoglieHaCard extends HTMLElement {
       isNightMode = currentHHMM >= startHHMM && currentHHMM <= endHHMM;
     }
 
-    // Include isNightMode in the statusKey so the card updates when the time crosses the threshold
-    const statusKey = `${wanState}-${alarmState}-${isNightMode}`;
+    // Include isNightMode AND isRaining in the statusKey so the card updates instantly
+    const statusKey = `${wanState}-${alarmState}-${isNightMode}-${isRaining}`;
     if (this._lastStatus === statusKey) return; 
     this._lastStatus = statusKey;
 
@@ -104,10 +112,19 @@ class MoglieHaCard extends HTMLElement {
       });
     }
 
-    // Dynamically assign the image source based on Night Mode
+    // --- Dynamic Image Selection ---
     const dayImage = "https://raw.githubusercontent.com/jordanazulay-maker/moglie-ha/refs/heads/main/monkey.png";
     const nightImage = "https://raw.githubusercontent.com/jordanazulay-maker/moglie-ha/d14f9374713e0a9db8e85d1869a8f854daf81fa7/sleepy-monkey.png";
-    this.image.src = isNightMode ? nightImage : dayImage;
+    const rainImage = "https://raw.githubusercontent.com/jordanazulay-maker/moglie-ha/main/rainy-monkey.png"; // Using RAW github link
+
+    // Night mode takes priority (he's asleep inside). If day and raining, raincoat. Otherwise, normal.
+    if (isNightMode) {
+      this.image.src = nightImage;
+    } else if (isRaining) {
+      this.image.src = rainImage;
+    } else {
+      this.image.src = dayImage;
+    }
 
     // Apply State Messaging and Styling
     if (!isWanActive) {
@@ -130,9 +147,15 @@ class MoglieHaCard extends HTMLElement {
       this.image.className = "";
       this.container.style.border = "2px solid #4caf50"; 
     } else {
-      this.content.innerHTML = isNightMode 
-        ? `The rest of the pack is sleeping.<br>Why aren't we?` 
-        : `The rest of the primates are<br>on patrol. I'll watch the trees<br>until they get back!`;
+      // The default "Away / Patrol" state
+      if (isNightMode) {
+        this.content.innerHTML = `The rest of the pack is sleeping.<br>Why aren't we?`;
+      } else if (isRaining) {
+        // Special quote if it's raining while on patrol!
+        this.content.innerHTML = `The rest of the primates are<br>on patrol in the rain. Glad<br>I have my raincoat!`;
+      } else {
+        this.content.innerHTML = `The rest of the primates are<br>on patrol. I'll watch the trees<br>until they get back!`;
+      }
       this.content.className = "text-box";
       this.image.className = "";
       this.container.style.border = "2px solid #f44336"; 
@@ -147,7 +170,7 @@ if (!window.customCards.some(card => card.type === 'moglie-ha-card')) {
   window.customCards.push({
     type: "moglie-ha-card",
     name: "Moglie-HA",
-    description: "WAN and Alarm status monitoring with a friendly monkey."
+    description: "WAN, Alarm, and Weather status monitoring with a friendly monkey."
   });
 }
 
@@ -164,6 +187,7 @@ class MoglieHaCardEditor extends HTMLElement {
       this.formElement.schema = [
         { name: "wan_entity", label: "WAN Status Entity", selector: { entity: {} } },
         { name: "alarm_entity", label: "Alarm Control Panel", selector: { entity: { domain: "alarm_control_panel" } } },
+        { name: "weather_entity", label: "Weather Entity (For Raincoat)", selector: { entity: { domain: "weather" } } },
         { name: "click_entity", label: "Click Action Entity (Opens Dialog)", selector: { entity: {} } },
         { name: "night_start", label: "Night Mode Start", selector: { time: {} } },
         { name: "night_end", label: "Night Mode End", selector: { time: {} } }
