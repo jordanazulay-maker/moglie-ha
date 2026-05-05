@@ -87,16 +87,20 @@ class MoglieHaCard extends HTMLElement {
       this.image = this.querySelector(".img-container img");
 
       this.container.addEventListener("click", () => {
-        const clickEntity = this.config.click_entity;
-        if (!clickEntity) return;
+        // Use the standard tap_action if defined, otherwise fallback to the old more-info behavior
+        const actionConfig = this.config.tap_action || { action: "more-info" };
+        
+        // If the user selected 'none' for their tap action, do nothing
+        if (actionConfig.action === "none") return;
+
+        // Determine the entity to target (prioritize tap_action entity, then legacy click_entity, then wan_entity)
+        const targetEntity = this.config.tap_action?.entity || this.config.click_entity || this.config.wan_entity;
 
         const event = new CustomEvent("hass-action", {
           detail: {
             config: {
-              entity: clickEntity, 
-              tap_action: {
-                action: "more-info" 
-              }
+              entity: targetEntity, 
+              tap_action: actionConfig
             },
             action: "tap"
           },
@@ -179,10 +183,16 @@ class MoglieHaCardEditor extends HTMLElement {
         { name: "wan_entity", label: "WAN Status Entity", selector: { entity: {} } },
         { name: "alarm_entity", label: "Alarm Control Panel", selector: { entity: { domain: "alarm_control_panel" } } },
         { name: "weather_entity", label: "Weather Entity (For Raincoat)", selector: { entity: { domain: "weather" } } },
-        { name: "click_entity", label: "Click Action Entity (Opens Dialog)", selector: { entity: {} } },
+        
+        // Tap action configured natively for Home Assistant
+        { name: "tap_action", label: "Tap Action", selector: { ui_action: {} } },
+        // Kept for backward compatibility for folks upgrading
+        { name: "click_entity", label: "Legacy Click Entity (Fallback)", selector: { entity: {} } },
+        
         { name: "night_start", label: "Night Mode Start", selector: { time: {} } },
         { name: "night_end", label: "Night Mode End", selector: { time: {} } },
-        // New custom text fields
+        
+        // Custom text fields
         { name: "text_wan_offline", label: "Custom Text: WAN Offline", selector: { text: { multiline: true } } },
         { name: "text_armed_home", label: "Custom Text: Armed Home", selector: { text: { multiline: true } } },
         { name: "text_disarmed", label: "Custom Text: Disarmed", selector: { text: { multiline: true } } },
