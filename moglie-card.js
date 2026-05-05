@@ -3,7 +3,9 @@ class MoglieHaCard extends HTMLElement {
     return {
       wan_entity: "",
       alarm_entity: "",
-      click_entity: "" 
+      click_entity: "",
+      night_start: "22:00:00",
+      night_end: "06:00:00"
     };
   }
 
@@ -32,7 +34,27 @@ class MoglieHaCard extends HTMLElement {
     const isHomeState = ['armed_home'].includes(alarmState);
     const isOffState = ['off', 'disarmed'].includes(alarmState);
 
-    const statusKey = `${wanState}-${alarmState}`;
+    // --- Night Mode Logic ---
+    let isNightMode = false;
+    if (this.config.night_start && this.config.night_end) {
+      const now = new Date();
+      // Format current time to HH:MM:SS to easily compare with HA's time selector string
+      const currentTimeStr = now.toTimeString().split(' ')[0]; 
+      
+      const start = this.config.night_start;
+      const end = this.config.night_end;
+
+      if (start > end) {
+        // Time window wraps around midnight (e.g. 22:00:00 to 06:00:00)
+        isNightMode = currentTimeStr >= start || currentTimeStr <= end;
+      } else {
+        // Time window is within the same day (e.g. 01:00:00 to 05:00:00)
+        isNightMode = currentTimeStr >= start && currentTimeStr <= end;
+      }
+    }
+
+    // Include isNightMode in the statusKey so the card updates when the time crosses the threshold
+    const statusKey = `${wanState}-${alarmState}-${isNightMode}`;
     if (this._lastStatus === statusKey) return; 
     this._lastStatus = statusKey;
 
@@ -50,7 +72,7 @@ class MoglieHaCard extends HTMLElement {
           <div class="moglie-container card-content">
             <div class="text-box"></div>
             <div class="img-container">
-              <img src="https://raw.githubusercontent.com/jordanazulay-maker/moglie-ha/refs/heads/main/monkey.png" alt="Moglie">
+              <img alt="Moglie">
             </div>
           </div>
         </ha-card>
@@ -80,6 +102,12 @@ class MoglieHaCard extends HTMLElement {
       });
     }
 
+    // Dynamically assign the image source based on Night Mode
+    const dayImage = "https://raw.githubusercontent.com/jordanazulay-maker/moglie-ha/refs/heads/main/monkey.png";
+    const nightImage = "https://raw.githubusercontent.com/jordanazulay-maker/moglie-ha/d14f9374713e0a9db8e85d1869a8f854daf81fa7/sleepy-monkey.png";
+    this.image.src = isNightMode ? nightImage : dayImage;
+
+    // Apply State Messaging and Styling
     if (!isWanActive) {
       this.content.innerHTML = `Moglie is stranded.<br>The WAN connection<br>has been lost!`;
       this.content.className = "text-box status-warning";
@@ -128,7 +156,9 @@ class MoglieHaCardEditor extends HTMLElement {
       this.formElement.schema = [
         { name: "wan_entity", label: "WAN Status Entity", selector: { entity: {} } },
         { name: "alarm_entity", label: "Alarm Control Panel", selector: { entity: { domain: "alarm_control_panel" } } },
-        { name: "click_entity", label: "Click Action Entity (Opens Dialog)", selector: { entity: {} } }
+        { name: "click_entity", label: "Click Action Entity (Opens Dialog)", selector: { entity: {} } },
+        { name: "night_start", label: "Night Mode Start", selector: { time: {} } },
+        { name: "night_end", label: "Night Mode End", selector: { time: {} } }
       ];
 
       this.formElement.addEventListener("value-changed", (ev) => {
