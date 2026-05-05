@@ -25,44 +25,7 @@ class MoglieHaCard extends HTMLElement {
     
     this._hass = hass; 
 
-    const wanId = this.config.wan_entity;
-    const alarmId = this.config.alarm_entity;
-    const weatherId = this.config.weather_entity;
-
-    const wanEntity = wanId ? hass.states[wanId] : null;
-    const alarmEntity = alarmId ? hass.states[alarmId] : null;
-    const weatherEntity = weatherId ? hass.states[weatherId] : null;
-    
-    const wanState = wanEntity ? wanEntity.state : 'unavailable';
-    const alarmState = alarmEntity ? alarmEntity.state : 'unknown';
-    const weatherState = weatherEntity ? weatherEntity.state : 'unknown';
-    
-    const isWanActive = ['on', 'connected', 'home', 'up'].includes(wanState);
-    const isHomeState = ['armed_home'].includes(alarmState);
-    const isOffState = ['off', 'disarmed'].includes(alarmState);
-    
-    const isRaining = ['rain', 'pouring', 'lightning-rainy', 'snowy-rainy'].includes(weatherState);
-
-    let isNightMode = false;
-    
-    const start = this.config.night_start || "22:00";
-    const end = this.config.night_end || "06:00";
-
-    const now = new Date();
-    const currentHHMM = now.toTimeString().substring(0, 5); 
-    const startHHMM = start.substring(0, 5);
-    const endHHMM = end.substring(0, 5);
-
-    if (startHHMM > endHHMM) {
-      isNightMode = currentHHMM >= startHHMM || currentHHMM <= endHHMM;
-    } else {
-      isNightMode = currentHHMM >= startHHMM && currentHHMM <= endHHMM;
-    }
-
-    const statusKey = `${wanState}-${alarmState}-${isNightMode}-${isRaining}`;
-    if (this._lastStatus === statusKey) return; 
-    this._lastStatus = statusKey;
-
+    // --- SETUP CARD DOM IF IT DOESN'T EXIST YET ---
     if (!this.content) {
       this.innerHTML = `
         <ha-card>
@@ -72,6 +35,7 @@ class MoglieHaCard extends HTMLElement {
             .text-box { line-height: 1.5; margin-bottom: 10px; font-size: 1.1em; min-height: 80px; }
             .img-container img { width: 110px; transition: all 0.5s ease; pointer-events: none; }
             .status-warning { color: var(--error-color, #e74c3c); font-weight: bold; }
+            .status-config-err { color: var(--warning-color, #ff9800); font-weight: bold; font-size: 0.9em; }
             .status-grayscale { filter: grayscale(100%) opacity(0.6); transform: scale(0.95); }
           </style>
           <div class="moglie-container card-content">
@@ -87,31 +51,86 @@ class MoglieHaCard extends HTMLElement {
       this.image = this.querySelector(".img-container img");
 
       this.container.addEventListener("click", () => {
-        // Use the standard tap_action if defined, otherwise fallback to the old more-info behavior
         const actionConfig = this.config.tap_action || { action: "more-info" };
-        
-        // If the user selected 'none' for their tap action, do nothing
         if (actionConfig.action === "none") return;
 
-        // Determine the entity to target (prioritize tap_action entity, then legacy click_entity, then wan_entity)
         const targetEntity = this.config.tap_action?.entity || this.config.click_entity || this.config.wan_entity;
 
         const event = new CustomEvent("hass-action", {
-          detail: {
-            config: {
-              entity: targetEntity, 
-              tap_action: actionConfig
-            },
-            action: "tap"
-          },
-          bubbles: true,
-          composed: true,
+          detail: { config: { entity: targetEntity, tap_action: actionConfig }, action: "tap" },
+          bubbles: true, composed: true,
         });
         this.dispatchEvent(event);
       });
     }
 
-    // Set the image sources from assets.js based on state
+    // --- ENTITY VALIDATION ---
+    const wanId = this.config.wan_entity;
+    const alarmId = this.config.alarm_entity;
+    const weatherId = this.config.weather_entity;
+
+    // Helper to show warnings
+    const showWarning = (message) => {
+      this.image.src = normal_monkey; // Use standard monkey for warnings
+      this.image.className = "status-grayscale";
+      this.content.innerHTML = message;
+      this.content.className = "text-box status-config-err";
+      this.container.style.border = "2px dashed var(--warning-color, #ff9800)";
+    };
+
+    // 1. Check if required entities are even configured
+    if (!wanId || !alarmId) {
+      showWarning(`Moglie needs more information to do his job!<br>The primates get antsy when I have nothing to say.<br><span style="font-size:0.8em; color:var(--secondary-text-color);">(Configure WAN & Alarm entities)</span>`);
+      return;
+    }
+
+    const wanEntity = hass.states[wanId];
+    const alarmEntity = hass.states[alarmId];
+    const weatherEntity = weatherId ? hass.states[weatherId] : null;
+
+    // 2. Check if the configured entities actually exist in Home Assistant
+    if (!wanEntity) {
+      showWarning(`Moglie needs more information!<br>I can't find the WAN entity:<br><span style="font-family:monospace;">${wanId}</span>`);
+      return;
+    }
+    if (!alarmEntity) {
+      showWarning(`Moglie needs more information!<br>I can't find the Alarm entity:<br><span style="font-family:monospace;">${alarmId}</span>`);
+      return;
+    }
+    if (weatherId && !weatherEntity) {
+      showWarning(`Moglie needs more information!<br>I can't find the Weather entity:<br><span style="font-family:monospace;">${weatherId}</span>`);
+      return;
+    }
+
+    // --- MAIN LOGIC (Only runs if entities are valid) ---
+    const wanState = wanEntity.state;
+    const alarmState = alarmEntity.state;
+    const weatherState = weatherEntity ? weatherEntity.state : 'unknown';
+    
+    const isWanActive = ['on', 'connected', 'home', 'up'].includes(wanState);
+    const isHomeState = ['armed_home'].includes(alarmState);
+    const isOffState = ['off', 'disarmed'].includes(alarmState);
+    const isRaining = ['rain', 'pouring', 'lightning-rainy', 'snowy-rainy'].includes(weatherState);
+
+    let isNightMode = false;
+    const start = this.config.night_start || "22:00";
+    const end = this.config.night_end || "06:00";
+    const now = new Date();
+    const currentHHMM = now.toTimeString().substring(0, 5); 
+    const startHHMM = start.substring(0, 5);
+    const endHHMM = end.substring(0, 5);
+
+    if (startHHMM > endHHMM) {
+      isNightMode = currentHHMM >= startHHMM || currentHHMM <= endHHMM;
+    } else {
+      isNightMode = currentHHMM >= startHHMM && currentHHMM <= endHHMM;
+    }
+
+    const statusKey = `${wanState}-${alarmState}-${isNightMode}-${isRaining}`;
+    if (this._lastStatus === statusKey) return; 
+    this._lastStatus = statusKey;
+
+    // Set the image sources
     if (isNightMode) {
       this.image.src = sleepy_monkey;
     } else if (isRaining) {
@@ -120,7 +139,7 @@ class MoglieHaCard extends HTMLElement {
       this.image.src = normal_monkey;
     }
 
-    // Grab custom text from config, or use default fallbacks
+    // Custom text overrides
     const msgWanOffline = this.config.text_wan_offline || `Moglie is stranded.<br>The WAN connection<br>has been lost!`;
     const msgArmedHome = this.config.text_armed_home || `Welcome Home!<br>The WAN is strong.<br>Tell me you brought<br>more bananas!`;
     const msgDisarmed = this.config.text_disarmed || `System's off! The rest of the<br>primates ditched their post<br>for a banana run. Typical.`;
@@ -128,6 +147,7 @@ class MoglieHaCard extends HTMLElement {
     const msgNight = this.config.text_night || `The rest of the pack is sleeping.<br>Why aren't we?`;
     const msgRain = this.config.text_rain || `The rest of the primates are<br>on patrol in the rain. Glad<br>I have my raincoat!`;
 
+    // Visual State Logic
     if (!isWanActive) {
       this.content.innerHTML = msgWanOffline;
       this.content.className = "text-box status-warning";
@@ -183,16 +203,10 @@ class MoglieHaCardEditor extends HTMLElement {
         { name: "wan_entity", label: "WAN Status Entity", selector: { entity: {} } },
         { name: "alarm_entity", label: "Alarm Control Panel", selector: { entity: { domain: "alarm_control_panel" } } },
         { name: "weather_entity", label: "Weather Entity (For Raincoat)", selector: { entity: { domain: "weather" } } },
-        
-        // Tap action configured natively for Home Assistant
         { name: "tap_action", label: "Tap Action", selector: { ui_action: {} } },
-        // Kept for backward compatibility for folks upgrading
         { name: "click_entity", label: "Legacy Click Entity (Fallback)", selector: { entity: {} } },
-        
         { name: "night_start", label: "Night Mode Start", selector: { time: {} } },
         { name: "night_end", label: "Night Mode End", selector: { time: {} } },
-        
-        // Custom text fields
         { name: "text_wan_offline", label: "Custom Text: WAN Offline", selector: { text: { multiline: true } } },
         { name: "text_armed_home", label: "Custom Text: Armed Home", selector: { text: { multiline: true } } },
         { name: "text_disarmed", label: "Custom Text: Disarmed", selector: { text: { multiline: true } } },
