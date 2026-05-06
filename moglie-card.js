@@ -1,6 +1,7 @@
 import { normal_monkey } from "./normal-monkey.js";
 import { sleepy_monkey } from "./sleepy-monkey.js";
 import { rainy_monkey } from "./rainy-monkey.js";
+import { sunny_monkey } from "./sunny-monkey.js";
 
 class MoglieHaCard extends HTMLElement {
   static getStubConfig() {
@@ -116,6 +117,10 @@ class MoglieHaCard extends HTMLElement {
     // Exact weather states to trigger the raincoat
     const isRaining = ['rain', 'pouring', 'lightning-rainy', 'snowy-rainy'].includes(weatherState);
 
+    // Temperature check for Sunny Monkey
+    const temperature = weatherEntity && weatherEntity.attributes ? weatherEntity.attributes.temperature : null;
+    const isHot = temperature !== null && parseFloat(temperature) > 90;
+
     let isNightMode = false;
     
     // FIXED LOGIC: Only apply night mode if the user has actually configured the start and end times
@@ -140,14 +145,17 @@ class MoglieHaCard extends HTMLElement {
       }
     }
 
-    const statusKey = `${wanState}-${alarmState}-${isNightMode}-${isRaining}`;
+    // Include isHot in the status key to trigger a render update
+    const statusKey = `${wanState}-${alarmState}-${isNightMode}-${isRaining}-${isHot}`;
     if (this._lastStatus === statusKey) return; 
     this._lastStatus = statusKey;
 
     // --- VISUAL LOGIC ---
-    // Swapped order: Raining takes priority over Sleepy!
+    // Swapped order: Raining takes priority over Hot, Hot takes priority over Sleepy
     if (isRaining) {
       this.image.src = rainy_monkey;
+    } else if (isHot) {
+      this.image.src = sunny_monkey;
     } else if (isNightMode) {
       this.image.src = sleepy_monkey;
     } else {
@@ -160,6 +168,7 @@ class MoglieHaCard extends HTMLElement {
     const msgArmedAway = this.config.text_armed_away || `The rest of the primates are<br>on patrol. I'll watch the trees<br>until they get back!`;
     const msgNight = this.config.text_night || `The rest of the pack is sleeping.<br>Why aren't we?`;
     const msgRain = this.config.text_rain || `The rest of the primates are<br>on patrol in the rain. Glad<br>I have my raincoat!`;
+    const msgHot = this.config.text_hot || `It's sweltering out there!<br>I'm melting.<br>Pass me an ice cold banana.`;
 
     if (!isWanActive) {
       this.content.innerHTML = msgWanOffline;
@@ -180,6 +189,8 @@ class MoglieHaCard extends HTMLElement {
       // Text logic priority matching visual logic
       if (isRaining) {
         this.content.innerHTML = msgRain;
+      } else if (isHot) {
+        this.content.innerHTML = msgHot;
       } else if (isNightMode) {
         this.content.innerHTML = msgNight;
       } else {
@@ -216,7 +227,7 @@ class MoglieHaCardEditor extends HTMLElement {
       this.formElement.schema = [
         { name: "wan_entity", label: "WAN Status Entity", selector: { entity: {} } },
         { name: "alarm_entity", label: "Alarm Control Panel", selector: { entity: { domain: "alarm_control_panel" } } },
-        { name: "weather_entity", label: "Weather Entity (For Raincoat)", selector: { entity: { domain: "weather" } } },
+        { name: "weather_entity", label: "Weather Entity (For Rain & Temp)", selector: { entity: { domain: "weather" } } },
         { name: "tap_action", label: "Tap Action", selector: { ui_action: {} } },
         { name: "click_entity", label: "Legacy Click Entity (Fallback)", selector: { entity: {} } },
         { name: "night_start", label: "Night Mode Start", selector: { time: {} } },
@@ -226,7 +237,8 @@ class MoglieHaCardEditor extends HTMLElement {
         { name: "text_disarmed", label: "Custom Text: Disarmed", selector: { text: { multiline: true } } },
         { name: "text_armed_away", label: "Custom Text: Armed Away/Other", selector: { text: { multiline: true } } },
         { name: "text_night", label: "Custom Text: Night Mode", selector: { text: { multiline: true } } },
-        { name: "text_rain", label: "Custom Text: Raining", selector: { text: { multiline: true } } }
+        { name: "text_rain", label: "Custom Text: Raining", selector: { text: { multiline: true } } },
+        { name: "text_hot", label: "Custom Text: Hot Weather (> 90)", selector: { text: { multiline: true } } }
       ];
 
       this.formElement.addEventListener("value-changed", (ev) => {
