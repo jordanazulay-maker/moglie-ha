@@ -1,8 +1,6 @@
 import { normal_monkey } from "./normal-monkey.js";
 import { sleepy_monkey } from "./sleepy-monkey.js";
-
-// Using the raw PNG file for the Rainy monkey dynamically
-const rainy_monkey = new URL('./rainy-monkey.png', import.meta.url).href;
+import { rainy_monkey } from "./rainy-monkey.js";
 
 class MoglieHaCard extends HTMLElement {
   static getStubConfig() {
