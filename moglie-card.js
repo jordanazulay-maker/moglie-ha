@@ -1,256 +1,248 @@
-import { normal_monkey } from "./normal-monkey.js";
-import { sleepy_monkey } from "./sleepy-monkey.js";
-import { rainy_monkey } from "./rainy-monkey.js";
-import { sunny_monkey } from "./sunny-monkey.js";
+// 1. Import your base64 images with Cache Busters (?v=12)
+import { normal_monkey } from './normal-monkey.js?v=12';
+import { winter_monkey } from './winter-monkey.js?v=12';
+import { rainy_monkey } from './rainy-monkey.js?v=12';
+import { summer_monkey } from './summer-monkey.js?v=12';
+import { sleepy_monkey } from './sleepy-monkey.js?v=12';
 
-class MoglieHaCard extends HTMLElement {
+/* -------------------------------------------------------------------
+   MAIN CARD COMPONENT
+------------------------------------------------------------------- */
+class MoglieCard extends HTMLElement {
+  
+  static getConfigElement() {
+    return document.createElement("moglie-card-editor");
+  }
+
   static getStubConfig() {
     return {
       wan_entity: "",
       alarm_entity: "",
-      click_entity: "",
       weather_entity: "",
-      night_start: "22:00:00",
-      night_end: "06:00:00"
+      night_start: 22,
+      night_end: 6
     };
-  }
-
-  static getConfigElement() {
-    return document.createElement("moglie-ha-card-editor");
   }
 
   setConfig(config) {
     this.config = config;
-  }
-
-  set hass(hass) {
-    if (!this.config || !hass) return;
-    
-    this._hass = hass; 
 
     if (!this.content) {
       this.innerHTML = `
         <ha-card>
-          <style>
-            .moglie-container { padding: 20px; text-align: center; cursor: pointer; transition: all 0.3s ease; border-radius: var(--ha-card-border-radius, 12px); box-sizing: border-box; }
-            .moglie-container:hover { background: rgba(var(--rgb-primary-text-color), 0.05); }
-            .text-box { line-height: 1.5; margin-bottom: 10px; font-size: 1.1em; min-height: 80px; color: var(--primary-text-color); }
-            
-            /* Theme color fix to prevent images turning blue */
-            .img-container img { 
-              width: 110px; 
-              transition: all 0.5s ease; 
-              pointer-events: none; 
-              filter: none !important; 
-              background: transparent !important; 
-              color: unset !important;
-            }
-            
-            .status-warning { color: var(--error-color); font-weight: bold; }
-            .status-config-err { color: var(--warning-color); font-weight: bold; font-size: 0.9em; }
-            .status-grayscale { filter: grayscale(100%) opacity(0.6); transform: scale(0.95); }
-          </style>
-          <div class="moglie-container card-content">
-            <div class="text-box"></div>
-            <div class="img-container">
-              <img alt="Moglie">
-            </div>
+          <div id="moglie-container" style="padding: 16px; border-radius: 10px; text-align: center; transition: all 0.3s ease; cursor: pointer;">
+            <img id="moglie-image" src="${normal_monkey}" width="150" style="transition: all 0.3s ease;" />
+            <div id="moglie-text" class="text-box" style="margin-top: 10px; font-weight: bold; min-height: 2em;"></div>
           </div>
         </ha-card>
       `;
-      this.container = this.querySelector(".moglie-container");
-      this.content = this.querySelector(".text-box");
-      this.image = this.querySelector(".img-container img");
+      this.container = this.querySelector('#moglie-container');
+      this.image = this.querySelector('#moglie-image');
+      this.content = this.querySelector('#moglie-text');
 
-      this.container.addEventListener("click", () => {
-        const actionConfig = this.config.tap_action || { action: "more-info" };
-        if (actionConfig.action === "none") return;
-
-        const targetEntity = this.config.tap_action?.entity || this.config.click_entity || this.config.wan_entity;
-
-        const event = new CustomEvent("hass-action", {
-          detail: { config: { entity: targetEntity, tap_action: actionConfig }, action: "tap" },
-          bubbles: true, composed: true,
-        });
-        this.dispatchEvent(event);
+      this.container.addEventListener('click', () => {
+        if (!this.config || !this.config.alarm_entity) return;
+        this.dispatchEvent(new CustomEvent('hass-more-info', {
+          bubbles: true,
+          composed: true,
+          detail: { entityId: this.config.alarm_entity }
+        }));
       });
     }
 
-    const wanId = this.config.wan_entity;
-    const alarmId = this.config.alarm_entity;
-    const weatherId = this.config.weather_entity;
-
-    const showWarning = (message) => {
-      this.image.src = normal_monkey; 
-      this.image.className = "status-grayscale";
-      this.content.innerHTML = message;
-      this.content.className = "text-box status-config-err";
-      this.container.style.border = "2px dashed var(--warning-color)";
-    };
-
-    if (!wanId || !alarmId) {
-      showWarning(`Moglie needs more information to do his job!<br>The primates get antsy when I have nothing to say.<br><span style="font-size:0.8em; color:var(--secondary-text-color);">(Configure WAN & Alarm entities)</span>`);
-      return;
+    if (!config.wan_entity || !config.alarm_entity || !config.weather_entity) {
+      this.content.innerHTML = "⚠️ Please configure Moglie's entities in the Visual Editor.";
+      this.container.style.border = "2px dashed var(--error-color, red)";
     }
+  }
 
-    const wanEntity = hass.states[wanId];
-    const alarmEntity = hass.states[alarmId];
-    const weatherEntity = weatherId ? hass.states[weatherId] : null;
+  set hass(hass) {
+    if (!this.config || !this.config.wan_entity || !this.config.alarm_entity || !this.config.weather_entity) return;
 
-    if (!wanEntity) {
-      showWarning(`Moglie needs more information!<br>I can't find the WAN entity:<br><span style="font-family:monospace;">${wanId}</span>`);
-      return;
-    }
-    if (!alarmEntity) {
-      showWarning(`Moglie needs more information!<br>I can't find the Alarm entity:<br><span style="font-family:monospace;">${alarmId}</span>`);
-      return;
-    }
+    const wanEntity = hass.states[this.config.wan_entity];
+    const alarmEntity = hass.states[this.config.alarm_entity];
+    const weatherEntity = hass.states[this.config.weather_entity];
 
-    const wanState = wanEntity.state;
-    const alarmState = alarmEntity.state;
-    const weatherState = weatherEntity ? weatherEntity.state : 'unknown';
+    const wanState = wanEntity && wanEntity.state !== undefined ? String(wanEntity.state).toLowerCase() : 'unknown';
+    const alarmState = alarmEntity && alarmEntity.state !== undefined ? String(alarmEntity.state).toLowerCase() : 'unknown';
+    const weatherState = weatherEntity && weatherEntity.state !== undefined ? String(weatherEntity.state).toLowerCase() : 'unknown';
     
-    const isWanActive = ['on', 'connected', 'home', 'up'].includes(wanState);
-    const isHomeState = ['armed_home'].includes(alarmState);
-    const isOffState = ['off', 'disarmed'].includes(alarmState);
+    const isWanActive = wanState === 'on' || wanState === 'connected'; 
+    const isOffState = alarmState === 'disarmed';
     
-    // Exact weather states to trigger the raincoat
-    const isRaining = ['rain', 'pouring', 'lightning-rainy', 'snowy-rainy'].includes(weatherState);
+    // FIX: Added broader check for "Armed Home" variations
+    const isHomeState = alarmState === 'armed_home' || alarmState === 'home' || alarmState === 'armed_night';
 
-    // Temperature check for Sunny Monkey
-    const temperature = weatherEntity && weatherEntity.attributes ? weatherEntity.attributes.temperature : null;
-    const isHot = temperature !== null && parseFloat(temperature) > 90;
-
+    const currentHour = new Date().getHours();
+    const nightStart = parseInt(this.config.night_start) || 22;
+    const nightEnd = parseInt(this.config.night_end) || 6;
+    
     let isNightMode = false;
-    
-    // FIXED LOGIC: Only apply night mode if the user has actually configured the start and end times
-    if (this.config.night_start && this.config.night_end) {
-      const startStr = this.config.night_start;
-      const endStr = this.config.night_end;
-      const now = new Date();
-      
-      const timeToMinutes = (timeString) => {
-        const parts = timeString.split(':');
-        return parseInt(parts[0] || 0, 10) * 60 + parseInt(parts[1] || 0, 10);
-      };
-
-      const currentMins = now.getHours() * 60 + now.getMinutes();
-      const startMins = timeToMinutes(startStr);
-      const endMins = timeToMinutes(endStr);
-
-      if (startMins > endMins) {
-        isNightMode = currentMins >= startMins || currentMins <= endMins;
-      } else {
-        isNightMode = currentMins >= startMins && currentMins <= endMins;
-      }
+    if (nightStart > nightEnd) {
+      isNightMode = currentHour >= nightStart || currentHour < nightEnd;
+    } else {
+      isNightMode = currentHour >= nightStart && currentHour < nightEnd;
     }
 
-    // Include isHot in the status key to trigger a render update
-    const statusKey = `${wanState}-${alarmState}-${isNightMode}-${isRaining}-${isHot}`;
+    const isRaining = weatherState.includes('rain') || 
+                      weatherState.includes('pour') || 
+                      weatherState.includes('drizzle') || 
+                      weatherState.includes('shower') || 
+                      weatherState.includes('storm');
+
+    let temp = null;
+    if (weatherEntity && weatherEntity.attributes && weatherEntity.attributes.temperature !== undefined) {
+      temp = parseFloat(weatherEntity.attributes.temperature);
+    } else if (!isNaN(parseFloat(weatherState))) {
+      temp = parseFloat(weatherState);
+    }
+      
+    let unitStr = 'F';
+    if (weatherEntity && weatherEntity.attributes) {
+        if (weatherEntity.attributes.temperature_unit) {
+            unitStr = String(weatherEntity.attributes.temperature_unit);
+        } else if (weatherEntity.attributes.unit_of_measurement) {
+            unitStr = String(weatherEntity.attributes.unit_of_measurement);
+        }
+    }
+    const isF = unitStr.toUpperCase().includes('F');
+    const isC = unitStr.toUpperCase().includes('C');
+      
+    const isSnowing = ['snowy', 'snowy-rainy', 'hail'].includes(weatherState);
+    const isSunny = weatherState.includes('sunny') || weatherState.includes('clear');
+    
+    const isHot = isSunny || (temp !== null && ((isF && temp >= 80) || (isC && temp >= 27)));
+    const isCold = temp !== null && ((isF && temp < 50) || (isC && temp < 10));
+    const showWinter = isSnowing || isCold;
+
+    const statusKey = `${wanState}-${alarmState}-${isNightMode}-${isRaining}-${isHot}-${showWinter}`;
     if (this._lastStatus === statusKey) return; 
     this._lastStatus = statusKey;
 
-    // --- VISUAL LOGIC ---
-    // Swapped order: Raining takes priority over Hot, Hot takes priority over Sleepy
-    if (isRaining) {
-      this.image.src = rainy_monkey;
-    } else if (isHot) {
-      this.image.src = sunny_monkey;
-    } else if (isNightMode) {
-      this.image.src = sleepy_monkey;
-    } else {
-      this.image.src = normal_monkey;
-    }
+    const quotes = {
+      offline: this.config.quote_offline || "Moglie is stranded. The WAN connection has been lost!",
+      cold: this.config.quote_cold || "Brrr! It's freezing out there!",
+      rain: this.config.quote_rain || "Looks like rain, grabbing my coat!",
+      hot: this.config.quote_hot || "It's boiling! Need a banana smoothie.",
+      night: this.config.quote_night || "Zzz... Moglie is sleeping...",
+      disarmed: this.config.quote_disarmed || "System's off! The rest of the primates ditched their post for a banana run. Typical.",
+      armedHome: this.config.quote_armed_home || "Welcome Home! The WAN is strong. Tell me you brought more bananas!",
+      armedAway: this.config.quote_armed_away || "The rest of the primates are on patrol. I'll watch the trees until they get back!"
+    };
 
-    const msgWanOffline = this.config.text_wan_offline || `Moglie is stranded.<br>The WAN connection<br>has been lost!`;
-    const msgArmedHome = this.config.text_armed_home || `Welcome Home!<br>The WAN is strong.<br>Tell me you brought<br>more bananas!`;
-    const msgDisarmed = this.config.text_disarmed || `System's off! The rest of the<br>primates ditched their post<br>for a banana run. Typical.`;
-    const msgArmedAway = this.config.text_armed_away || `The rest of the primates are<br>on patrol. I'll watch the trees<br>until they get back!`;
-    const msgNight = this.config.text_night || `The rest of the pack is sleeping.<br>Why aren't we?`;
-    const msgRain = this.config.text_rain || `The rest of the primates are<br>on patrol in the rain. Glad<br>I have my raincoat!`;
-    const msgHot = this.config.text_hot || `It's sweltering out there!<br>I'm melting.<br>Pass me an ice cold banana.`;
+    this.content.className = "text-box";
+    this.image.style.filter = "none"; 
 
     if (!isWanActive) {
-      this.content.innerHTML = msgWanOffline;
-      this.content.className = "text-box status-warning";
-      this.image.className = "status-grayscale";
-      this.container.style.border = "2px solid var(--disabled-text-color)"; 
+      this.updateUI(normal_monkey, quotes.offline, "2px solid var(--disabled-text-color, gray)");
+      this.content.classList.add("status-warning");
+      this.image.style.filter = "grayscale(100%)";
+    } else if (isNightMode) {
+      this.updateUI(sleepy_monkey, quotes.night, "2px solid #673AB7");
+    } else if (isRaining) {
+      this.updateUI(rainy_monkey, quotes.rain, "2px solid #2196F3");
+    } else if (showWinter) {
+      this.updateUI(winter_monkey, quotes.cold, "2px solid #00BCD4");
+    } else if (isHot) {
+      this.updateUI(summer_monkey, quotes.hot, "2px solid #FF9800"); 
     } else if (isOffState) {
-      this.content.innerHTML = msgDisarmed;
-      this.content.className = "text-box";
-      this.image.className = "";
-      this.container.style.border = "2px solid var(--warning-color)"; 
+      this.updateUI(normal_monkey, quotes.disarmed, "2px solid var(--warning-color, orange)");
     } else if (isHomeState) {
-      this.content.innerHTML = msgArmedHome;
-      this.content.className = "text-box";
-      this.image.className = "";
-      this.container.style.border = "2px solid var(--success-color)"; 
+      this.updateUI(normal_monkey, quotes.armedHome, "2px solid var(--success-color, green)");
     } else {
-      // Text logic priority matching visual logic
-      if (isRaining) {
-        this.content.innerHTML = msgRain;
-      } else if (isHot) {
-        this.content.innerHTML = msgHot;
-      } else if (isNightMode) {
-        this.content.innerHTML = msgNight;
-      } else {
-        this.content.innerHTML = msgArmedAway;
-      }
-      this.content.className = "text-box";
-      this.image.className = "";
-      this.container.style.border = "2px solid var(--error-color)"; 
+      this.updateUI(normal_monkey, quotes.armedAway, "2px solid var(--error-color, red)");
     }
   }
+
+  updateUI(imageSrc, text, borderStyle) {
+    this.image.src = imageSrc; 
+    this.content.innerHTML = text;
+    this.container.style.border = borderStyle;
+  }
+
+  getCardSize() { return 3; }
 }
+customElements.define('moglie-card', MoglieCard);
 
-customElements.define("moglie-ha-card", MoglieHaCard);
 
-window.customCards = window.customCards || [];
-if (!window.customCards.some(card => card.type === 'moglie-ha-card')) {
-  window.customCards.push({
-    type: "moglie-ha-card",
-    name: "Moglie-HA",
-    description: "WAN, Alarm, and Weather status monitoring with a friendly monkey."
-  });
-}
-
-class MoglieHaCardEditor extends HTMLElement {
-  setConfig(config) { this._config = config; }
-  set hass(hass) { this._hass = hass; this.renderForm(); }
+/* -------------------------------------------------------------------
+   VISUAL EDITOR COMPONENT (GUI)
+------------------------------------------------------------------- */
+class MoglieCardEditor extends HTMLElement {
   
-  renderForm() {
-    if (!this._hass || !this._config) return;
-    if (!this.formElement) {
-      this.innerHTML = `<ha-form></ha-form>`;
-      this.formElement = this.querySelector("ha-form");
-      
-      this.formElement.schema = [
-        { name: "wan_entity", label: "WAN Status Entity", selector: { entity: {} } },
-        { name: "alarm_entity", label: "Alarm Control Panel", selector: { entity: { domain: "alarm_control_panel" } } },
-        { name: "weather_entity", label: "Weather Entity (For Rain & Temp)", selector: { entity: { domain: "weather" } } },
-        { name: "tap_action", label: "Tap Action", selector: { ui_action: {} } },
-        { name: "click_entity", label: "Legacy Click Entity (Fallback)", selector: { entity: {} } },
-        { name: "night_start", label: "Night Mode Start", selector: { time: {} } },
-        { name: "night_end", label: "Night Mode End", selector: { time: {} } },
-        { name: "text_wan_offline", label: "Custom Text: WAN Offline", selector: { text: { multiline: true } } },
-        { name: "text_armed_home", label: "Custom Text: Armed Home", selector: { text: { multiline: true } } },
-        { name: "text_disarmed", label: "Custom Text: Disarmed", selector: { text: { multiline: true } } },
-        { name: "text_armed_away", label: "Custom Text: Armed Away/Other", selector: { text: { multiline: true } } },
-        { name: "text_night", label: "Custom Text: Night Mode", selector: { text: { multiline: true } } },
-        { name: "text_rain", label: "Custom Text: Raining", selector: { text: { multiline: true } } },
-        { name: "text_hot", label: "Custom Text: Hot Weather (> 90)", selector: { text: { multiline: true } } }
-      ];
+  setConfig(config) {
+    this._config = config;
+    this.render();
+  }
 
-      this.formElement.addEventListener("value-changed", (ev) => {
-        const event = new CustomEvent("config-changed", {
-          detail: { config: ev.detail.value },
-          bubbles: true, composed: true,
-        });
-        this.dispatchEvent(event);
-      });
-    }
-    this.formElement.hass = this._hass;
-    this.formElement.data = this._config;
+  set hass(hass) {
+    this._hass = hass;
+  }
+
+  render() {
+    if (!this._config) return;
+
+    // FIX: Rebuilt UI with direct .value mapping and explicit event listeners
+    this.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 24px; padding: 16px 0;">
+        
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <h3 style="margin: 0; color: var(--primary-text-color);">Entity Configuration</h3>
+          <ha-textfield id="wan_entity" label="WAN Entity ID" .value="${this._config.wan_entity || ''}" style="width: 100%;"></ha-textfield>
+          <ha-textfield id="alarm_entity" label="Alarm Entity ID" .value="${this._config.alarm_entity || ''}" style="width: 100%;"></ha-textfield>
+          <ha-textfield id="weather_entity" label="Weather Entity ID" .value="${this._config.weather_entity || ''}" style="width: 100%;"></ha-textfield>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <h3 style="margin: 0; color: var(--primary-text-color);">Night Mode Schedule</h3>
+          <div style="display: flex; gap: 16px;">
+            <ha-textfield id="night_start" label="Start Hour (0-23)" type="number" .value="${this._config.night_start || 22}" style="flex: 1;"></ha-textfield>
+            <ha-textfield id="night_end" label="End Hour (0-23)" type="number" .value="${this._config.night_end || 6}" style="flex: 1;"></ha-textfield>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <h3 style="margin: 0; color: var(--primary-text-color);">Custom Quotes</h3>
+          <ha-textfield id="quote_offline" label="WAN Offline" .value="${this._config.quote_offline || ''}" style="width: 100%;"></ha-textfield>
+          <ha-textfield id="quote_disarmed" label="Disarmed" .value="${this._config.quote_disarmed || ''}" style="width: 100%;"></ha-textfield>
+          <ha-textfield id="quote_armed_home" label="Armed Home" .value="${this._config.quote_armed_home || ''}" style="width: 100%;"></ha-textfield>
+          <ha-textfield id="quote_armed_away" label="Armed Away" .value="${this._config.quote_armed_away || ''}" style="width: 100%;"></ha-textfield>
+          <ha-textfield id="quote_night" label="Night Mode" .value="${this._config.quote_night || ''}" style="width: 100%;"></ha-textfield>
+        </div>
+
+      </div>
+    `;
+
+    // Attach listeners to all text fields
+    this.querySelectorAll("ha-textfield").forEach((el) => {
+      el.addEventListener('input', (ev) => this._valueChanged(ev));
+    });
+  }
+
+  _valueChanged(ev) {
+    if (!this._config) return;
+    const target = ev.target;
+    if (this._config[target.id] === target.value) return;
+
+    const newConfig = { ...this._config, [target.id]: target.value };
+    
+    this.dispatchEvent(new CustomEvent("config-changed", {
+      detail: { config: newConfig },
+      bubbles: true,
+      composed: true,
+    }));
   }
 }
-customElements.define("moglie-ha-card-editor", MoglieHaCardEditor);
+customElements.define("moglie-card-editor", MoglieCardEditor);
+
+/* -------------------------------------------------------------------
+   CARD PICKER REGISTRATION
+------------------------------------------------------------------- */
+window.customCards = window.customCards || [];
+window.customCards.push({
+  type: "moglie-card",
+  name: "Moglie HA Beta",
+  description: "Moglie monitors your WAN status and security state.",
+  preview: true,
+  documentationURL: "https://github.com/jordanazulay-maker/moglie-ha"
+});
