@@ -41,4 +41,4 @@
     <li>🟠 <b>Disarmed:</b> Orange border. <i>"System's off! The rest of the primates ditched their post for a banana run. Typical."</i></li>
     <li>🔴 <b>Armed Away / Other:</b> Red border. <i>"The rest of the primates are on patrol. I'll watch the trees until they get back!"</i></li>
   </ul>
-  <p><i>(Psst... no matter the status, if it's between your configured <code>night
+  <p><i>(Psst... no matter the status, if it's between your configured <code>Night Mode</code>, Moglie will get his pjs on!)</i></p>
