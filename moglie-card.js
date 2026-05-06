@@ -1,6 +1,8 @@
 import { normal_monkey } from "./normal-monkey.js";
 import { sleepy_monkey } from "./sleepy-monkey.js";
-import { rainy_monkey } from "./rainy-monkey.js";
+
+// Using the raw PNG file for the Rainy monkey dynamically
+const rainy_monkey = new URL('./rainy-monkey.png', import.meta.url).href;
 
 class MoglieHaCard extends HTMLElement {
   static getStubConfig() {
@@ -112,6 +114,8 @@ class MoglieHaCard extends HTMLElement {
     const isWanActive = ['on', 'connected', 'home', 'up'].includes(wanState);
     const isHomeState = ['armed_home'].includes(alarmState);
     const isOffState = ['off', 'disarmed'].includes(alarmState);
+    
+    // Exact weather states to trigger the raincoat
     const isRaining = ['rain', 'pouring', 'lightning-rainy', 'snowy-rainy'].includes(weatherState);
 
     let isNightMode = false;
@@ -139,10 +143,11 @@ class MoglieHaCard extends HTMLElement {
     this._lastStatus = statusKey;
 
     // --- VISUAL LOGIC ---
-    if (isNightMode) {
-      this.image.src = sleepy_monkey;
-    } else if (isRaining) {
+    // Swapped order: Raining takes priority over Sleepy!
+    if (isRaining) {
       this.image.src = rainy_monkey;
+    } else if (isNightMode) {
+      this.image.src = sleepy_monkey;
     } else {
       this.image.src = normal_monkey;
     }
@@ -160,20 +165,21 @@ class MoglieHaCard extends HTMLElement {
       this.image.className = "status-grayscale";
       this.container.style.border = "2px solid var(--disabled-text-color)"; 
     } else if (isOffState) {
-      this.content.innerHTML = isNightMode ? msgNight : msgDisarmed;
+      this.content.innerHTML = msgDisarmed;
       this.content.className = "text-box";
       this.image.className = "";
       this.container.style.border = "2px solid var(--warning-color)"; 
     } else if (isHomeState) {
-      this.content.innerHTML = isNightMode ? msgNight : msgArmedHome;
+      this.content.innerHTML = msgArmedHome;
       this.content.className = "text-box";
       this.image.className = "";
       this.container.style.border = "2px solid var(--success-color)"; 
     } else {
-      if (isNightMode) {
-        this.content.innerHTML = msgNight;
-      } else if (isRaining) {
+      // Text logic priority matching visual logic
+      if (isRaining) {
         this.content.innerHTML = msgRain;
+      } else if (isNightMode) {
+        this.content.innerHTML = msgNight;
       } else {
         this.content.innerHTML = msgArmedAway;
       }
