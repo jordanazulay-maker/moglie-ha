@@ -35,7 +35,7 @@ class MoglieHaCard extends HTMLElement {
             .moglie-container:hover { background: rgba(var(--rgb-primary-text-color), 0.05); }
             .text-box { line-height: 1.5; margin-bottom: 10px; font-size: 1.1em; min-height: 80px; color: var(--primary-text-color); }
             
-            /* Theme color fix */
+            /* Theme color fix to prevent images turning blue */
             .img-container img { 
               width: 110px; 
               transition: all 0.5s ease; 
@@ -224,8 +224,7 @@ class MoglieHaCardEditor extends HTMLElement {
       this.formElement.addEventListener("value-changed", (ev) => {
         const event = new CustomEvent("config-changed", {
           detail: { config: ev.detail.value },
-          bubbles: true,
-          composed: true,
+          bubbles: true, composed: true,
         });
         this.dispatchEvent(event);
       });
