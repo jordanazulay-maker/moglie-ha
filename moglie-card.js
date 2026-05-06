@@ -117,23 +117,27 @@ class MoglieHaCard extends HTMLElement {
     const isRaining = ['rain', 'pouring', 'lightning-rainy', 'snowy-rainy'].includes(weatherState);
 
     let isNightMode = false;
-    const startStr = this.config.night_start || "22:00";
-    const endStr = this.config.night_end || "06:00";
-    const now = new Date();
     
-    const timeToMinutes = (timeString) => {
-      const parts = timeString.split(':');
-      return parseInt(parts[0] || 0, 10) * 60 + parseInt(parts[1] || 0, 10);
-    };
+    // FIXED LOGIC: Only apply night mode if the user has actually configured the start and end times
+    if (this.config.night_start && this.config.night_end) {
+      const startStr = this.config.night_start;
+      const endStr = this.config.night_end;
+      const now = new Date();
+      
+      const timeToMinutes = (timeString) => {
+        const parts = timeString.split(':');
+        return parseInt(parts[0] || 0, 10) * 60 + parseInt(parts[1] || 0, 10);
+      };
 
-    const currentMins = now.getHours() * 60 + now.getMinutes();
-    const startMins = timeToMinutes(startStr);
-    const endMins = timeToMinutes(endStr);
+      const currentMins = now.getHours() * 60 + now.getMinutes();
+      const startMins = timeToMinutes(startStr);
+      const endMins = timeToMinutes(endStr);
 
-    if (startMins > endMins) {
-      isNightMode = currentMins >= startMins || currentMins <= endMins;
-    } else {
-      isNightMode = currentMins >= startMins && currentMins <= endMins;
+      if (startMins > endMins) {
+        isNightMode = currentMins >= startMins || currentMins <= endMins;
+      } else {
+        isNightMode = currentMins >= startMins && currentMins <= endMins;
+      }
     }
 
     const statusKey = `${wanState}-${alarmState}-${isNightMode}-${isRaining}`;
