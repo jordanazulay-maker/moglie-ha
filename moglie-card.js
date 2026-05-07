@@ -1,11 +1,7 @@
 import { normal_monkey } from './normal-monkey.js';
-import { winter_monkey } from './winter-monkey.js';
-import { rainy_monkey } from './rainy-monkey.js';
-import { summer_monkey } from './summer-monkey.js';
-import { sleepy_monkey } from './sleepy-monkey.js';
 
 /* -------------------------------------------------------------------
-   MAIN CARD COMPONENT
+   MAIN CARD COMPONENT (TESTING VERSION)
 ------------------------------------------------------------------- */
 class MoglieCard extends HTMLElement {
   
@@ -126,7 +122,6 @@ class MoglieCard extends HTMLElement {
       
     const isSnowing = ['snowy', 'snowy-rainy', 'hail'].includes(weatherState);
     
-    // Fix: Removed `isSunny ||` which improperly forced the summer monkey on cool sunny days.
     const isHot = temp !== null && ((isF && temp >= 80) || (isC && temp >= 27));
     const isCold = temp !== null && ((isF && temp < 50) || (isC && temp < 10));
     const showWinter = isSnowing || isCold;
@@ -150,18 +145,19 @@ class MoglieCard extends HTMLElement {
     this.content.className = "text-box";
     this.image.style.filter = "none"; 
 
+    // TESTING CHANGE: ALL MONKEYS ARE NORMAL MONKEY
     if (!isWanActive) {
       this.updateUI(normal_monkey, quotes.offline, "2px solid var(--disabled-text-color, gray)");
       this.content.classList.add("status-warning");
       this.image.style.filter = "grayscale(100%)";
     } else if (isNightMode) {
-      this.updateUI(sleepy_monkey, quotes.night, "2px solid #673AB7");
+      this.updateUI(normal_monkey, quotes.night, "2px solid #673AB7");
     } else if (isRaining) {
-      this.updateUI(rainy_monkey, quotes.rain, "2px solid #2196F3");
+      this.updateUI(normal_monkey, quotes.rain, "2px solid #2196F3");
     } else if (showWinter) {
-      this.updateUI(winter_monkey, quotes.cold, "2px solid #00BCD4");
+      this.updateUI(normal_monkey, quotes.cold, "2px solid #00BCD4");
     } else if (isHot) {
-      this.updateUI(summer_monkey, quotes.hot, "2px solid #FF9800"); 
+      this.updateUI(normal_monkey, quotes.hot, "2px solid #FF9800"); 
     } else if (isOffState) {
       this.updateUI(normal_monkey, quotes.disarmed, "2px solid var(--warning-color, orange)");
     } else if (isHomeState) {
@@ -246,7 +242,6 @@ class MoglieCardEditor extends HTMLElement {
       return labels[schema.name] || schema.name;
     };
 
-    // Fix: Replaced standard `Event` generation with a proper `CustomEvent` structure 
     this._form.addEventListener("value-changed", (ev) => {
       this.dispatchEvent(new CustomEvent("config-changed", {
         detail: { config: ev.detail.value },
