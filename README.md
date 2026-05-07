@@ -30,6 +30,7 @@
     <li><b>✏️ Fully Customizable Text:</b> You can now customize every single message Moglie says directly in the Visual Editor to fit your exact style.</li>
     <li><b>Dynamic Visuals:</b> Card border colors shift dynamically based on status, and Moglie goes grayscale when stranded offline.</li>
     <li><b>Interactive Dialogs:</b> Tap the card to instantly bring up the more-info dialog for your designated alarm entity.</li>
+    <li><b>🛠️ Self-Healing & Stability:</b> Built-in image load auto-retries and a handy "Reload Dashboard" button if entities are missing or need a fresh pull after an update! Oh, and check your browser console for a surprise when he wakes up.</li>
     <li><b>Zero Dependencies:</b> Built entirely as a standalone custom card.</li>
     <li><b>Visual Editor:</b> Easily configure your entities, custom text, and sleep schedule right from the Home Assistant UI without writing any code.</li>
   </ul>
