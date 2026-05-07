@@ -1,9 +1,8 @@
-// 1. Import your base64 images with Cache Busters (?v=12)
-import { normal_monkey } from './normal-monkey.js?v=12';
-import { winter_monkey } from './winter-monkey.js?v=12';
-import { rainy_monkey } from './rainy-monkey.js?v=12';
-import { summer_monkey } from './summer-monkey.js?v=12';
-import { sleepy_monkey } from './sleepy-monkey.js?v=12';
+import { normal_monkey } from './normal-monkey.js?v=1';
+import { winter_monkey } from './winter-monkey.js?v=1';
+import { rainy_monkey } from './rainy-monkey.js?v=1';
+import { summer_monkey } from './summer-monkey.js?v=1';
+import { sleepy_monkey } from './sleepy-monkey.js?v=1';
 
 /* -------------------------------------------------------------------
    MAIN CARD COMPONENT
@@ -126,9 +125,8 @@ class MoglieCard extends HTMLElement {
     const isC = unitStr.toUpperCase().includes('C');
       
     const isSnowing = ['snowy', 'snowy-rainy', 'hail'].includes(weatherState);
-    const isSunny = weatherState.includes('sunny') || weatherState.includes('clear');
     
-    const isHot = isSunny || (temp !== null && ((isF && temp >= 80) || (isC && temp >= 27)));
+    const isHot = temp !== null && ((isF && temp >= 80) || (isC && temp >= 27));
     const isCold = temp !== null && ((isF && temp < 50) || (isC && temp < 10));
     const showWinter = isSnowing || isCold;
 
@@ -212,7 +210,6 @@ class MoglieCardEditor extends HTMLElement {
     this._form.hass = this._hass;
     this._form.data = this._config;
 
-    // Define the native HA interface
     this._form.schema = [
       { name: "wan_entity", selector: { entity: { domain: "binary_sensor" } } },
       { name: "alarm_entity", selector: { entity: { domain: "alarm_control_panel" } } },
@@ -223,10 +220,12 @@ class MoglieCardEditor extends HTMLElement {
       { name: "quote_disarmed", selector: { text: {} } },
       { name: "quote_armed_home", selector: { text: {} } },
       { name: "quote_armed_away", selector: { text: {} } },
-      { name: "quote_night", selector: { text: {} } }
+      { name: "quote_night", selector: { text: {} } },
+      { name: "quote_hot", selector: { text: {} } },
+      { name: "quote_cold", selector: { text: {} } },
+      { name: "quote_rain", selector: { text: {} } }
     ];
 
-    // Give the inputs nice readable labels
     this._form.computeLabel = (schema) => {
       const labels = {
         wan_entity: "WAN Entity (binary_sensor)",
@@ -238,19 +237,20 @@ class MoglieCardEditor extends HTMLElement {
         quote_disarmed: "Custom Quote: Disarmed",
         quote_armed_home: "Custom Quote: Armed Home",
         quote_armed_away: "Custom Quote: Armed Away",
-        quote_night: "Custom Quote: Night Mode"
+        quote_night: "Custom Quote: Night Mode",
+        quote_hot: "Custom Quote: Hot Weather (>= 80F / 27C)",
+        quote_cold: "Custom Quote: Cold Weather (< 50F / 10C)",
+        quote_rain: "Custom Quote: Rainy Weather"
       };
       return labels[schema.name] || schema.name;
     };
 
-    // When the form changes, update the YAML seamlessly
     this._form.addEventListener("value-changed", (ev) => {
-      const event = new Event("config-changed", {
+      this.dispatchEvent(new CustomEvent("config-changed", {
+        detail: { config: ev.detail.value },
         bubbles: true,
         composed: true,
-      });
-      event.detail = { config: ev.detail.value };
-      this.dispatchEvent(event);
+      }));
     });
 
     this.appendChild(this._form);
@@ -264,7 +264,7 @@ customElements.define("moglie-card-editor", MoglieCardEditor);
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: "moglie-card",
-  name: "Moglie HA Beta",
+  name: "Moglie HA",
   description: "Moglie monitors your WAN status and security state.",
   preview: true,
   documentationURL: "https://github.com/jordanazulay-maker/moglie-ha"
