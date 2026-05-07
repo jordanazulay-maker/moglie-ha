@@ -33,11 +33,11 @@ class MoglieCard extends HTMLElement {
     this.config = config;
 
     if (!this.content) {
-      // Directly inject the raw base64 string to bypass iOS blob restrictions
+      // 1. Create the HTML *WITHOUT* the massive base64 string inside it
       this.innerHTML = `
         <ha-card>
           <div id="moglie-container" style="padding: 16px; border-radius: 10px; text-align: center; transition: all 0.3s ease; cursor: pointer;">
-            <img id="moglie-image" src="${normal_b64}" data-img-src="normal" style="width: 150px; height: 150px; object-fit: contain; transition: all 0.3s ease;" />
+            <img id="moglie-image" data-img-src="normal" style="width: 150px; height: 150px; object-fit: contain; transition: all 0.3s ease;" />
             <div id="moglie-text" class="text-box" style="margin-top: 10px; font-weight: bold; min-height: 2em;"></div>
           </div>
         </ha-card>
@@ -45,6 +45,9 @@ class MoglieCard extends HTMLElement {
       this.container = this.querySelector('#moglie-container');
       this.image = this.querySelector('#moglie-image');
       this.content = this.querySelector('#moglie-text');
+
+      // 2. Safely attach the massive string via object property, bypassing the HTML parser!
+      this.image.src = normal_b64;
 
       this._imgRetries = 0;
       this.image.onerror = () => {
