@@ -4,34 +4,6 @@ import { rainy_monkey as rainy_b64 } from './rainy-monkey.js';
 import { summer_monkey as summer_b64 } from './summer-monkey.js';
 import { sleepy_monkey as sleepy_b64 } from './sleepy-monkey.js';
 
-// Cache to store Blobs so we only ever generate them ONCE per session, on-demand
-const blobCache = {};
-
-function base64ToBlobUrl(base64URI) {
-  try {
-    const parts = base64URI.split(',');
-    const mime = parts[0].match(/:(.*?);/)[1];
-    const bstr = atob(parts[1]);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    while (n--) {
-      u8arr[n] = bstr.charCodeAt(n);
-    }
-    return URL.createObjectURL(new Blob([u8arr], { type: mime }));
-  } catch (e) {
-    console.error("[Moglie HA] Error converting base64", e);
-    return base64URI; 
-  }
-}
-
-// Lazy-load helper: Only converts the base64 string when it is actually needed
-function getMonkeyUrl(monkeyKey, base64URI) {
-  if (!blobCache[monkeyKey]) {
-    blobCache[monkeyKey] = base64ToBlobUrl(base64URI);
-  }
-  return blobCache[monkeyKey];
-}
-
 console.info(
   `%c🐒 MOGLIE-HA %c a monkey has appeared! `,
   'color: white; background: #FF9800; font-weight: 700; padding: 4px; border-radius: 4px 0 0 4px;',
@@ -61,10 +33,11 @@ class MoglieCard extends HTMLElement {
     this.config = config;
 
     if (!this.content) {
+      // Directly inject the raw base64 string to bypass iOS blob restrictions
       this.innerHTML = `
         <ha-card>
           <div id="moglie-container" style="padding: 16px; border-radius: 10px; text-align: center; transition: all 0.3s ease; cursor: pointer;">
-            <img id="moglie-image" src="" data-img-src="" style="width: 150px; height: 150px; object-fit: contain; transition: all 0.3s ease;" />
+            <img id="moglie-image" src="${normal_b64}" data-img-src="normal" style="width: 150px; height: 150px; object-fit: contain; transition: all 0.3s ease;" />
             <div id="moglie-text" class="text-box" style="margin-top: 10px; font-weight: bold; min-height: 2em;"></div>
           </div>
         </ha-card>
@@ -73,7 +46,6 @@ class MoglieCard extends HTMLElement {
       this.image = this.querySelector('#moglie-image');
       this.content = this.querySelector('#moglie-text');
 
-      // FEATURE 1: Image Load Checker & Auto-Retry
       this._imgRetries = 0;
       this.image.onerror = () => {
         if (this._imgRetries < 3) {
@@ -81,8 +53,8 @@ class MoglieCard extends HTMLElement {
           console.warn(`[Moglie HA] Image failed to load. Attempting refresh (${this._imgRetries}/3)...`);
           setTimeout(() => {
             const currentSrc = this.image.src;
-            this.image.src = ''; // Clear source
-            this.image.src = currentSrc; // Re-apply source to force reload
+            this.image.src = ''; 
+            this.image.src = currentSrc; 
           }, 1000);
         } else {
           console.error("[Moglie HA] Image failed to load after 3 attempts.");
@@ -109,7 +81,6 @@ class MoglieCard extends HTMLElement {
     }
   }
 
-  // FEATURE 2: Helper to show errors and inject the Reload Dashboard button
   showError(message) {
     this.content.innerHTML = `
       <div style="margin-bottom: 12px;">${message}</div>
@@ -119,16 +90,15 @@ class MoglieCard extends HTMLElement {
     `;
     this.container.style.border = "2px dashed var(--error-color, red)";
     
-    const blobUrl = getMonkeyUrl('normal', normal_b64);
-    this.image.src = blobUrl;
-    this.image.setAttribute('data-img-src', blobUrl);
+    this.image.src = normal_b64;
+    this.image.setAttribute('data-img-src', 'normal');
     this.image.style.filter = "grayscale(100%)";
 
     const reloadBtn = this.querySelector('#moglie-reload-btn');
     if (reloadBtn) {
       reloadBtn.addEventListener('click', (e) => {
-        e.stopPropagation(); // Stop the click from triggering the alarm dialog
-        window.location.reload(true); // Force hard reload of the frontend
+        e.stopPropagation(); 
+        window.location.reload(true); 
       });
     }
   }
@@ -241,12 +211,10 @@ class MoglieCard extends HTMLElement {
   }
 
   updateUI(monkeyKey, base64Data, text, borderStyle) {
-    const imageSrc = getMonkeyUrl(monkeyKey, base64Data);
-
-    if (this.image && this.image.getAttribute('data-img-src') !== imageSrc) {
+    if (this.image && this.image.getAttribute('data-img-src') !== monkeyKey) {
       this._imgRetries = 0; 
-      this.image.setAttribute('data-img-src', imageSrc);
-      this.image.src = imageSrc; 
+      this.image.setAttribute('data-img-src', monkeyKey);
+      this.image.src = base64Data; 
     }
     
     this.content.innerHTML = text;
@@ -256,7 +224,6 @@ class MoglieCard extends HTMLElement {
   getCardSize() { return 3; }
 }
 customElements.define('moglie-card', MoglieCard);
-
 
 /* -------------------------------------------------------------------
    VISUAL EDITOR COMPONENT (NATIVE HA-FORM)
