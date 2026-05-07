@@ -4,6 +4,12 @@ import { rainy_monkey } from './rainy-monkey.js';
 import { summer_monkey } from './summer-monkey.js';
 import { sleepy_monkey } from './sleepy-monkey.js';
 
+console.info(
+  `%c🐒 MOGLIE-HA %c a monkey has appeared! `,
+  'color: white; background: #FF9800; font-weight: 700; padding: 4px; border-radius: 4px 0 0 4px;',
+  'color: #FF9800; background: white; font-weight: 700; padding: 4px; border-radius: 0 4px 4px 0; border: 1px solid #FF9800;'
+);
+
 /* -------------------------------------------------------------------
    MAIN CARD COMPONENT
 ------------------------------------------------------------------- */
