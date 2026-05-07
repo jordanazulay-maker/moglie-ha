@@ -125,10 +125,9 @@ class MoglieCard extends HTMLElement {
     const isC = unitStr.toUpperCase().includes('C');
       
     const isSnowing = ['snowy', 'snowy-rainy', 'hail'].includes(weatherState);
-    const isSunny = weatherState.includes('sunny') || weatherState.includes('clear');
     
-    // Includes Beta fix for sunny weather logic
-    const isHot = isSunny || (temp !== null && ((isF && temp >= 80) || (isC && temp >= 27)));
+    // Fix: Removed `isSunny ||` which improperly forced the summer monkey on cool sunny days.
+    const isHot = temp !== null && ((isF && temp >= 80) || (isC && temp >= 27));
     const isCold = temp !== null && ((isF && temp < 50) || (isC && temp < 10));
     const showWinter = isSnowing || isCold;
 
@@ -247,14 +246,13 @@ class MoglieCardEditor extends HTMLElement {
       return labels[schema.name] || schema.name;
     };
 
-    // The core fix from Beta allowing Home Assistant to save settings
+    // Fix: Replaced standard `Event` generation with a proper `CustomEvent` structure 
     this._form.addEventListener("value-changed", (ev) => {
-      const event = new Event("config-changed", {
+      this.dispatchEvent(new CustomEvent("config-changed", {
+        detail: { config: ev.detail.value },
         bubbles: true,
         composed: true,
-      });
-      event.detail = { config: ev.detail.value };
-      this.dispatchEvent(event);
+      }));
     });
 
     this.appendChild(this._form);
