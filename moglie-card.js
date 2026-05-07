@@ -4,29 +4,23 @@ import { rainy_monkey as rainy_b64 } from './rainy-monkey.js';
 import { summer_monkey as summer_b64 } from './summer-monkey.js';
 import { sleepy_monkey as sleepy_b64 } from './sleepy-monkey.js';
 
-// Convert massive base64 strings into lightweight local browser URLs to prevent iOS crashes
-function base64ToBlobUrl(base64URI) {
+const blobCache = {};
+
+async function getMonkeyUrl(monkeyKey, base64URI) {
+  if (blobCache[monkeyKey]) return blobCache[monkeyKey];
+
   try {
-    const parts = base64URI.split(',');
-    const mime = parts[0].match(/:(.*?);/)[1];
-    const bstr = atob(parts[1]);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    while (n--) {
-      u8arr[n] = bstr.charCodeAt(n);
-    }
-    return URL.createObjectURL(new Blob([u8arr], { type: mime }));
+    const res = await fetch(base64URI);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    
+    blobCache[monkeyKey] = url;
+    return url;
   } catch (e) {
-    console.error("[Moglie HA] Error converting base64", e);
-    return base64URI; // Fallback to raw base64 if conversion fails
+    console.error(`[Moglie HA] Error converting ${monkeyKey} base64`, e);
+    return base64URI;
   }
 }
-
-const normal_monkey = base64ToBlobUrl(normal_b64);
-const winter_monkey = base64ToBlobUrl(winter_b64);
-const rainy_monkey = base64ToBlobUrl(rainy_b64);
-const summer_monkey = base64ToBlobUrl(summer_b64);
-const sleepy_monkey = base64ToBlobUrl(sleepy_b64);
 
 console.info(
   `%c🐒 MOGLIE-HA %c a monkey has appeared! `,
@@ -34,9 +28,6 @@ console.info(
   'color: #FF9800; background: white; font-weight: 700; padding: 4px; border-radius: 0 4px 4px 0; border: 1px solid #FF9800;'
 );
 
-/* -------------------------------------------------------------------
-   MAIN CARD COMPONENT
-------------------------------------------------------------------- */
 class MoglieCard extends HTMLElement {
   
   static getConfigElement() {
@@ -60,7 +51,7 @@ class MoglieCard extends HTMLElement {
       this.innerHTML = `
         <ha-card>
           <div id="moglie-container" style="padding: 16px; border-radius: 10px; text-align: center; transition: all 0.3s ease; cursor: pointer;">
-            <img id="moglie-image" src="${normal_monkey}" data-img-src="${normal_monkey}" style="width: 150px; height: 150px; object-fit: contain; transition: all 0.3s ease;" />
+            <img id="moglie-image" src="" data-img-src="" style="width: 150px; height: 150px; object-fit: contain; transition: all 0.3s ease;" />
             <div id="moglie-text" class="text-box" style="margin-top: 10px; font-weight: bold; min-height: 2em;"></div>
           </div>
         </ha-card>
@@ -69,7 +60,6 @@ class MoglieCard extends HTMLElement {
       this.image = this.querySelector('#moglie-image');
       this.content = this.querySelector('#moglie-text');
 
-      // FEATURE 1: Image Load Checker & Auto-Retry
       this._imgRetries = 0;
       this.image.onerror = () => {
         if (this._imgRetries < 3) {
@@ -77,8 +67,8 @@ class MoglieCard extends HTMLElement {
           console.warn(`[Moglie HA] Image failed to load. Attempting refresh (${this._imgRetries}/3)...`);
           setTimeout(() => {
             const currentSrc = this.image.src;
-            this.image.src = ''; // Clear source
-            this.image.src = currentSrc; // Re-apply source to force reload
+            this.image.src = '';
+            this.image.src = currentSrc;
           }, 1000);
         } else {
           console.error("[Moglie HA] Image failed to load after 3 attempts.");
@@ -105,8 +95,7 @@ class MoglieCard extends HTMLElement {
     }
   }
 
-  // FEATURE 2: Helper to show errors and inject the Reload Dashboard button
-  showError(message) {
+  async showError(message) {
     this.content.innerHTML = `
       <div style="margin-bottom: 12px;">${message}</div>
       <button id="moglie-reload-btn" style="background: var(--primary-color, #03a9f4); color: var(--text-primary-color, white); border: none; border-radius: 6px; padding: 8px 16px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: background 0.2s;">
@@ -114,15 +103,17 @@ class MoglieCard extends HTMLElement {
       </button>
     `;
     this.container.style.border = "2px dashed var(--error-color, red)";
-    this.image.src = normal_monkey;
-    this.image.setAttribute('data-img-src', normal_monkey);
+    
+    const blobUrl = await getMonkeyUrl('normal', normal_b64);
+    this.image.src = blobUrl;
+    this.image.setAttribute('data-img-src', blobUrl);
     this.image.style.filter = "grayscale(100%)";
 
     const reloadBtn = this.querySelector('#moglie-reload-btn');
     if (reloadBtn) {
       reloadBtn.addEventListener('click', (e) => {
-        e.stopPropagation(); // Stop the click from triggering the alarm dialog
-        window.location.reload(true); // Force hard reload of the frontend
+        e.stopPropagation();
+        window.location.reload(true);
       });
     }
   }
@@ -214,128 +205,12 @@ class MoglieCard extends HTMLElement {
     this.image.style.filter = "none"; 
 
     if (!isWanActive) {
-      this.updateUI(normal_monkey, quotes.offline, "2px solid var(--disabled-text-color, gray)");
+      this.updateUI('normal', normal_b64, quotes.offline, "2px solid var(--disabled-text-color, gray)");
       this.content.classList.add("status-warning");
       this.image.style.filter = "grayscale(100%)";
     } else if (isNightMode) {
-      this.updateUI(sleepy_monkey, quotes.night, "2px solid #673AB7");
+      this.updateUI('sleepy', sleepy_b64, quotes.night, "2px solid #673AB7");
     } else if (isRaining) {
-      this.updateUI(rainy_monkey, quotes.rain, "2px solid #2196F3");
+      this.updateUI('rainy', rainy_b64, quotes.rain, "2px solid #2196F3");
     } else if (showWinter) {
-      this.updateUI(winter_monkey, quotes.cold, "2px solid #00BCD4");
-    } else if (isHot) {
-      this.updateUI(summer_monkey, quotes.hot, "2px solid #FF9800"); 
-    } else if (isOffState) {
-      this.updateUI(normal_monkey, quotes.disarmed, "2px solid var(--warning-color, orange)");
-    } else if (isHomeState) {
-      this.updateUI(normal_monkey, quotes.armedHome, "2px solid var(--success-color, green)");
-    } else {
-      this.updateUI(normal_monkey, quotes.armedAway, "2px solid var(--error-color, red)");
-    }
-  }
-
-  updateUI(imageSrc, text, borderStyle) {
-    // Check our custom data attribute instead of parsing massive base64 strings!
-    if (this.image && this.image.getAttribute('data-img-src') !== imageSrc) {
-      this._imgRetries = 0; 
-      this.image.setAttribute('data-img-src', imageSrc);
-      this.image.src = imageSrc; 
-    }
-    
-    this.content.innerHTML = text;
-    this.container.style.border = borderStyle;
-  }
-
-  getCardSize() { return 3; }
-}
-customElements.define('moglie-card', MoglieCard);
-
-
-/* -------------------------------------------------------------------
-   VISUAL EDITOR COMPONENT (NATIVE HA-FORM)
-------------------------------------------------------------------- */
-class MoglieCardEditor extends HTMLElement {
-  setConfig(config) {
-    this._config = config;
-    if (this._form) {
-      this._form.data = config;
-    } else {
-      this.render();
-    }
-  }
-
-  set hass(hass) {
-    this._hass = hass;
-    if (this._form) {
-      this._form.hass = hass;
-    } else {
-      this.render();
-    }
-  }
-
-  render() {
-    if (!this._hass || !this._config || this._form) return;
-
-    this._form = document.createElement("ha-form");
-    this._form.hass = this._hass;
-    this._form.data = this._config;
-
-    this._form.schema = [
-      { name: "wan_entity", selector: { entity: { domain: "binary_sensor" } } },
-      { name: "alarm_entity", selector: { entity: { domain: "alarm_control_panel" } } },
-      { name: "weather_entity", selector: { entity: { domain: "weather" } } },
-      { name: "night_start", selector: { number: { min: 0, max: 23, mode: "box" } } },
-      { name: "night_end", selector: { number: { min: 0, max: 23, mode: "box" } } },
-      { name: "quote_offline", selector: { text: {} } },
-      { name: "quote_disarmed", selector: { text: {} } },
-      { name: "quote_armed_home", selector: { text: {} } },
-      { name: "quote_armed_away", selector: { text: {} } },
-      { name: "quote_night", selector: { text: {} } },
-      { name: "quote_hot", selector: { text: {} } },
-      { name: "quote_cold", selector: { text: {} } },
-      { name: "quote_rain", selector: { text: {} } }
-    ];
-
-    this._form.computeLabel = (schema) => {
-      const labels = {
-        wan_entity: "WAN Entity (binary_sensor)",
-        alarm_entity: "Alarm Entity (alarm_control_panel)",
-        weather_entity: "Weather Entity (weather)",
-        night_start: "Night Mode Start Hour (0-23)",
-        night_end: "Night Mode End Hour (0-23)",
-        quote_offline: "Custom Quote: WAN Offline",
-        quote_disarmed: "Custom Quote: Disarmed",
-        quote_armed_home: "Custom Quote: Armed Home",
-        quote_armed_away: "Custom Quote: Armed Away",
-        quote_night: "Custom Quote: Night Mode",
-        quote_hot: "Custom Quote: Hot Weather (>= 80F / 27C)",
-        quote_cold: "Custom Quote: Cold Weather (< 50F / 10C)",
-        quote_rain: "Custom Quote: Rainy Weather"
-      };
-      return labels[schema.name] || schema.name;
-    };
-
-    this._form.addEventListener("value-changed", (ev) => {
-      this.dispatchEvent(new CustomEvent("config-changed", {
-        detail: { config: ev.detail.value },
-        bubbles: true,
-        composed: true,
-      }));
-    });
-
-    this.appendChild(this._form);
-  }
-}
-customElements.define("moglie-card-editor", MoglieCardEditor);
-
-/* -------------------------------------------------------------------
-   CARD PICKER REGISTRATION
-------------------------------------------------------------------- */
-window.customCards = window.customCards || [];
-window.customCards.push({
-  type: "moglie-card",
-  name: "Moglie HA",
-  description: "Moglie monitors your WAN status and security state.",
-  preview: true,
-  documentationURL: "https://github.com/jordanazulay-maker/moglie-ha"
-});
+      this.updateUI('winter', winter_b64, quotes.cold, "2px solid #0
