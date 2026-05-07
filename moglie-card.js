@@ -39,6 +39,22 @@ class MoglieCard extends HTMLElement {
       this.image = this.querySelector('#moglie-image');
       this.content = this.querySelector('#moglie-text');
 
+      // FEATURE 1: Image Load Checker & Auto-Retry
+      this._imgRetries = 0;
+      this.image.onerror = () => {
+        if (this._imgRetries < 3) {
+          this._imgRetries++;
+          console.warn(`[Moglie HA] Image failed to load. Attempting refresh (${this._imgRetries}/3)...`);
+          setTimeout(() => {
+            const currentSrc = this.image.src;
+            this.image.src = ''; // Clear source
+            this.image.src = currentSrc; // Re-apply source to force reload
+          }, 1000);
+        } else {
+          console.error("[Moglie HA] Image failed to load after 3 attempts.");
+        }
+      };
+
       this.container.addEventListener('click', () => {
         if (!this.config || !this.config.alarm_entity) return;
         this.dispatchEvent(new CustomEvent('hass-more-info', {
@@ -55,8 +71,28 @@ class MoglieCard extends HTMLElement {
     }
 
     if (!config.wan_entity || !config.alarm_entity || !config.weather_entity) {
-      this.content.innerHTML = "⚠️ Please configure Moglie's entities in the Visual Editor.";
-      this.container.style.border = "2px dashed var(--error-color, red)";
+      this.showError("⚠️ Please configure Moglie's entities in the Visual Editor.");
+    }
+  }
+
+  // FEATURE 2: Helper to show errors and inject the Reload Dashboard button
+  showError(message) {
+    this.content.innerHTML = `
+      <div style="margin-bottom: 12px;">${message}</div>
+      <button id="moglie-reload-btn" style="background: var(--primary-color, #03a9f4); color: var(--text-primary-color, white); border: none; border-radius: 6px; padding: 8px 16px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: background 0.2s;">
+        🔄 Reload Dashboard
+      </button>
+    `;
+    this.container.style.border = "2px dashed var(--error-color, red)";
+    this.image.src = normal_monkey;
+    this.image.style.filter = "grayscale(100%)";
+
+    const reloadBtn = this.querySelector('#moglie-reload-btn');
+    if (reloadBtn) {
+      reloadBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Stop the click from triggering the alarm dialog
+        window.location.reload(true); // Force hard reload of the frontend
+      });
     }
   }
 
@@ -74,10 +110,7 @@ class MoglieCard extends HTMLElement {
       if (!alarmEntity) missing.push(this.config.alarm_entity);
       if (!weatherEntity) missing.push(this.config.weather_entity);
       
-      this.content.innerHTML = `⚠️ Cannot find entity: <b>${missing.join(', ')}</b>. Check your spelling or YAML.`;
-      this.container.style.border = "2px dashed var(--error-color, red)";
-      this.image.src = normal_monkey;
-      this.image.style.filter = "grayscale(100%)";
+      this.showError(`⚠️ Cannot find entity: <b>${missing.join(', ')}</b>. Check your spelling or click below to refresh data after install.`);
       return;
     }
 
@@ -126,7 +159,6 @@ class MoglieCard extends HTMLElement {
       
     const isSnowing = ['snowy', 'snowy-rainy', 'hail'].includes(weatherState);
     
-    // Fix: Removed `isSunny ||` which improperly forced the summer monkey on cool sunny days.
     const isHot = temp !== null && ((isF && temp >= 80) || (isC && temp >= 27));
     const isCold = temp !== null && ((isF && temp < 50) || (isC && temp < 10));
     const showWinter = isSnowing || isCold;
@@ -172,6 +204,11 @@ class MoglieCard extends HTMLElement {
   }
 
   updateUI(imageSrc, text, borderStyle) {
+    // Reset the retry counter if we are successfully switching to a new image
+    if (this.image && (!this.image.src.includes(imageSrc))) {
+      this._imgRetries = 0; 
+    }
+    
     this.image.src = imageSrc; 
     this.content.innerHTML = text;
     this.container.style.border = borderStyle;
@@ -246,7 +283,6 @@ class MoglieCardEditor extends HTMLElement {
       return labels[schema.name] || schema.name;
     };
 
-    // Fix: Replaced standard `Event` generation with a proper `CustomEvent` structure 
     this._form.addEventListener("value-changed", (ev) => {
       this.dispatchEvent(new CustomEvent("config-changed", {
         detail: { config: ev.detail.value },
