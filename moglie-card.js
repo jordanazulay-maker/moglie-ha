@@ -1,8 +1,32 @@
-import { normal_monkey } from './normal-monkey.js';
-import { winter_monkey } from './winter-monkey.js';
-import { rainy_monkey } from './rainy-monkey.js';
-import { summer_monkey } from './summer-monkey.js';
-import { sleepy_monkey } from './sleepy-monkey.js';
+import { normal_monkey as normal_b64 } from './normal-monkey.js';
+import { winter_monkey as winter_b64 } from './winter-monkey.js';
+import { rainy_monkey as rainy_b64 } from './rainy-monkey.js';
+import { summer_monkey as summer_b64 } from './summer-monkey.js';
+import { sleepy_monkey as sleepy_b64 } from './sleepy-monkey.js';
+
+// Convert massive base64 strings into lightweight local browser URLs to prevent iOS crashes
+function base64ToBlobUrl(base64URI) {
+  try {
+    const parts = base64URI.split(',');
+    const mime = parts[0].match(/:(.*?);/)[1];
+    const bstr = atob(parts[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return URL.createObjectURL(new Blob([u8arr], { type: mime }));
+  } catch (e) {
+    console.error("[Moglie HA] Error converting base64", e);
+    return base64URI; // Fallback to raw base64 if conversion fails
+  }
+}
+
+const normal_monkey = base64ToBlobUrl(normal_b64);
+const winter_monkey = base64ToBlobUrl(winter_b64);
+const rainy_monkey = base64ToBlobUrl(rainy_b64);
+const summer_monkey = base64ToBlobUrl(summer_b64);
+const sleepy_monkey = base64ToBlobUrl(sleepy_b64);
 
 console.info(
   `%c🐒 MOGLIE-HA %c a monkey has appeared! `,
@@ -36,7 +60,7 @@ class MoglieCard extends HTMLElement {
       this.innerHTML = `
         <ha-card>
           <div id="moglie-container" style="padding: 16px; border-radius: 10px; text-align: center; transition: all 0.3s ease; cursor: pointer;">
-            <img id="moglie-image" src="${normal_monkey}" width="150" style="transition: all 0.3s ease;" />
+            <img id="moglie-image" src="${normal_monkey}" data-img-src="${normal_monkey}" style="width: 150px; height: 150px; object-fit: contain; transition: all 0.3s ease;" />
             <div id="moglie-text" class="text-box" style="margin-top: 10px; font-weight: bold; min-height: 2em;"></div>
           </div>
         </ha-card>
@@ -91,6 +115,7 @@ class MoglieCard extends HTMLElement {
     `;
     this.container.style.border = "2px dashed var(--error-color, red)";
     this.image.src = normal_monkey;
+    this.image.setAttribute('data-img-src', normal_monkey);
     this.image.style.filter = "grayscale(100%)";
 
     const reloadBtn = this.querySelector('#moglie-reload-btn');
@@ -210,12 +235,13 @@ class MoglieCard extends HTMLElement {
   }
 
   updateUI(imageSrc, text, borderStyle) {
-    // Reset the retry counter if we are successfully switching to a new image
-    if (this.image && (!this.image.src.includes(imageSrc))) {
+    // Check our custom data attribute instead of parsing massive base64 strings!
+    if (this.image && this.image.getAttribute('data-img-src') !== imageSrc) {
       this._imgRetries = 0; 
+      this.image.setAttribute('data-img-src', imageSrc);
+      this.image.src = imageSrc; 
     }
     
-    this.image.src = imageSrc; 
     this.content.innerHTML = text;
     this.container.style.border = borderStyle;
   }
