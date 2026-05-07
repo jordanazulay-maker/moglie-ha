@@ -125,8 +125,10 @@ class MoglieCard extends HTMLElement {
     const isC = unitStr.toUpperCase().includes('C');
       
     const isSnowing = ['snowy', 'snowy-rainy', 'hail'].includes(weatherState);
+    const isSunny = weatherState.includes('sunny') || weatherState.includes('clear');
     
-    const isHot = temp !== null && ((isF && temp >= 80) || (isC && temp >= 27));
+    // Includes Beta fix for sunny weather logic
+    const isHot = isSunny || (temp !== null && ((isF && temp >= 80) || (isC && temp >= 27)));
     const isCold = temp !== null && ((isF && temp < 50) || (isC && temp < 10));
     const showWinter = isSnowing || isCold;
 
@@ -245,12 +247,14 @@ class MoglieCardEditor extends HTMLElement {
       return labels[schema.name] || schema.name;
     };
 
+    // The core fix from Beta allowing Home Assistant to save settings
     this._form.addEventListener("value-changed", (ev) => {
-      this.dispatchEvent(new CustomEvent("config-changed", {
-        detail: { config: ev.detail.value },
+      const event = new Event("config-changed", {
         bubbles: true,
         composed: true,
-      }));
+      });
+      event.detail = { config: ev.detail.value };
+      this.dispatchEvent(event);
     });
 
     this.appendChild(this._form);
