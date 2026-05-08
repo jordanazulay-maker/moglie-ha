@@ -1,4 +1,4 @@
-# Moglie HA
+Moglie HA, Your smart home companion!
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=jordanazulay-maker&repository=moglie-ha&category=plugin)
 
@@ -19,6 +19,7 @@
 * **🌙 Night Mode:** Set a custom sleep schedule! Moglie automatically changes into his pajamas during user-defined nighttime hours.
 * **🌧️❄️🌡️ Weather Aware:** Pass in your local weather entity, and Moglie will throw on his raincoat if it starts pouring, his sunglasses if the temperature climbs above 80°F (27°C), or bundle up in his winter gear if it snows or drops below 50°F (10°C)!
 * **✏️ Fully Customizable Text:** You can now customize every single message Moglie says directly in the Visual Editor to fit your exact style.
+* **🙈 Hide Moglie (Text-Only Mode):** Want the info without the monkey? Toggle "Hide Moglie" in the Visual Editor to hide the image and turn the card into a sleek, text-based status feed (e.g., *"MOGLIE'S LATEST UPDATE: System's off!"*).
 * **🎨 Dynamic Visuals:** Card border colors shift dynamically based on status, and Moglie goes grayscale when stranded offline.
 * **👆 Interactive Dialogs:** Tap the card to instantly bring up the more-info dialog for your designated alarm entity.
 * **🎁 Hidden Surprises:** Moglie loves to celebrate! Keep an eye on him during certain times of the year—you might catch him feeling unusually festive or acting a little topsy-turvy.
