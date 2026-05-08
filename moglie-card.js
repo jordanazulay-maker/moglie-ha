@@ -118,22 +118,39 @@ class MoglieCard extends HTMLElement {
       else if (hr >= 17 && hr < nS) greet = "Sun's getting low. ";
     }
 
-    let nTxt = "The troop is sleeping...";
+    // --- 1. SEPARATE THE PATROL SUBTEXT --- //
+    let patrolTxt = "";
     if (alrm) {
-      if (aHome) nTxt = "The troop is fast asleep in the canopy. <br><small style='color:#4CAF50;font-weight:bold;'>(Primates are silently securing the perimeter.)</small>";
-      else if (aOff) nTxt = "The troop is sleeping... <br><small style='color:orange;font-weight:bold;'>(But the primates are off duty! Who is watching the trees?!)</small>";
-      else nTxt = "The canopy is empty tonight. <br><small style='color:#F44336;font-weight:bold;'>(Primates are on HIGH ALERT in the dark!)</small>";
+      if (aHome) {
+        patrolTxt = showNight 
+          ? "<br><small style='color:#4CAF50;font-weight:bold;'>(Primates are silently securing the perimeter.)</small>" 
+          : "<br><small style='color:#4CAF50;font-weight:bold;'>(Primates are on perimeter patrol.)</small>";
+      } else if (aOff) {
+        patrolTxt = "<br><small style='color:orange;font-weight:bold;'>(But the primates are off duty! Who is watching the trees?!)</small>";
+      } else {
+        patrolTxt = showNight 
+          ? "<br><small style='color:#F44336;font-weight:bold;'>(Primates are on HIGH ALERT in the dark!)</small>" 
+          : "<br><small style='color:#F44336;font-weight:bold;'>(Primates are on HIGH ALERT!)</small>";
+      }
     }
 
+    let nTxt = "The troop is sleeping...";
+    if (alrm) {
+      if (aHome) nTxt = "The troop is fast asleep in the canopy.";
+      else if (aOff) nTxt = "The troop is sleeping...";
+      else nTxt = "The canopy is empty tonight.";
+    }
+
+    // --- 2. BASE QUOTES (Without the subtext baked in) --- //
     const uQ = c.use_custom_quotes;
     const q = {
       off: (uQ && c.quote_offline) || "Moglie is stranded. The WAN connection has been lost!",
       cold: (uQ && c.quote_cold) || "Brrr! It's freezing out there!",
       rain: (uQ && c.quote_rain) || "Looks like rain, grabbing my coat!",
       hot: (uQ && c.quote_hot) || "It's boiling! Need a banana smoothie.",
-      dis: (uQ && c.quote_disarmed) || `${greet}System's off! The primates ditched their post for a banana run.`,
-      home: (uQ && c.quote_armed_home) || `${greet}${isWknd ? "The troop is relaxing in the branches. " : "The troop is home. "}The primates are on perimeter patrol.`,
-      away: (uQ && c.quote_armed_away) || "The troop is away. The primates are watching the trees!",
+      dis: (uQ && c.quote_disarmed) || `${greet}System's off! The troop is relaxing.`,
+      home: (uQ && c.quote_armed_home) || `${greet}${isWknd ? "The troop is relaxing in the branches." : "The troop is home."}`,
+      away: (uQ && c.quote_armed_away) || "The troop is away.",
       night: (uQ && c.quote_night) || nTxt
     };
 
@@ -152,6 +169,7 @@ class MoglieCard extends HTMLElement {
       quote = q.off; 
       border = "2px solid gray"; 
       isGrayscale = true; 
+      patrolTxt = ""; // Clear patrol status if network is dead
     }
     else if (isApril) { 
       outfit = n_b64; 
@@ -181,6 +199,9 @@ class MoglieCard extends HTMLElement {
       quote = q.hot; 
       border = "2px solid #FF9800"; 
     }
+
+    // --- 3. MERGE THEM TOGETHER --- //
+    quote += patrolTxt;
 
     if (c.hide_moglie) {
       this.img.style.display = "none";
