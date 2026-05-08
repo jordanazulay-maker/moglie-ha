@@ -85,7 +85,7 @@ class MoglieCard extends HTMLElement {
     const isOffState = alarmState.includes('disarmed') || alarmState === 'off';
     const isHomeState = alarmState.includes('home') || alarmState.includes('night') || alarmState.includes('stay');
 
-    // 2. Weather Logic (Fix: Safely access properties without optional chaining to prevent older browser crashes)
+    // 2. Weather Logic 
     const isRaining = weatherState.includes('rain') || weatherState.includes('pour') || weatherState.includes('shower') || weatherState.includes('storm');
     
     let temp = null;
@@ -125,7 +125,7 @@ class MoglieCard extends HTMLElement {
     let isNightTime = nightStart > nightEnd ? (currentHour >= nightStart || currentHour < nightEnd) : (currentHour >= nightStart && currentHour < nightEnd);
     const showNight = (this.config.enable_night_mode !== false) && isNightTime;
 
-    // 4. Cache check to prevent freezing (Fix: Removed JSON.stringify to prevent circular reference crash)
+    // 4. Cache check to prevent freezing 
     const configHash = `${this.config.wan_entity}-${this.config.alarm_entity}-${this.config.weather_entity}-${this.config.enable_night_mode}`;
     const statusKey = `${wanState}-${alarmState}-${weatherState}-${showNight}-${isChristmas}-${isAprilFools}-${currentHour}-${configHash}`;
     if (this._lastStatus === statusKey) return; 
@@ -143,24 +143,24 @@ class MoglieCard extends HTMLElement {
       }
     }
 
-    // 6. Build The Pack vs Primates Quotes
+    // 6. Build The Troop vs Primates Quotes
     let nightText = "";
     if (hasAlarm) {
       if (isHomeState) {
-        nightText = "The pack is fast asleep in the den. <br><small style='color: var(--success-color, #4CAF50); font-weight: bold;'>(Primates are silently securing the perimeter.)</small>";
+        nightText = "The troop is fast asleep in the canopy. <br><small style='color: var(--success-color, #4CAF50); font-weight: bold;'>(Primates are silently securing the perimeter.)</small>";
       } 
       else if (isOffState) {
-        nightText = "The pack is sleeping... <br><small style='color: var(--warning-color, orange); font-weight: bold;'>(But the primates are off duty! Who is watching the trees?!)</small>";
+        nightText = "The troop is sleeping... <br><small style='color: var(--warning-color, orange); font-weight: bold;'>(But the primates are off duty! Who is watching the trees?!)</small>";
       } 
       else {
-        nightText = "The den is empty tonight. <br><small style='color: var(--error-color, #F44336); font-weight: bold;'>(Primates are on HIGH ALERT in the dark!)</small>";
+        nightText = "The canopy is empty tonight. <br><small style='color: var(--error-color, #F44336); font-weight: bold;'>(Primates are on HIGH ALERT in the dark!)</small>";
       }
     } else {
-      nightText = "The pack is sleeping...";
+      nightText = "The troop is sleeping...";
     }
     const fullNightQuote = this.config.quote_night || nightText;
 
-    let armedHomeText = isWeekend ? "The pack is relaxing at home. " : "The pack is home. ";
+    let armedHomeText = isWeekend ? "The troop is relaxing in the branches. " : "The troop is home. ";
     armedHomeText += "The primates are on perimeter patrol.";
     let disarmedText = "System's off! The primates ditched their post for a banana run.";
 
@@ -171,7 +171,7 @@ class MoglieCard extends HTMLElement {
       hot: this.config.quote_hot || "It's boiling! Need a banana smoothie.",
       disarmed: this.config.quote_disarmed || `${timeGreeting}${disarmedText}`,
       armedHome: this.config.quote_armed_home || `${timeGreeting}${armedHomeText}`,
-      armedAway: this.config.quote_armed_away || "The pack is away. The primates are watching the trees!"
+      armedAway: this.config.quote_armed_away || "The troop is away. The primates are watching the trees!"
     };
 
     // 7. Set Borders
@@ -190,7 +190,7 @@ class MoglieCard extends HTMLElement {
     } else if (isAprilFools) {
       this.updateUI('normal', normal_b64, "Why is the blood rushing to my head?", dynamicBorder);
     } else if (isChristmas) {
-      this.updateUI('festive', festive_b64, "Merry Christmas to the pack!", dynamicBorder);
+      this.updateUI('festive', festive_b64, "Merry Christmas to the troop!", dynamicBorder);
     } else if (showNight) {
       this.updateUI('sleepy', sleepy_b64, fullNightQuote, "2px solid #673AB7");
     } else if (hasWeather && isRaining) {
