@@ -7,7 +7,7 @@ import { festive_monkey as f_b64 } from './festive-monkey.js';
 
 class MoglieCard extends HTMLElement {
   static getConfigElement() { return document.createElement("moglie-card-editor"); }
-  static getStubConfig() { return { wan_entity: "", alarm_entity: "", weather_entity: "", enable_night_mode: true, night_start: 22, night_end: 6, use_custom_quotes: false }; }
+  static getStubConfig() { return { wan_entity: "", alarm_entity: "", weather_entity: "", enable_night_mode: true, night_start: 22, night_end: 6, use_custom_quotes: false, hide_moglie: false }; }
 
   setConfig(config) {
     this.config = config;
@@ -77,7 +77,9 @@ class MoglieCard extends HTMLElement {
 
     const d = new Date();
     const hr = d.getHours();
-    const sHash = `${wState}|${aState}|${weState}|${hr}|${d.getDate()}|${c.enable_night_mode}|${c.use_custom_quotes}`;
+    
+    // Add hide_moglie to the state hash so it updates if toggled
+    const sHash = `${wState}|${aState}|${weState}|${hr}|${d.getDate()}|${c.enable_night_mode}|${c.use_custom_quotes}|${c.hide_moglie}`;
     if (this._last === sHash) return; 
     this._last = sHash;
 
@@ -133,25 +135,72 @@ class MoglieCard extends HTMLElement {
       night: (uQ && c.quote_night) || nTxt
     };
 
-    let bdr = "2px solid #03a9f4";
-    if (alrm) bdr = aOff ? "2px solid orange" : (aHome ? "2px solid #4CAF50" : "2px solid #F44336");
+    // --- MOGLIE'S OUTFIT ENGINE --- //
+    let outfit = n_b64;
+    let quote = "Moglie is standing by!";
+    let border = "2px solid #03a9f4";
+    let isGrayscale = false;
 
-    this.img.style.filter = "none";
-    if (isApril) this.img.classList.add('anti-gravity'); else this.img.classList.remove('anti-gravity');
+    // 1. Evaluate Alarm Borders & Quotes
+    if (alrm) {
+      border = aOff ? "2px solid orange" : (aHome ? "2px solid #4CAF50" : "2px solid #F44336");
+      quote = aOff ? q.dis : (aHome ? q.home : q.away);
+    }
+
+    // 2. Determine the Outfit & Status Priorities
+    if (wan && !wanOk) { 
+      outfit = n_b64; 
+      quote = q.off; 
+      border = "2px solid gray"; 
+      isGrayscale = true; 
+    }
+    else if (isApril) { 
+      outfit = n_b64; 
+      quote = "Why is the blood rushing to my head?"; 
+    }
+    else if (isXmas) { 
+      outfit = f_b64; 
+      quote = "Merry Christmas to the troop!"; 
+    }
+    else if (showNight) { 
+      outfit = sl_b64; 
+      quote = q.night; 
+      border = "2px solid #673AB7"; 
+    }
+    else if (wthr && isRain) { 
+      outfit = r_b64; 
+      quote = q.rain; 
+      border = "2px solid #2196F3"; 
+    }
+    else if (wthr && (isSnow || isCold)) { 
+      outfit = w_b64; 
+      quote = q.cold; 
+      border = "2px solid #00BCD4"; 
+    }
+    else if (wthr && isHot) { 
+      outfit = s_b64; 
+      quote = q.hot; 
+      border = "2px solid #FF9800"; 
+    }
+
+    // --- PRESENTATION LAYER --- //
+    if (c.hide_moglie) {
+      this.img.style.display = "none";
+      // Clean HTML tags out of the quote for a clean status feed look
+      let cleanQuote = quote.replace(/<br>|<small.*?>|<\/small>/g, ' ').replace(/\s+/g, ' ').trim();
+      quote = `<div style="color: gray; font-size: 0.85em; text-transform: uppercase; margin-bottom: 4px;">Moglie's latest update:</div><i>"${cleanQuote}"</i>`;
+    } else {
+      this.img.style.display = "block";
+    }
+
+    this.img.style.filter = isGrayscale ? "grayscale(100%)" : "none";
+    if (isApril && !c.hide_moglie) this.img.classList.add('anti-gravity'); else this.img.classList.remove('anti-gravity');
     
-    if (wan && !wanOk) { this.upd(n_b64, q.off, "2px solid gray"); this.img.style.filter = "grayscale(100%)"; }
-    else if (isApril) this.upd(n_b64, "Why is the blood rushing to my head?", bdr);
-    else if (isXmas) this.upd(f_b64, "Merry Christmas to the troop!", bdr);
-    else if (showNight) this.upd(sl_b64, q.night, "2px solid #673AB7");
-    else if (wthr && isRain) this.upd(r_b64, q.rain, "2px solid #2196F3");
-    else if (wthr && (isSnow || isCold)) this.upd(w_b64, q.cold, "2px solid #00BCD4");
-    else if (wthr && isHot) this.upd(s_b64, q.hot, "2px solid #FF9800"); 
-    else if (alrm) this.upd(n_b64, aOff ? q.dis : (aHome ? q.home : q.away), bdr);
-    else this.upd(n_b64, "Moglie is standing by!", bdr);
+    // Zap it to the DOM
+    this.upd(outfit, quote, border);
   }
 
   upd(img, txt, bdr) {
-    // ⚡ ZAP: Use getAttribute and setAttribute to safely handle massive Base64 Strings ⚡
     if (this.img.getAttribute('src') !== img) this.img.setAttribute('src', img);
     if (this.txt.innerHTML !== txt) this.txt.innerHTML = txt;
     if (this.cont.style.border !== bdr) this.cont.style.border = bdr;
@@ -160,7 +209,7 @@ class MoglieCard extends HTMLElement {
 customElements.define('moglie-card', MoglieCard);
 
 const M_LBLS = {
-  wan_entity: "WAN Entity", alarm_entity: "Alarm Entity", weather_entity: "Weather Entity", tap_action: "Tap Action", hold_action: "Hold Action", enable_night_mode: "Enable Night Mode", night_start: "Night Start Hour", night_end: "Night End Hour", use_custom_quotes: "Enable Custom Quotes", quote_offline: "Quote: WAN Offline", quote_disarmed: "Quote: Disarmed", quote_armed_home: "Quote: Armed Home", quote_armed_away: "Quote: Armed Away", quote_night: "Quote: Night Mode", quote_hot: "Quote: Hot Weather", quote_cold: "Quote: Cold Weather", quote_rain: "Quote: Rainy Weather"
+  wan_entity: "WAN Entity", alarm_entity: "Alarm Entity", weather_entity: "Weather Entity", tap_action: "Tap Action", hold_action: "Hold Action", enable_night_mode: "Enable Night Mode", night_start: "Night Start Hour", night_end: "Night End Hour", hide_moglie: "Hide Moglie (Text Only Mode)", use_custom_quotes: "Enable Custom Quotes", quote_offline: "Quote: WAN Offline", quote_disarmed: "Quote: Disarmed", quote_armed_home: "Quote: Armed Home", quote_armed_away: "Quote: Armed Away", quote_night: "Quote: Night Mode", quote_hot: "Quote: Hot Weather", quote_cold: "Quote: Cold Weather", quote_rain: "Quote: Rainy Weather"
 };
 
 class MoglieCardEditor extends HTMLElement {
@@ -181,6 +230,7 @@ class MoglieCardEditor extends HTMLElement {
         { name: "night_start", selector: { number: { min: 0, max: 23, mode: "box" } } },
         { name: "night_end", selector: { number: { min: 0, max: 23, mode: "box" } } }
       ]},
+      { name: "hide_moglie", selector: { boolean: {} } },
       { name: "use_custom_quotes", selector: { boolean: {} } }
     ];
     if (this._cfg.use_custom_quotes) {
