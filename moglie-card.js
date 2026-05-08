@@ -49,7 +49,6 @@ class MoglieCard extends HTMLElement {
       });
     }
 
-    // Update error state to respect toggles
     if (!(this.config.use_wan && this.config.wan_entity) && 
         !(this.config.use_alarm && this.config.alarm_entity) && 
         !(this.config.use_weather && this.config.weather_entity)) {
@@ -78,7 +77,6 @@ class MoglieCard extends HTMLElement {
     if (!this.config) return;
     const c = this.config;
     
-    // Only grab states if the toggle is ON and the entity is provided
     const wan = (c.use_wan && c.wan_entity) ? hass.states[c.wan_entity] : null;
     const alrm = (c.use_alarm && c.alarm_entity) ? hass.states[c.alarm_entity] : null;
     const wthr = (c.use_weather && c.weather_entity) ? hass.states[c.weather_entity] : null;
@@ -236,17 +234,24 @@ class MoglieCard extends HTMLElement {
 customElements.define('moglie-card', MoglieCard);
 
 const M_LBLS = {
-  use_wan: "Monitor WAN Status", use_alarm: "Monitor Security Alarm", use_weather: "Monitor Weather",
+  monitored_features: "Features to Monitor",
   wan_entity: "WAN Entity", alarm_entity: "Alarm Entity", weather_entity: "Weather Entity", tap_action: "Tap Action", hold_action: "Hold Action", enable_night_mode: "Enable Night Mode", night_start: "Night Start Hour", night_end: "Night End Hour", hide_moglie: "Hide Moglie (Text Only Mode)", use_custom_quotes: "Enable Custom Quotes", quote_offline: "Quote: WAN Offline", quote_disarmed: "Quote: Disarmed", quote_armed_home: "Quote: Armed Home", quote_armed_away: "Quote: Armed Away", quote_night: "Quote: Night Mode", quote_hot: "Quote: Hot Weather", quote_cold: "Quote: Cold Weather", quote_rain: "Quote: Rainy Weather"
 };
 
 class MoglieCardEditor extends HTMLElement {
   setConfig(config) { 
     this._cfg = { ...config }; 
-    // Legacy fallback so existing cards don't lose their settings
+    
+    // Legacy fallback
     if (this._cfg.use_wan === undefined) this._cfg.use_wan = !!this._cfg.wan_entity;
     if (this._cfg.use_alarm === undefined) this._cfg.use_alarm = !!this._cfg.alarm_entity;
     if (this._cfg.use_weather === undefined) this._cfg.use_weather = !!this._cfg.weather_entity;
+
+    // Build the array for the multi-select dropdown
+    this._cfg.monitored_features = [];
+    if (this._cfg.use_wan) this._cfg.monitored_features.push("wan");
+    if (this._cfg.use_alarm) this._cfg.monitored_features.push("alarm");
+    if (this._cfg.use_weather) this._cfg.monitored_features.push("weather");
 
     if (this._f) { this._f.data = this._cfg; this._upd(); } else this.render(); 
   }
@@ -255,14 +260,21 @@ class MoglieCardEditor extends HTMLElement {
 
   _upd() {
     const s = [
-      { type: "grid", schema: [
-        { name: "use_wan", selector: { boolean: {} } },
-        { name: "use_alarm", selector: { boolean: {} } },
-        { name: "use_weather", selector: { boolean: {} } }
-      ]}
+      { 
+        name: "monitored_features", 
+        selector: { 
+          select: { 
+            multiple: true, 
+            options: [
+              { label: "WAN Status", value: "wan" },
+              { label: "Security Alarm", value: "alarm" },
+              { label: "Weather", value: "weather" }
+            ]
+          } 
+        } 
+      }
     ];
 
-    // Conditionally render entity pickers
     if (this._cfg.use_wan) s.push({ name: "wan_entity", selector: { entity: { domain: "binary_sensor" } } });
     if (this._cfg.use_alarm) s.push({ name: "alarm_entity", selector: { entity: { domain: "alarm_control_panel" } } });
     if (this._cfg.use_weather) s.push({ name: "weather_entity", selector: { entity: { domain: "weather" } } });
@@ -274,7 +286,6 @@ class MoglieCardEditor extends HTMLElement {
 
     s.push({ name: "enable_night_mode", selector: { boolean: {} } });
 
-    // Hide night schedule if night mode is off
     if (this._cfg.enable_night_mode !== false) {
       s.push({ type: "grid", schema: [
         { name: "night_start", selector: { number: { min: 0, max: 23, mode: "box" } } },
@@ -305,7 +316,16 @@ class MoglieCardEditor extends HTMLElement {
     this._f.data = this._cfg;
     this._upd();
     this._f.computeLabel = (s) => M_LBLS[s.name] || s.name;
-    this._f.addEventListener("value-changed", (e) => this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: e.detail.value }, bubbles: true, composed: true })));
+    this._f.addEventListener("value-changed", (e) => {
+      // Map the multi-select array back to the booleans before saving config
+      const newConfig = { ...e.detail.value };
+      const feats = newConfig.monitored_features || [];
+      newConfig.use_wan = feats.includes("wan");
+      newConfig.use_alarm = feats.includes("alarm");
+      newConfig.use_weather = feats.includes("weather");
+
+      this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: newConfig }, bubbles: true, composed: true }));
+    });
     this.appendChild(this._f);
   }
 }
