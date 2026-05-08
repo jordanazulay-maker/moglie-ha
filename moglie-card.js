@@ -163,11 +163,15 @@ class MoglieCardEditor extends HTMLElement {
       { name: "wan_entity", selector: { entity: { domain: "binary_sensor" } } },
       { name: "alarm_entity", selector: { entity: { domain: "alarm_control_panel" } } },
       { name: "weather_entity", selector: { entity: { domain: "weather" } } },
-      { name: "tap_action", selector: { ui_action: {} } },
-      { name: "hold_action", selector: { ui_action: {} } },
+      { type: "grid", schema: [
+        { name: "tap_action", selector: { ui_action: {} } },
+        { name: "hold_action", selector: { ui_action: {} } }
+      ]},
       { name: "enable_night_mode", selector: { boolean: {} } },
-      { name: "night_start", selector: { number: { min: 0, max: 23, mode: "box" } } },
-      { name: "night_end", selector: { number: { min: 0, max: 23, mode: "box" } } },
+      { type: "grid", schema: [
+        { name: "night_start", selector: { number: { min: 0, max: 23, mode: "box" } } },
+        { name: "night_end", selector: { number: { min: 0, max: 23, mode: "box" } } }
+      ]},
       { name: "use_custom_quotes", selector: { boolean: {} } }
     ];
     if (this._cfg.use_custom_quotes) {
