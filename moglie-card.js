@@ -210,6 +210,19 @@ class MoglieCard extends HTMLElement {
       alarmBorder = "2px solid var(--success-color, green)";
     }
 
+    // Determine patrol status for night mode
+    let patrolStatus = "";
+    if (isOffState) {
+      patrolStatus = "System Disarmed";
+    } else if (isHomeState) {
+      patrolStatus = "Armed Home";
+    } else {
+      patrolStatus = "Primates are on patrol";
+    }
+    
+    // Combine the base night quote with the alarm state
+    const fullNightQuote = `${quotes.night}<br><span style="font-size: 0.85em; font-weight: normal; opacity: 0.8;">(${patrolStatus})</span>`;
+
     this.content.className = "text-box";
     this.image.style.filter = "none"; 
 
@@ -229,7 +242,7 @@ class MoglieCard extends HTMLElement {
     } else if (isChristmas) {
       this.updateUI('festive', festive_b64, "The rest of the pack and I wish you a Merry Christmas!", alarmBorder);
     } else if (isNightMode) {
-      this.updateUI('sleepy', sleepy_b64, quotes.night, "2px solid #673AB7");
+      this.updateUI('sleepy', sleepy_b64, fullNightQuote, "2px solid #673AB7");
     } else if (isRaining) {
       this.updateUI('rainy', rainy_b64, quotes.rain, "2px solid #2196F3");
     } else if (showWinter) {
