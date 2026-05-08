@@ -15,10 +15,16 @@ class MoglieCard extends HTMLElement {
     
     if (!this.content) {
       this.innerHTML = `
+        <style>
+          .anti-gravity { transform: rotate(180deg); }
+          #m-cont { padding: 16px; border-radius: 10px; text-align: center; transition: all 0.3s ease; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+          #m-img { width: 100%; max-width: 150px; height: auto; aspect-ratio: 1/1; object-fit: contain; transition: transform 0.5s ease; }
+          #m-txt { margin-top: 10px; font-weight: bold; min-height: 2em; width: 100%; }
+        </style>
         <ha-card>
-          <div id="m-cont" style="padding: 16px; border-radius: 10px; text-align: center; transition: all 0.3s ease; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-            <img id="m-img" src="${n_b64}" style="width: 100%; max-width: 150px; height: auto; aspect-ratio: 1/1; object-fit: contain; transition: transform 0.5s ease;" />
-            <div id="m-txt" style="margin-top: 10px; font-weight: bold; min-height: 2em; width: 100%;"></div>
+          <div id="m-cont">
+            <img id="m-img" src="${n_b64}" />
+            <div id="m-txt"></div>
           </div>
         </ha-card>`;
       this.cont = this.querySelector('#m-cont');
@@ -28,20 +34,21 @@ class MoglieCard extends HTMLElement {
       let timer, moved = false;
       this.cont.addEventListener('pointerdown', () => {
         moved = false;
-        timer = setTimeout(() => { timer = null; this.handleAct('hold_action'); }, 500);
+        timer = setTimeout(() => { timer = null; this.handleAct('hold'); }, 500);
       });
       this.cont.addEventListener('pointermove', () => { moved = true; if (timer) clearTimeout(timer); });
+      this.cont.addEventListener('pointercancel', () => { if (timer) clearTimeout(timer); });
       this.cont.addEventListener('pointerup', () => {
-        if (timer && !moved) { clearTimeout(timer); this.handleAct('tap_action'); }
+        if (timer && !moved) { clearTimeout(timer); this.handleAct('tap'); }
       });
     }
     if (!config.wan_entity && !config.alarm_entity && !config.weather_entity) this.showErr("⚠️ Configure at least one entity (WAN, Alarm, Weather).");
   }
 
   handleAct(a) {
-    const act = this.config[a];
+    const act = this.config[a + '_action'];
     if (!act) {
-      if (a === 'tap_action' && this.config.alarm_entity) {
+      if (a === 'tap' && this.config.alarm_entity) {
         this.dispatchEvent(new CustomEvent('hass-more-info', { bubbles: true, composed: true, detail: { entityId: this.config.alarm_entity } }));
       }
       return;
@@ -95,7 +102,8 @@ class MoglieCard extends HTMLElement {
     const isXmas = mo === 11 && (dt === 24 || dt === 25); 
     const isApril = mo === 3 && dt === 1;
 
-    const nS = parseInt(c.night_start) || 22, nE = parseInt(c.night_end) || 6;
+    const nS = c.night_start !== undefined && c.night_start !== "" ? parseInt(c.night_start) : 22;
+    const nE = c.night_end !== undefined && c.night_end !== "" ? parseInt(c.night_end) : 6;
     const isNight = nS > nE ? (hr >= nS || hr < nE) : (hr >= nS && hr < nE);
     const showNight = c.enable_night_mode !== false && isNight;
 
