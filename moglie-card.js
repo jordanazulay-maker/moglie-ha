@@ -1,66 +1,90 @@
-set hass(hass) {
-    this._hass = hass;
-    if (!this.config) return;
-    
-    // Check if we have at least one entity to work with
-    const hasWan = !!this.config.wan_entity;
-    const hasAlarm = !!this.config.alarm_entity;
-    const hasWeather = !!this.config.weather_entity;
-    
-    if (!hasWan && !hasAlarm && !hasWeather) return;
+import { normal_monkey as normal_b64 } from './normal-monkey.js';
+import { winter_monkey as winter_b64 } from './winter-monkey.js';
+import { rainy_monkey as rainy_b64 } from './rainy-monkey.js';
+import { summer_monkey as summer_b64 } from './summer-monkey.js';
+import { sleepy_monkey as sleepy_b64 } from './sleepy-monkey.js';
+import { festive_monkey as festive_b64 } from './festive-monkey.js';
 
-    // Fetch states safely
-    const wanEntity = hasWan ? hass.states[this.config.wan_entity] : null;
-    const alarmEntity = hasAlarm ? hass.states[this.config.alarm_entity] : null;
-    const weatherEntity = hasWeather ? hass.states[this.config.weather_entity] : null;
+class MoglieCard extends HTMLElement {
+  static getConfigElement() { return document.createElement("moglie-card-editor"); }
+  static getStubConfig() {
+    return { wan_entity: "", alarm_entity: "", weather_entity: "", night_start: 22, night_end: 6 };
+  }
 
-    // Default values
-    const wanState = wanEntity ? String(wanEntity.state).toLowerCase() : 'on';
-    const alarmState = alarmEntity ? String(alarmEntity.state).toLowerCase() : 'disarmed';
-    const weatherState = weatherEntity ? String(weatherEntity.state).toLowerCase() : 'unknown';
-    
-    const isWanActive = wanState === 'on' || wanState === 'connected' || wanState === 'true'; 
-    const isOffState = alarmState.includes('disarmed') || alarmState === 'off';
-    const isHomeState = alarmState.includes('home') || alarmState.includes('night') || alarmState.includes('stay') || alarmState.includes('partial');
+  setConfig(config) {
+    this.config = config;
+    if (!this.content) {
+      this.innerHTML = `
+        <ha-card>
+          <div id="moglie-container" style="padding: 16px; border-radius: 10px; text-align: center; transition: all 0.3s ease; cursor: pointer;">
+            <img id="moglie-image" style="width: 150px; height: 150px; object-fit: contain;" />
+            <div id="moglie-text" style="margin-top: 10px; font-weight: bold; min-height: 2em;"></div>
+          </div>
+        </ha-card>`;
+      this.container = this.querySelector('#moglie-container');
+      this.image = this.querySelector('#moglie-image');
+      this.content = this.querySelector('#moglie-text');
+      this.image.src = normal_b64;
+    }
 
-    // ... (Keep existing Time/Holiday/Weather logic) ...
-
-    const quotes = {
-      offline: this.config.quote_offline || "Moglie is stranded. The WAN connection has been lost!",
-      cold: this.config.quote_cold || "Brrr! It's freezing out there!",
-      rain: this.config.quote_rain || "Looks like rain, grabbing my coat!",
-      hot: this.config.quote_hot || "It's boiling! Need a banana smoothie.",
-      night: this.config.quote_night || "Zzz... Moglie is sleeping...",
-      disarmed: this.config.quote_disarmed || "System's off! I'm taking a banana break.",
-      // DYNAMIC QUOTES: Only mention WAN if the entity exists
-      armedHome: this.config.quote_armed_home || (hasWan ? "Welcome Home! The WAN is strong." : "Welcome Home! Everything looks secure."),
-      armedAway: this.config.quote_armed_away || (hasWan ? "The WAN is stable. I'll watch the trees!" : "I'm watching the trees until you get back!")
-    };
-
-    // ... (Keep existing Border logic) ...
-
-    // UI Priority Tree
-    if (hasWan && !isWanActive) {
-      this.updateUI('normal', normal_b64, quotes.offline, "2px solid var(--disabled-text-color, gray)");
-      this.image.style.filter = "grayscale(100%)";
-    } else if (isAprilFools) {
-      this.updateUI('normal', normal_b64, "Why is the blood rushing to my head?", alarmBorder);
-    } else if (isChristmas) {
-      this.updateUI('festive', festive_b64, "Merry Christmas!", alarmBorder);
-    } else if (isNightMode) {
-      this.updateUI('sleepy', sleepy_b64, fullNightQuote, "2px solid #673AB7");
-    } else if (hasWeather && isRaining) {
-      this.updateUI('rainy', rainy_b64, quotes.rain, "2px solid #2196F3");
-    } else if (hasWeather && showWinter) {
-      this.updateUI('winter', winter_b64, quotes.cold, "2px solid #00BCD4");
-    } else if (hasWeather && isHot) {
-      this.updateUI('summer', summer_b64, quotes.hot, "2px solid #FF9800"); 
-    } else if (hasAlarm) {
-      // Use alarm-specific quotes if alarm is configured
-      const text = isOffState ? quotes.disarmed : (isHomeState ? quotes.armedHome : quotes.armedAway);
-      this.updateUI('normal', normal_b64, text, alarmBorder);
-    } else {
-      // Fallback if only WAN is configured and it is active
-      this.updateUI('normal', normal_b64, "Everything looks good!", alarmBorder);
+    if (!config.wan_entity && !config.alarm_entity && !config.weather_entity) {
+      this.showError("⚠️ Please configure at least one entity (WAN, Alarm, or Weather).");
     }
   }
+
+  showError(message) {
+    this.content.innerHTML = message;
+    this.container.style.border = "2px dashed red";
+    this.image.style.filter = "grayscale(100%)";
+  }
+
+  set hass(hass) {
+    this._hass = hass;
+    if (!this.config) return;
+
+    const hasWan = !!this.config.wan_entity && hass.states[this.config.wan_entity];
+    const hasAlarm = !!this.config.alarm_entity && hass.states[this.config.alarm_entity];
+    const hasWeather = !!this.config.weather_entity && hass.states[this.config.weather_entity];
+
+    if (!hasWan && !hasAlarm && !hasWeather) return;
+
+    const wanState = hasWan ? String(hass.states[this.config.wan_entity].state).toLowerCase() : 'on';
+    const alarmState = hasAlarm ? String(hass.states[this.config.alarm_entity].state).toLowerCase() : 'disarmed';
+    const weatherState = hasWeather ? String(hass.states[this.config.weather_entity].state).toLowerCase() : 'unknown';
+
+    const isWanActive = wanState === 'on' || wanState === 'connected' || wanState === 'true';
+    const isOffState = alarmState.includes('disarmed') || alarmState === 'off';
+    const isHomeState = alarmState.includes('home') || alarmState.includes('night') || alarmState.includes('stay');
+
+    const quotes = {
+      offline: this.config.quote_offline || "WAN connection lost!",
+      night: this.config.quote_night || "Zzz... Moglie is sleeping...",
+      disarmed: this.config.quote_disarmed || "System's off! Taking a banana break.",
+      armedHome: this.config.quote_armed_home || (hasWan ? "Welcome Home! WAN is strong." : "Welcome Home! Everything is secure."),
+      armedAway: this.config.quote_armed_away || (hasWan ? "WAN is stable. I'll watch the trees!" : "I'm watching the trees!")
+    };
+
+    let border = "2px solid gray";
+    if (hasAlarm) {
+      border = isOffState ? "2px solid orange" : (isHomeState ? "2px solid green" : "2px solid red");
+    }
+
+    this.image.style.filter = "none";
+    if (hasWan && !isWanActive) {
+      this.updateUI('normal', normal_b64, quotes.offline, "2px solid gray");
+      this.image.style.filter = "grayscale(100%)";
+    } else if (hasAlarm) {
+      const text = isOffState ? quotes.disarmed : (isHomeState ? quotes.armedHome : quotes.armedAway);
+      this.updateUI('normal', normal_b64, text, border);
+    } else {
+      this.updateUI('normal', normal_b64, "Moglie is standing by!", border);
+    }
+  }
+
+  updateUI(key, img, text, border) {
+    this.image.src = img;
+    this.content.innerHTML = text;
+    this.container.style.border = border;
+  }
+}
+customElements.define('moglie-card', MoglieCard);
