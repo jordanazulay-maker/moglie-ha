@@ -11,7 +11,6 @@ class MoglieCard extends HTMLElement {
   static getStubConfig() { return { use_wan: false, use_alarm: false, use_weather: false, wan_entity: "", alarm_entity: "", weather_entity: "", enable_night_mode: true, night_start: 22, night_end: 6, use_custom_quotes: false, hide_moglie: false }; }
 
   setConfig(config) {
-    // Clone config and set legacy fallbacks so existing users don't break
     this.config = { ...config };
     if (this.config.use_wan === undefined) this.config.use_wan = !!this.config.wan_entity;
     if (this.config.use_alarm === undefined) this.config.use_alarm = !!this.config.alarm_entity;
@@ -242,12 +241,10 @@ class MoglieCardEditor extends HTMLElement {
   setConfig(config) { 
     this._cfg = { ...config }; 
     
-    // Legacy fallback
     if (this._cfg.use_wan === undefined) this._cfg.use_wan = !!this._cfg.wan_entity;
     if (this._cfg.use_alarm === undefined) this._cfg.use_alarm = !!this._cfg.alarm_entity;
     if (this._cfg.use_weather === undefined) this._cfg.use_weather = !!this._cfg.weather_entity;
 
-    // Build the array for the multi-select dropdown
     this._cfg.monitored_features = [];
     if (this._cfg.use_wan) this._cfg.monitored_features.push("wan");
     if (this._cfg.use_alarm) this._cfg.monitored_features.push("alarm");
@@ -265,6 +262,7 @@ class MoglieCardEditor extends HTMLElement {
         selector: { 
           select: { 
             multiple: true, 
+            mode: "dropdown",
             options: [
               { label: "WAN Status", value: "wan" },
               { label: "Security Alarm", value: "alarm" },
@@ -317,7 +315,6 @@ class MoglieCardEditor extends HTMLElement {
     this._upd();
     this._f.computeLabel = (s) => M_LBLS[s.name] || s.name;
     this._f.addEventListener("value-changed", (e) => {
-      // Map the multi-select array back to the booleans before saving config
       const newConfig = { ...e.detail.value };
       const feats = newConfig.monitored_features || [];
       newConfig.use_wan = feats.includes("wan");
