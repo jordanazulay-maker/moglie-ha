@@ -135,11 +135,9 @@ class MoglieCard extends HTMLElement {
 
     const currentHour = new Date().getHours();
     
-    // --- TEST MODE FOR MAY 7TH --- 
-    // Remember to change this back to: d.getMonth() === 11 && (d.getDate() === 24 || d.getDate() === 25);
+    // Real Christmas Date Logic
     const d = new Date();
-    const isChristmas = d.getMonth() === 4 && d.getDate() === 7; 
-    // -----------------------------
+    const isChristmas = d.getMonth() === 11 && (d.getDate() === 24 || d.getDate() === 25); 
     
     const nightStart = parseInt(this.config.night_start) || 22;
     const nightEnd = parseInt(this.config.night_end) || 6;
@@ -197,6 +195,14 @@ class MoglieCard extends HTMLElement {
       armedAway: this.config.quote_armed_away || "The rest of the primates are on patrol. I'll watch the trees until they get back!"
     };
 
+    // Determine the border color based on the alarm state
+    let alarmBorder = "2px solid var(--error-color, red)"; // Default to Armed Away
+    if (isOffState) {
+      alarmBorder = "2px solid var(--warning-color, orange)";
+    } else if (isHomeState) {
+      alarmBorder = "2px solid var(--success-color, green)";
+    }
+
     this.content.className = "text-box";
     this.image.style.filter = "none"; 
 
@@ -205,7 +211,7 @@ class MoglieCard extends HTMLElement {
       this.content.classList.add("status-warning");
       this.image.style.filter = "grayscale(100%)";
     } else if (isChristmas) {
-      this.updateUI('festive', festive_b64, "The rest of the pack and I wish you a merry christmas", "2px solid #D32F2F");
+      this.updateUI('festive', festive_b64, "The rest of the pack and I wish you a merry christmas", alarmBorder);
     } else if (isNightMode) {
       this.updateUI('sleepy', sleepy_b64, quotes.night, "2px solid #673AB7");
     } else if (isRaining) {
