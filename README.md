@@ -30,6 +30,7 @@
     <li><b>✏️ Fully Customizable Text:</b> You can now customize every single message Moglie says directly in the Visual Editor to fit your exact style.</li>
     <li><b>Dynamic Visuals:</b> Card border colors shift dynamically based on status, and Moglie goes grayscale when stranded offline.</li>
     <li><b>Interactive Dialogs:</b> Tap the card to instantly bring up the more-info dialog for your designated alarm entity.</li>
+    <li><b>🎁 Hidden Surprises:</b> Moglie loves to celebrate! Keep an eye on him during certain times of the year—you might catch him feeling unusually festive or acting a little topsy-turvy.</li>
     <li><b>🛠️ Self-Healing & Stability:</b> Built-in image load auto-retries and a handy "Reload Dashboard" button if entities are missing or need a fresh pull after an update! Oh, and check your browser console for a surprise when he wakes up.</li>
     <li><b>Zero Dependencies:</b> Built entirely as a standalone custom card.</li>
     <li><b>Visual Editor:</b> Easily configure your entities, custom text, and sleep schedule right from the Home Assistant UI without writing any code.</li>
@@ -53,6 +54,11 @@
     <li>☔ <b>Raining:</b> Blue border + Rainy Monkey. <i>"Looks like rain, grabbing my coat!"</i></li>
     <li>❄️ <b>Cold/Snow:</b> Cyan border + Winter Monkey. <i>"Brrr! It's freezing out there!"</i></li>
     <li>😎 <b>Hot:</b> Yellow-Orange border + Summer Monkey. <i>"It's boiling! Need a banana smoothie."</i></li>
+  </ul>
+
+  <h4>🤫 Secret Seasonal Anomalies:</h4>
+  <ul>
+    <li>📅 <b>??? :</b> Rumor has it Moglie occasionally checks the calendar. Be on the lookout during a certain festive winter holiday or a notoriously silly spring day. He might just show off a rare outfit or completely forget how gravity works... you'll just have to wait and see!</li>
   </ul>
 
 </div>
