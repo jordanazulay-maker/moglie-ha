@@ -68,7 +68,7 @@ class MoglieCard extends HTMLElement {
 
   showErr(m) {
     this.txt.innerHTML = `<div style="margin-bottom:12px;">${m}</div>`;
-    this.cont.style.border = "2px dashed red";
+    this.cont.style.border = "2px dashed var(--error-color, red)";
     this.img.style.filter = "grayscale(100%)";
   }
 
@@ -132,14 +132,14 @@ class MoglieCard extends HTMLElement {
     if (alrm) {
       if (aHome) {
         patrolTxt = showNight 
-          ? "<br><small style='color:#4CAF50;font-weight:bold;'>(Primates are silently securing the perimeter.)</small>" 
-          : "<br><small style='color:#4CAF50;font-weight:bold;'>(Primates are on perimeter patrol.)</small>";
+          ? "<br><small style='color:var(--success-color, #4CAF50);font-weight:bold;'>(Primates are silently securing the perimeter.)</small>" 
+          : "<br><small style='color:var(--success-color, #4CAF50);font-weight:bold;'>(Primates are on perimeter patrol.)</small>";
       } else if (aOff) {
-        patrolTxt = "<br><small style='color:orange;font-weight:bold;'>(But the primates are off duty! Who is watching the trees?!)</small>";
+        patrolTxt = "<br><small style='color:var(--warning-color, orange);font-weight:bold;'>(But the primates are off duty! Who is watching the trees?!)</small>";
       } else {
         patrolTxt = showNight 
-          ? "<br><small style='color:#F44336;font-weight:bold;'>(Primates are on HIGH ALERT in the dark!)</small>" 
-          : "<br><small style='color:#F44336;font-weight:bold;'>(Primates are on HIGH ALERT!)</small>";
+          ? "<br><small style='color:var(--error-color, #F44336);font-weight:bold;'>(Primates are on HIGH ALERT in the dark!)</small>" 
+          : "<br><small style='color:var(--error-color, #F44336);font-weight:bold;'>(Primates are on HIGH ALERT!)</small>";
       }
     }
 
@@ -164,18 +164,18 @@ class MoglieCard extends HTMLElement {
 
     let outfit = n_b64;
     let quote = "Moglie is standing by!";
-    let border = "2px solid #03a9f4";
+    let border = "2px solid var(--primary-color, #03a9f4)";
     let isGrayscale = false;
 
     if (alrm) {
-      border = aOff ? "2px solid orange" : (aHome ? "2px solid #4CAF50" : "2px solid #F44336");
+      border = aOff ? "2px solid var(--warning-color, orange)" : (aHome ? "2px solid var(--success-color, #4CAF50)" : "2px solid var(--error-color, #F44336)");
       quote = aOff ? q.dis : (aHome ? q.home : q.away);
     }
 
     if (wan && !wanOk) { 
       outfit = n_b64; 
       quote = q.off; 
-      border = "2px solid gray"; 
+      border = "2px solid var(--disabled-text-color, gray)"; 
       isGrayscale = true; 
       patrolTxt = ""; 
     }
@@ -190,22 +190,22 @@ class MoglieCard extends HTMLElement {
     else if (showNight) { 
       outfit = sl_b64; 
       quote = q.night; 
-      border = "2px solid #673AB7"; 
+      border = "2px solid var(--primary-color, #673AB7)"; 
     }
     else if (wthr && isRain) { 
       outfit = r_b64; 
       quote = q.rain; 
-      border = "2px solid #2196F3"; 
+      border = "2px solid var(--info-color, #2196F3)"; 
     }
     else if (wthr && (isSnow || isCold)) { 
       outfit = w_b64; 
       quote = q.cold; 
-      border = "2px solid #00BCD4"; 
+      border = "2px solid var(--info-color, #00BCD4)"; 
     }
     else if (wthr && isHot) { 
       outfit = isHumid ? sw_b64 : s_b64; 
       quote = q.hot; 
-      border = "2px solid #FF9800"; 
+      border = "2px solid var(--warning-color, #FF9800)"; 
     }
 
     quote += patrolTxt;
@@ -213,7 +213,7 @@ class MoglieCard extends HTMLElement {
     if (c.hide_moglie) {
       this.img.style.display = "none";
       let cleanQuote = quote.replace(/<br>|<small.*?>|<\/small>/g, ' ').replace(/\s+/g, ' ').trim();
-      quote = `<div style="color: gray; font-size: 0.85em; text-transform: uppercase; margin-bottom: 4px;">Moglie's latest update:</div><i>"${cleanQuote}"</i>`;
+      quote = `<div style="color: var(--secondary-text-color, gray); font-size: 0.85em; text-transform: uppercase; margin-bottom: 4px;">Moglie's latest update:</div><i>"${cleanQuote}"</i>`;
     } else {
       this.img.style.display = "block";
     }
