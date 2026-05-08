@@ -1,295 +1,202 @@
-import { normal_monkey as normal_b64 } from './normal-monkey.js';
-import { winter_monkey as winter_b64 } from './winter-monkey.js';
-import { rainy_monkey as rainy_b64 } from './rainy-monkey.js';
-import { summer_monkey as summer_b64 } from './summer-monkey.js';
-import { sleepy_monkey as sleepy_b64 } from './sleepy-monkey.js';
-import { festive_monkey as festive_b64 } from './festive-monkey.js';
+import { normal_monkey as n_b64 } from './normal-monkey.js';
+import { winter_monkey as w_b64 } from './winter-monkey.js';
+import { rainy_monkey as r_b64 } from './rainy-monkey.js';
+import { summer_monkey as s_b64 } from './summer-monkey.js';
+import { sleepy_monkey as sl_b64 } from './sleepy-monkey.js';
+import { festive_monkey as f_b64 } from './festive-monkey.js';
 
 /* -------------------------------------------------------------------
-   MAIN CARD COMPONENT
+   MAIN CARD COMPONENT - ECO OPTIMIZED
 ------------------------------------------------------------------- */
 class MoglieCard extends HTMLElement {
-  
-  static getConfigElement() {
-    return document.createElement("moglie-card-editor");
-  }
-
-  static getStubConfig() {
-    return { 
-      wan_entity: "", 
-      alarm_entity: "", 
-      weather_entity: "", 
-      enable_night_mode: true,
-      night_start: 22, 
-      night_end: 6 
-    };
-  }
+  static getConfigElement() { return document.createElement("moglie-card-editor"); }
+  static getStubConfig() { return { wan_entity: "", alarm_entity: "", weather_entity: "", enable_night_mode: true, night_start: 22, night_end: 6 }; }
 
   setConfig(config) {
     this.config = config;
-
     if (!this.content) {
       this.innerHTML = `
         <ha-card>
-          <div id="moglie-container" style="padding: 16px; border-radius: 10px; text-align: center; transition: all 0.3s ease; cursor: pointer;">
-            <img id="moglie-image" data-img-src="normal" style="width: 150px; height: 150px; object-fit: contain; transition: transform 0.5s ease;" />
-            <div id="moglie-text" style="margin-top: 10px; font-weight: bold; min-height: 2em;"></div>
+          <div id="m-cont" style="padding: 16px; border-radius: 10px; text-align: center; transition: all 0.3s ease; cursor: pointer;">
+            <img id="m-img" src="${n_b64}" style="width: 150px; height: 150px; object-fit: contain; transition: transform 0.5s ease;" />
+            <div id="m-txt" style="margin-top: 10px; font-weight: bold; min-height: 2em;"></div>
           </div>
-        </ha-card>
-      `;
-      this.container = this.querySelector('#moglie-container');
-      this.image = this.querySelector('#moglie-image');
-      this.content = this.querySelector('#moglie-text');
-      this.image.src = normal_b64;
+        </ha-card>`;
+      this.cont = this.querySelector('#m-cont');
+      this.img = this.querySelector('#m-img');
+      this.txt = this.querySelector('#m-txt');
 
-      this.container.addEventListener('click', () => {
-        if (!this.config || !this.config.alarm_entity) return;
-        this.dispatchEvent(new CustomEvent('hass-more-info', {
-          bubbles: true, composed: true, detail: { entityId: this.config.alarm_entity }
-        }));
+      this.cont.addEventListener('click', () => {
+        if (this.config?.alarm_entity) this.dispatchEvent(new CustomEvent('hass-more-info', { bubbles: true, composed: true, detail: { entityId: this.config.alarm_entity } }));
       });
     }
-
-    if (!config.wan_entity && !config.alarm_entity && !config.weather_entity) {
-      this.showError("⚠️ Please configure at least one entity (WAN, Alarm, or Weather).");
-    }
+    if (!config.wan_entity && !config.alarm_entity && !config.weather_entity) this.showErr("⚠️ Configure at least one entity (WAN, Alarm, Weather).");
   }
 
-  showError(message) {
-    this.content.innerHTML = `<div style="margin-bottom: 12px;">${message}</div>`;
-    this.container.style.border = "2px dashed var(--error-color, red)";
-    this.image.src = normal_b64;
-    this.image.style.filter = "grayscale(100%)";
+  showErr(m) {
+    this.txt.innerHTML = `<div style="margin-bottom:12px;">${m}</div>`;
+    this.cont.style.border = "2px dashed red";
+    this.img.style.filter = "grayscale(100%)";
   }
 
   set hass(hass) {
-    this._hass = hass;
     if (!this.config) return;
-
-    // 1. Fetch states safely
-    const hasWan = this.config.wan_entity && hass.states[this.config.wan_entity];
-    const hasAlarm = this.config.alarm_entity && hass.states[this.config.alarm_entity];
-    const hasWeather = this.config.weather_entity && hass.states[this.config.weather_entity];
-
-    if (!hasWan && !hasAlarm && !hasWeather) return;
-
-    const wanEntity = hasWan ? hass.states[this.config.wan_entity] : null;
-    const alarmEntity = hasAlarm ? hass.states[this.config.alarm_entity] : null;
-    const weatherEntity = hasWeather ? hass.states[this.config.weather_entity] : null;
-
-    const wanState = hasWan ? String(wanEntity.state).toLowerCase() : 'on';
-    const alarmState = hasAlarm ? String(alarmEntity.state).toLowerCase() : 'disarmed';
-    const weatherState = hasWeather ? String(weatherEntity.state).toLowerCase() : 'unknown';
-
-    const isWanActive = wanState === 'on' || wanState === 'connected' || wanState === 'true';
-    const isOffState = alarmState.includes('disarmed') || alarmState === 'off';
-    const isHomeState = alarmState.includes('home') || alarmState.includes('night') || alarmState.includes('stay');
-
-    // 2. Weather Logic 
-    const isRaining = weatherState.includes('rain') || weatherState.includes('pour') || weatherState.includes('shower') || weatherState.includes('storm');
+    const c = this.config;
     
-    let temp = null;
-    let isF = true, isC = false;
-    
-    if (hasWeather) {
-      if (weatherEntity.attributes && weatherEntity.attributes.temperature !== undefined) {
-        temp = parseFloat(weatherEntity.attributes.temperature);
-      } else if (!isNaN(parseFloat(weatherState))) {
-        temp = parseFloat(weatherState);
-      }
-      
-      let unitStr = 'F';
-      if (weatherEntity.attributes) {
-        unitStr = weatherEntity.attributes.temperature_unit || weatherEntity.attributes.unit_of_measurement || 'F';
-      }
-      isF = String(unitStr).toUpperCase().includes('F');
-      isC = String(unitStr).toUpperCase().includes('C');
-    }
+    const wan = c.wan_entity ? hass.states[c.wan_entity] : null;
+    const alrm = c.alarm_entity ? hass.states[c.alarm_entity] : null;
+    const wthr = c.weather_entity ? hass.states[c.weather_entity] : null;
 
-    const isSnowing = ['snowy', 'snowy-rainy', 'hail'].includes(weatherState);
-    const isHot = temp !== null && ((isF && temp >= 80) || (isC && temp >= 27));
-    const isCold = temp !== null && ((isF && temp < 50) || (isC && temp < 10));
-    const showWinter = isSnowing || isCold;
+    if (!wan && !alrm && !wthr) return;
 
-    // 3. Time Intelligence & Holidays
+    // Fast-track strings
+    const wState = wan ? wan.state.toLowerCase() : 'on';
+    const aState = alrm ? alrm.state.toLowerCase() : 'disarmed';
+    const weState = wthr ? wthr.state.toLowerCase() : 'unknown';
+
     const d = new Date();
-    const currentHour = d.getHours();
-    const currentDay = d.getDay(); 
-    const isWeekend = currentDay === 0 || currentDay === 6;
+    const hr = d.getHours();
 
-    const isChristmas = d.getMonth() === 11 && (d.getDate() === 24 || d.getDate() === 25); 
-    const isAprilFools = d.getMonth() === 3 && d.getDate() === 1;
+    // 🚀 ULTRA-OPTIMIZATION: The Fast-Bail Cache
+    // Halts processing instantly if crucial elements haven't changed since the last HA tick
+    const sHash = `${wState}|${aState}|${weState}|${hr}|${d.getDate()}|${c.enable_night_mode}`;
+    if (this._last === sHash) return; 
+    this._last = sHash;
 
-    const nightStart = parseInt(this.config.night_start) || 22;
-    const nightEnd = parseInt(this.config.night_end) || 6;
-    let isNightTime = nightStart > nightEnd ? (currentHour >= nightStart || currentHour < nightEnd) : (currentHour >= nightStart && currentHour < nightEnd);
-    const showNight = (this.config.enable_night_mode !== false) && isNightTime;
+    // Core Logic Flags
+    const wanOk = /on|connected|true/.test(wState);
+    const aOff = /disarmed|off/.test(aState);
+    const aHome = /home|night|stay/.test(aState);
 
-    // 4. Cache check to prevent freezing 
-    const configHash = `${this.config.wan_entity}-${this.config.alarm_entity}-${this.config.weather_entity}-${this.config.enable_night_mode}`;
-    const statusKey = `${wanState}-${alarmState}-${weatherState}-${showNight}-${isChristmas}-${isAprilFools}-${currentHour}-${configHash}`;
-    if (this._lastStatus === statusKey) return; 
-    this._lastStatus = statusKey;
+    // Weather Engine
+    let t = null, isF = true, isC = false;
+    if (wthr) {
+      t = parseFloat(wthr.attributes?.temperature ?? weState);
+      const unit = (wthr.attributes?.temperature_unit || wthr.attributes?.unit_of_measurement || 'F').toUpperCase();
+      isF = unit.includes('F');
+      isC = unit.includes('C');
+    }
+    const isRain = /(rain|pour|shower|storm)/.test(weState);
+    const isSnow = /(snow|hail)/.test(weState);
+    const isHot = t !== null && (isF ? t >= 80 : t >= 27);
+    const isCold = t !== null && (isF ? t < 50 : t < 10);
 
-    // 5. Build Dynamic Time Greetings
-    let timeGreeting = "";
-    if (!showNight && !isChristmas && !isAprilFools) {
-      if (currentHour >= 6 && currentHour < 11) {
-        timeGreeting = isWeekend ? "Lazy weekend morning! " : "Good morning! I need a banana coffee. ";
-      } else if (currentHour >= 11 && currentHour < 17) {
-        timeGreeting = isWeekend ? "Weekend vibes! " : "Afternoon watch is clear. ";
-      } else if (currentHour >= 17 && currentHour < nightStart) {
-        timeGreeting = "Sun's getting low. ";
-      }
+    // Time & Holiday Engine
+    const isWknd = d.getDay() === 0 || d.getDay() === 6;
+    const mo = d.getMonth(), dt = d.getDate();
+    const isXmas = mo === 11 && (dt === 24 || dt === 25); 
+    const isApril = mo === 3 && dt === 1;
+
+    const nS = parseInt(c.night_start) || 22, nE = parseInt(c.night_end) || 6;
+    const isNight = nS > nE ? (hr >= nS || hr < nE) : (hr >= nS && hr < nE);
+    const showNight = c.enable_night_mode !== false && isNight;
+
+    // Text Engine: Greetings
+    let greet = "";
+    if (!showNight && !isXmas && !isApril) {
+      if (hr >= 6 && hr < 11) greet = isWknd ? "Lazy weekend morning! " : "Good morning! I need a banana coffee. ";
+      else if (hr >= 11 && hr < 17) greet = isWknd ? "Weekend vibes! " : "Afternoon watch is clear. ";
+      else if (hr >= 17 && hr < nS) greet = "Sun's getting low. ";
     }
 
-    // 6. Build The Troop vs Primates Quotes
-    let nightText = "";
-    if (hasAlarm) {
-      if (isHomeState) {
-        nightText = "The troop is fast asleep in the canopy. <br><small style='color: var(--success-color, #4CAF50); font-weight: bold;'>(Primates are silently securing the perimeter.)</small>";
-      } 
-      else if (isOffState) {
-        nightText = "The troop is sleeping... <br><small style='color: var(--warning-color, orange); font-weight: bold;'>(But the primates are off duty! Who is watching the trees?!)</small>";
-      } 
-      else {
-        nightText = "The canopy is empty tonight. <br><small style='color: var(--error-color, #F44336); font-weight: bold;'>(Primates are on HIGH ALERT in the dark!)</small>";
-      }
-    } else {
-      nightText = "The troop is sleeping...";
+    // Text Engine: Night Troop Logic
+    let nTxt = "The troop is sleeping...";
+    if (alrm) {
+      if (aHome) nTxt = "The troop is fast asleep in the canopy. <br><small style='color:#4CAF50;font-weight:bold;'>(Primates are silently securing the perimeter.)</small>";
+      else if (aOff) nTxt = "The troop is sleeping... <br><small style='color:orange;font-weight:bold;'>(But the primates are off duty! Who is watching the trees?!)</small>";
+      else nTxt = "The canopy is empty tonight. <br><small style='color:#F44336;font-weight:bold;'>(Primates are on HIGH ALERT in the dark!)</small>";
     }
-    const fullNightQuote = this.config.quote_night || nightText;
 
-    let armedHomeText = isWeekend ? "The troop is relaxing in the branches. " : "The troop is home. ";
-    armedHomeText += "The primates are on perimeter patrol.";
-    let disarmedText = "System's off! The primates ditched their post for a banana run.";
+    const aHomeTxt = (isWknd ? "The troop is relaxing in the branches. " : "The troop is home. ") + "The primates are on perimeter patrol.";
+    const disTxt = "System's off! The primates ditched their post for a banana run.";
 
-    const quotes = {
-      offline: this.config.quote_offline || "Moglie is stranded. The WAN connection has been lost!",
-      cold: this.config.quote_cold || "Brrr! It's freezing out there!",
-      rain: this.config.quote_rain || "Looks like rain, grabbing my coat!",
-      hot: this.config.quote_hot || "It's boiling! Need a banana smoothie.",
-      disarmed: this.config.quote_disarmed || `${timeGreeting}${disarmedText}`,
-      armedHome: this.config.quote_armed_home || `${timeGreeting}${armedHomeText}`,
-      armedAway: this.config.quote_armed_away || "The troop is away. The primates are watching the trees!"
+    const q = {
+      off: c.quote_offline || "Moglie is stranded. The WAN connection has been lost!",
+      cold: c.quote_cold || "Brrr! It's freezing out there!",
+      rain: c.quote_rain || "Looks like rain, grabbing my coat!",
+      hot: c.quote_hot || "It's boiling! Need a banana smoothie.",
+      dis: c.quote_disarmed || `${greet}${disTxt}`,
+      home: c.quote_armed_home || `${greet}${aHomeTxt}`,
+      away: c.quote_armed_away || "The troop is away. The primates are watching the trees!",
+      night: c.quote_night || nTxt
     };
 
-    // 7. Set Borders
-    let dynamicBorder = "2px solid var(--primary-color, #03a9f4)";
-    if (hasAlarm) {
-      dynamicBorder = isOffState ? "2px solid var(--warning-color, orange)" : (isHomeState ? "2px solid var(--success-color, green)" : "2px solid var(--error-color, red)");
-    }
+    // Styling Engine
+    let bdr = "2px solid #03a9f4";
+    if (alrm) bdr = aOff ? "2px solid orange" : (aHome ? "2px solid #4CAF50" : "2px solid #F44336");
 
-    this.image.style.filter = "none";
-    if (isAprilFools) this.image.classList.add('anti-gravity'); else this.image.classList.remove('anti-gravity');
+    this.img.style.filter = "none";
+    if (isApril) this.img.classList.add('anti-gravity'); else this.img.classList.remove('anti-gravity');
     
-    // 8. Priority rendering tree
-    if (hasWan && !isWanActive) {
-      this.updateUI('normal', normal_b64, quotes.offline, "2px solid var(--disabled-text-color, gray)");
-      this.image.style.filter = "grayscale(100%)";
-    } else if (isAprilFools) {
-      this.updateUI('normal', normal_b64, "Why is the blood rushing to my head?", dynamicBorder);
-    } else if (isChristmas) {
-      this.updateUI('festive', festive_b64, "Merry Christmas to the troop!", dynamicBorder);
-    } else if (showNight) {
-      this.updateUI('sleepy', sleepy_b64, fullNightQuote, "2px solid #673AB7");
-    } else if (hasWeather && isRaining) {
-      this.updateUI('rainy', rainy_b64, quotes.rain, "2px solid #2196F3");
-    } else if (hasWeather && showWinter) {
-      this.updateUI('winter', winter_b64, quotes.cold, "2px solid #00BCD4");
-    } else if (hasWeather && isHot) {
-      this.updateUI('summer', summer_b64, quotes.hot, "2px solid #FF9800"); 
-    } else if (hasAlarm) {
-      const text = isOffState ? quotes.disarmed : (isHomeState ? quotes.armedHome : quotes.armedAway);
-      this.updateUI('normal', normal_b64, text, dynamicBorder);
-    } else {
-      this.updateUI('normal', normal_b64, "Moglie is standing by!", dynamicBorder);
+    // Render Tree
+    if (wan && !wanOk) {
+      this.upd(n_b64, q.off, "2px solid gray");
+      this.img.style.filter = "grayscale(100%)";
     }
+    else if (isApril) this.upd(n_b64, "Why is the blood rushing to my head?", bdr);
+    else if (isXmas) this.upd(f_b64, "Merry Christmas to the troop!", bdr);
+    else if (showNight) this.upd(sl_b64, q.night, "2px solid #673AB7");
+    else if (wthr && isRain) this.upd(r_b64, q.rain, "2px solid #2196F3");
+    else if (wthr && (isSnow || isCold)) this.upd(w_b64, q.cold, "2px solid #00BCD4");
+    else if (wthr && isHot) this.upd(s_b64, q.hot, "2px solid #FF9800"); 
+    else if (alrm) this.upd(n_b64, aOff ? q.dis : (aHome ? q.home : q.away), bdr);
+    else this.upd(n_b64, "Moglie is standing by!", bdr);
   }
 
-  updateUI(monkeyKey, imgBase64, text, borderStyle) {
-    if (this.image.getAttribute('data-img-src') !== monkeyKey) {
-      this.image.setAttribute('data-img-src', monkeyKey);
-      this.image.src = imgBase64;
-    }
-    this.content.innerHTML = text;
-    this.container.style.border = borderStyle;
+  // DOM Minimizer: Only repaints if values diverge
+  upd(img, txt, bdr) {
+    if (this.img.src !== img) this.img.src = img;
+    if (this.txt.innerHTML !== txt) this.txt.innerHTML = txt;
+    if (this.cont.style.border !== bdr) this.cont.style.border = bdr;
   }
 }
 customElements.define('moglie-card', MoglieCard);
 
 /* -------------------------------------------------------------------
-   VISUAL EDITOR COMPONENT
+   VISUAL EDITOR COMPONENT - STATIC CACHED
 ------------------------------------------------------------------- */
-class MoglieCardEditor extends HTMLElement {
-  setConfig(config) {
-    this._config = config;
-    if (this._form) this._form.data = config; else this.render();
-  }
+const MOGLIE_SCHEMA = [
+  { name: "wan_entity", selector: { entity: { domain: "binary_sensor" } } },
+  { name: "alarm_entity", selector: { entity: { domain: "alarm_control_panel" } } },
+  { name: "weather_entity", selector: { entity: { domain: "weather" } } },
+  { name: "enable_night_mode", label: "Enable Night Mode", selector: { boolean: {} } },
+  { name: "night_start", selector: { number: { min: 0, max: 23, mode: "box" } } },
+  { name: "night_end", selector: { number: { min: 0, max: 23, mode: "box" } } },
+  { name: "quote_offline", selector: { text: {} } },
+  { name: "quote_disarmed", selector: { text: {} } },
+  { name: "quote_armed_home", selector: { text: {} } },
+  { name: "quote_armed_away", selector: { text: {} } },
+  { name: "quote_night", selector: { text: {} } },
+  { name: "quote_hot", selector: { text: {} } },
+  { name: "quote_cold", selector: { text: {} } },
+  { name: "quote_rain", selector: { text: {} } }
+];
 
-  set hass(hass) {
-    this._hass = hass;
-    if (this._form) this._form.hass = hass; else this.render();
-  }
+const MOGLIE_LABELS = {
+  wan_entity: "WAN Entity (binary_sensor)", alarm_entity: "Alarm Entity (alarm_control_panel)", weather_entity: "Weather Entity (weather)", enable_night_mode: "Enable Night Mode (Sleepy Monkey)", night_start: "Night Mode Start Hour (0-23)", night_end: "Night Mode End Hour (0-23)", quote_offline: "Custom Quote: WAN Offline", quote_disarmed: "Custom Quote: Disarmed", quote_armed_home: "Custom Quote: Armed Home", quote_armed_away: "Custom Quote: Armed Away", quote_night: "Custom Quote: Night Mode", quote_hot: "Custom Quote: Hot Weather", quote_cold: "Custom Quote: Cold Weather", quote_rain: "Custom Quote: Rainy Weather"
+};
+
+class MoglieCardEditor extends HTMLElement {
+  setConfig(config) { this._cfg = config; if (this._f) this._f.data = config; else this.render(); }
+  set hass(hass) { this._h = hass; if (this._f) this._f.hass = hass; else this.render(); }
 
   render() {
-    if (!this._hass || !this._config || this._form) return;
-    this._form = document.createElement("ha-form");
-    this._form.hass = this._hass;
-    this._form.data = this._config;
-
-    this._form.schema = [
-      { name: "wan_entity", selector: { entity: { domain: "binary_sensor" } } },
-      { name: "alarm_entity", selector: { entity: { domain: "alarm_control_panel" } } },
-      { name: "weather_entity", selector: { entity: { domain: "weather" } } },
-      { name: "enable_night_mode", label: "Enable Night Mode", selector: { boolean: {} } },
-      { name: "night_start", selector: { number: { min: 0, max: 23, mode: "box" } } },
-      { name: "night_end", selector: { number: { min: 0, max: 23, mode: "box" } } },
-      { name: "quote_offline", selector: { text: {} } },
-      { name: "quote_disarmed", selector: { text: {} } },
-      { name: "quote_armed_home", selector: { text: {} } },
-      { name: "quote_armed_away", selector: { text: {} } },
-      { name: "quote_night", selector: { text: {} } },
-      { name: "quote_hot", selector: { text: {} } },
-      { name: "quote_cold", selector: { text: {} } },
-      { name: "quote_rain", selector: { text: {} } }
-    ];
-
-    this._form.computeLabel = (schema) => {
-      const labels = {
-        wan_entity: "WAN Entity (binary_sensor)",
-        alarm_entity: "Alarm Entity (alarm_control_panel)",
-        weather_entity: "Weather Entity (weather)",
-        enable_night_mode: "Enable Night Mode (Sleepy Monkey)",
-        night_start: "Night Mode Start Hour (0-23)",
-        night_end: "Night Mode End Hour (0-23)",
-        quote_offline: "Custom Quote: WAN Offline",
-        quote_disarmed: "Custom Quote: Disarmed",
-        quote_armed_home: "Custom Quote: Armed Home",
-        quote_armed_away: "Custom Quote: Armed Away",
-        quote_night: "Custom Quote: Night Mode",
-        quote_hot: "Custom Quote: Hot Weather",
-        quote_cold: "Custom Quote: Cold Weather",
-        quote_rain: "Custom Quote: Rainy Weather"
-      };
-      return labels[schema.name] || schema.name;
-    };
-
-    this._form.addEventListener("value-changed", (ev) => {
+    if (!this._h || !this._cfg || this._f) return;
+    this._f = document.createElement("ha-form");
+    this._f.hass = this._h;
+    this._f.data = this._cfg;
+    this._f.schema = MOGLIE_SCHEMA;
+    this._f.computeLabel = (s) => MOGLIE_LABELS[s.name] || s.name;
+    this._f.addEventListener("value-changed", (ev) => {
       this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: ev.detail.value }, bubbles: true, composed: true }));
     });
-    this.appendChild(this._form);
+    this.appendChild(this._f);
   }
 }
 customElements.define("moglie-card-editor", MoglieCardEditor);
 
 /* -------------------------------------------------------------------
-   CARD REGISTRATION (Required to show up in Dashboard)
+   CARD REGISTRATION
 ------------------------------------------------------------------- */
 window.customCards = window.customCards || [];
-window.customCards.push({
-  type: "moglie-card",
-  name: "Moglie HA",
-  description: "Moglie monitors your WAN, Weather, and Security state with Time Intelligence.",
-  preview: true
-});
+window.customCards.push({ type: "moglie-card", name: "Moglie HA", description: "Moglie monitors your Troop, Weather, and Canopy with Eco-Intelligence.", preview: true });
