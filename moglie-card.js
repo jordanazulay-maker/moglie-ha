@@ -134,8 +134,13 @@ class MoglieCard extends HTMLElement {
     const isHomeState = alarmState.includes('home') || alarmState.includes('night') || alarmState.includes('stay') || alarmState.includes('partial');
 
     const currentHour = new Date().getHours();
+    
+    // --- TEST MODE FOR MAY 7TH --- 
+    // Remember to change this back to: d.getMonth() === 11 && (d.getDate() === 24 || d.getDate() === 25);
     const d = new Date();
-    const isChristmas = d.getMonth() === 11 && (d.getDate() === 24 || d.getDate() === 25); 
+    const isChristmas = d.getMonth() === 4 && d.getDate() === 7; 
+    // -----------------------------
+    
     const nightStart = parseInt(this.config.night_start) || 22;
     const nightEnd = parseInt(this.config.night_end) || 6;
     
