@@ -107,9 +107,12 @@ class MoglieCard extends HTMLElement {
     const isCold = temp !== null && ((isF && temp < 50) || (isC && temp < 10));
     const showWinter = isSnowing || isCold;
 
-    // 3. Time & Date Logic
+    // 3. LEVEL 2: Time Intelligence & Holidays
     const d = new Date();
     const currentHour = d.getHours();
+    const currentDay = d.getDay(); // 0 = Sunday, 6 = Saturday
+    const isWeekend = currentDay === 0 || currentDay === 6;
+
     const isChristmas = d.getMonth() === 11 && (d.getDate() === 24 || d.getDate() === 25); 
     const isAprilFools = d.getMonth() === 3 && d.getDate() === 1;
 
@@ -120,29 +123,45 @@ class MoglieCard extends HTMLElement {
 
     // 4. Cache check to prevent freezing
     const configHash = JSON.stringify(this.config);
-    const statusKey = `${wanState}-${alarmState}-${weatherState}-${showNight}-${isChristmas}-${isAprilFools}-${configHash}`;
+    const statusKey = `${wanState}-${alarmState}-${weatherState}-${showNight}-${isChristmas}-${isAprilFools}-${currentHour}-${configHash}`;
     if (this._lastStatus === statusKey) return; 
     this._lastStatus = statusKey;
 
-    // 5. Build Night Mode Text explicitly (with Patrol subtitle)
-    let baseNightQuote = this.config.quote_night || "Zzz... Moglie is sleeping...";
-    let patrolText = "";
-    if (hasAlarm) {
-      patrolText = (isOffState || isHomeState) 
-        ? "<br><span style='font-size: 0.85em; font-weight: normal; opacity: 0.8;'>(The primates haven't started their patrol.)</span>" 
-        : "<br><span style='font-size: 0.85em; font-weight: normal; opacity: 0.8;'>(The primates are on patrol.)</span>";
+    // 5. Build Dynamic Time Greetings
+    let timeGreeting = "";
+    if (!showNight && !isChristmas && !isAprilFools) {
+      if (currentHour >= 6 && currentHour < 11) {
+        timeGreeting = isWeekend ? "Lazy weekend morning! " : "Good morning! I need a banana coffee. ";
+      } else if (currentHour >= 11 && currentHour < 17) {
+        timeGreeting = isWeekend ? "Weekend vibes! " : "Afternoon watch is clear. ";
+      } else if (currentHour >= 17 && currentHour < nightStart) {
+        timeGreeting = "Sun's getting low. ";
+      }
     }
-    const fullNightQuote = `${baseNightQuote}${patrolText}`;
 
-    // 6. Define general customizable quotes
+    // 6. Build The Pack vs Primates Quotes
+    let nightText = "";
+    if (hasAlarm) {
+      if (isHomeState) nightText = "The pack is sleeping safely. <br><small style='opacity: 0.8;'>(The primates are on night patrol.)</small>";
+      else if (isOffState) nightText = "The pack is sleeping... <br><small style='color: orange;'>(But the primates are off duty! Who is watching the trees?!)</small>";
+      else nightText = "The pack is away. <br><small style='opacity: 0.8;'>(The primates hold the night watch.)</small>";
+    } else {
+      nightText = "The pack is sleeping...";
+    }
+    const fullNightQuote = this.config.quote_night || nightText;
+
+    let armedHomeText = isWeekend ? "The pack is relaxing at home. " : "The pack is home. ";
+    armedHomeText += "The primates are on perimeter patrol.";
+    let disarmedText = "System's off! The primates ditched their post for a banana run.";
+
     const quotes = {
       offline: this.config.quote_offline || "Moglie is stranded. The WAN connection has been lost!",
       cold: this.config.quote_cold || "Brrr! It's freezing out there!",
       rain: this.config.quote_rain || "Looks like rain, grabbing my coat!",
       hot: this.config.quote_hot || "It's boiling! Need a banana smoothie.",
-      disarmed: this.config.quote_disarmed || "System's off! The rest of the primates ditched their post for a banana run. Typical.",
-      armedHome: this.config.quote_armed_home || (hasWan ? "Welcome Home! The WAN is strong. Tell me you brought more bananas!" : "Welcome Home! Everything is secure."),
-      armedAway: this.config.quote_armed_away || (hasWan ? "WAN stable. The rest of the primates are on patrol. I'll watch the trees!" : "I'm watching the trees until they get back!")
+      disarmed: this.config.quote_disarmed || `${timeGreeting}${disarmedText}`,
+      armedHome: this.config.quote_armed_home || `${timeGreeting}${armedHomeText}`,
+      armedAway: this.config.quote_armed_away || "The pack is away. The primates are watching the trees!"
     };
 
     // 7. Set Borders
@@ -161,7 +180,7 @@ class MoglieCard extends HTMLElement {
     } else if (isAprilFools) {
       this.updateUI('normal', normal_b64, "Why is the blood rushing to my head?", dynamicBorder);
     } else if (isChristmas) {
-      this.updateUI('festive', festive_b64, "Merry Christmas!", dynamicBorder);
+      this.updateUI('festive', festive_b64, "Merry Christmas to the pack!", dynamicBorder);
     } else if (showNight) {
       this.updateUI('sleepy', sleepy_b64, fullNightQuote, "2px solid #673AB7");
     } else if (hasWeather && isRaining) {
@@ -261,6 +280,6 @@ window.customCards = window.customCards || [];
 window.customCards.push({
   type: "moglie-card",
   name: "Moglie HA",
-  description: "Moglie monitors your WAN, Weather, and Security state.",
+  description: "Moglie monitors your WAN, Weather, and Security state with Time Intelligence.",
   preview: true
 });
