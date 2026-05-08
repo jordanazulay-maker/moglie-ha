@@ -8,7 +8,7 @@ import { festive_monkey as f_b64 } from './festive-monkey.js';
 
 class MoglieCard extends HTMLElement {
   static getConfigElement() { return document.createElement("moglie-card-editor"); }
-  static getStubConfig() { return { use_wan: false, use_alarm: false, use_weather: false, wan_entity: "", alarm_entity: "", weather_entity: "", enable_night_mode: true, night_start: 22, night_end: 6, use_custom_quotes: false, hide_moglie: false }; }
+  static getStubConfig() { return { use_wan: false, use_alarm: false, use_weather: false, wan_entity: "", alarm_entity: "", weather_entity: "", enable_night_mode: true, night_start: 22, night_end: 6, use_custom_quotes: false, hide_moglie: false, enable_hold: false }; }
 
   setConfig(config) {
     this.config = { ...config };
@@ -39,7 +39,7 @@ class MoglieCard extends HTMLElement {
       let timer, moved = false;
       this.cont.addEventListener('pointerdown', () => {
         moved = false;
-        timer = setTimeout(() => { timer = null; this.handleAct('hold'); }, 500);
+        timer = setTimeout(() => { timer = null; if (this.config.enable_hold) this.handleAct('hold'); }, 500);
       });
       this.cont.addEventListener('pointermove', () => { moved = true; if (timer) clearTimeout(timer); });
       this.cont.addEventListener('pointercancel', () => { if (timer) clearTimeout(timer); });
@@ -89,7 +89,7 @@ class MoglieCard extends HTMLElement {
     const d = new Date();
     const hr = d.getHours();
 
-    const sHash = `${wState}|${aState}|${weState}|${hr}|${d.getDate()}|${c.enable_night_mode}|${c.use_custom_quotes}|${c.hide_moglie}|${c.use_wan}|${c.use_alarm}|${c.use_weather}`;
+    const sHash = `${wState}|${aState}|${weState}|${hr}|${d.getDate()}|${c.enable_night_mode}|${c.use_custom_quotes}|${c.hide_moglie}|${c.use_wan}|${c.use_alarm}|${c.use_weather}|${c.enable_hold}`;
     if (this._last === sHash) return; 
     this._last = sHash;
 
@@ -235,7 +235,7 @@ customElements.define('moglie-card', MoglieCard);
 const M_LBLS = {
   monitored_features: "Features to Monitor",
   wan_entity: "WAN Entity", alarm_entity: "Alarm Entity", weather_entity: "Weather Entity", 
-  tap_action: "Tap Action", hold_action: "Hold Action",
+  tap_action: "Tap Action", hold_action: "Hold Action", enable_hold: "Enable Hold Action",
   tap_action_entity: "Entity to Toggle (Tap)", hold_action_entity: "Entity to Toggle (Hold)",
   tap_action_perform: "Action to Perform (Tap)", tap_action_data: "Action Data (Tap)",
   hold_action_perform: "Action to Perform (Hold)", hold_action_data: "Action Data (Hold)",
@@ -296,13 +296,16 @@ class MoglieCardEditor extends HTMLElement {
         s.push({ name: "tap_action_entity", selector: { entity: {} } });
     }
 
-    // Hold Action Config
-    s.push({ name: "hold_action", selector: { ui_action: {} } });
-    if (this._cfg.hold_action?.action === "perform-action") {
-        s.push({ name: "hold_action_perform", selector: { action: {} } });
-        s.push({ name: "hold_action_data", selector: { object: {} } });
-    } else if (this._cfg.hold_action?.action === "toggle") {
-        s.push({ name: "hold_action_entity", selector: { entity: {} } });
+    // Hold Action Config (Now optional)
+    s.push({ name: "enable_hold", selector: { boolean: {} } });
+    if (this._cfg.enable_hold) {
+        s.push({ name: "hold_action", selector: { ui_action: {} } });
+        if (this._cfg.hold_action?.action === "perform-action") {
+            s.push({ name: "hold_action_perform", selector: { action: {} } });
+            s.push({ name: "hold_action_data", selector: { object: {} } });
+        } else if (this._cfg.hold_action?.action === "toggle") {
+            s.push({ name: "hold_action_entity", selector: { entity: {} } });
+        }
     }
 
     s.push({ name: "enable_night_mode", selector: { boolean: {} } });
