@@ -7,19 +7,18 @@ import { festive_monkey as f_b64 } from './festive-monkey.js';
 
 class MoglieCard extends HTMLElement {
   static getConfigElement() { return document.createElement("moglie-card-editor"); }
-  static getStubConfig() { return { wan_entity: "", alarm_entity: "", weather_entity: "", enable_night_mode: true, night_start: 22, night_end: 6, image_size: 150 }; }
+  static getStubConfig() { return { wan_entity: "", alarm_entity: "", weather_entity: "", enable_night_mode: true, night_start: 22, night_end: 6 }; }
 
   setConfig(config) {
     this.config = config;
     this._last = null; 
     
     if (!this.content) {
-      const size = config.image_size || 150;
       this.innerHTML = `
         <ha-card>
-          <div id="m-cont" style="padding: 16px; border-radius: 10px; text-align: center; transition: all 0.3s ease; cursor: pointer;">
-            <img id="m-img" src="${n_b64}" style="width: var(--moglie-size, ${size}px); height: var(--moglie-size, ${size}px); object-fit: contain; transition: transform 0.5s ease, width 0.3s, height 0.3s;" />
-            <div id="m-txt" style="margin-top: 10px; font-weight: bold; min-height: 2em;"></div>
+          <div id="m-cont" style="padding: 16px; border-radius: 10px; text-align: center; transition: all 0.3s ease; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <img id="m-img" src="${n_b64}" style="width: 100%; max-width: 150px; height: auto; aspect-ratio: 1/1; object-fit: contain; transition: transform 0.5s ease;" />
+            <div id="m-txt" style="margin-top: 10px; font-weight: bold; min-height: 2em; width: 100%;"></div>
           </div>
         </ha-card>`;
       this.cont = this.querySelector('#m-cont');
@@ -35,13 +34,7 @@ class MoglieCard extends HTMLElement {
       this.cont.addEventListener('pointerup', () => {
         if (timer && !moved) { clearTimeout(timer); this.handleAct('tap_action'); }
       });
-    } else {
-      // Allow dynamic resizing without full reload if they slide the slider
-      const s = config.image_size || 150;
-      this.img.style.width = `var(--moglie-size, ${s}px)`;
-      this.img.style.height = `var(--moglie-size, ${s}px)`;
     }
-    
     if (!config.wan_entity && !config.alarm_entity && !config.weather_entity) this.showErr("⚠️ Configure at least one entity (WAN, Alarm, Weather).");
   }
 
@@ -160,7 +153,6 @@ const M_SCHEMA = [
   { name: "wan_entity", selector: { entity: { domain: "binary_sensor" } } },
   { name: "alarm_entity", selector: { entity: { domain: "alarm_control_panel" } } },
   { name: "weather_entity", selector: { entity: { domain: "weather" } } },
-  { name: "image_size", selector: { number: { min: 50, max: 400, mode: "slider", step: 10 } } },
   { name: "tap_action", selector: { ui_action: {} } },
   { name: "hold_action", selector: { ui_action: {} } },
   { name: "enable_night_mode", label: "Enable Night Mode", selector: { boolean: {} } },
@@ -173,7 +165,7 @@ const M_SCHEMA = [
 ];
 
 const M_LBLS = {
-  wan_entity: "WAN Entity", alarm_entity: "Alarm Entity", weather_entity: "Weather Entity", image_size: "Image Size (px)", tap_action: "Tap Action", hold_action: "Hold Action", enable_night_mode: "Enable Night Mode", night_start: "Night Start Hour", night_end: "Night End Hour", quote_offline: "Quote: WAN Offline", quote_disarmed: "Quote: Disarmed", quote_armed_home: "Quote: Armed Home", quote_armed_away: "Quote: Armed Away", quote_night: "Quote: Night Mode", quote_hot: "Quote: Hot Weather", quote_cold: "Quote: Cold Weather", quote_rain: "Quote: Rainy Weather"
+  wan_entity: "WAN Entity", alarm_entity: "Alarm Entity", weather_entity: "Weather Entity", tap_action: "Tap Action", hold_action: "Hold Action", enable_night_mode: "Enable Night Mode", night_start: "Night Start Hour", night_end: "Night End Hour", quote_offline: "Quote: WAN Offline", quote_disarmed: "Quote: Disarmed", quote_armed_home: "Quote: Armed Home", quote_armed_away: "Quote: Armed Away", quote_night: "Quote: Night Mode", quote_hot: "Quote: Hot Weather", quote_cold: "Quote: Cold Weather", quote_rain: "Quote: Rainy Weather"
 };
 
 class MoglieCardEditor extends HTMLElement {
