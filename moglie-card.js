@@ -234,7 +234,15 @@ customElements.define('moglie-card', MoglieCard);
 
 const M_LBLS = {
   monitored_features: "Features to Monitor",
-  wan_entity: "WAN Entity", alarm_entity: "Alarm Entity", weather_entity: "Weather Entity", tap_action: "Tap Action", hold_action: "Hold Action", enable_night_mode: "Enable Night Mode", night_start: "Night Start Hour", night_end: "Night End Hour", hide_moglie: "Hide Moglie (Text Only Mode)", use_custom_quotes: "Enable Custom Quotes", quote_offline: "Quote: WAN Offline", quote_disarmed: "Quote: Disarmed", quote_armed_home: "Quote: Armed Home", quote_armed_away: "Quote: Armed Away", quote_night: "Quote: Night Mode", quote_hot: "Quote: Hot Weather", quote_cold: "Quote: Cold Weather", quote_rain: "Quote: Rainy Weather"
+  wan_entity: "WAN Entity", alarm_entity: "Alarm Entity", weather_entity: "Weather Entity", 
+  tap_action: "Tap Action (e.g. Toggle, Navigate, Service Call)", 
+  hold_action: "Hold Action (e.g. Toggle, Navigate, Service Call)", 
+  enable_night_mode: "Enable Night Mode", night_start: "Night Start Hour", night_end: "Night End Hour", 
+  hide_moglie: "Hide Moglie (Text Only Mode)", use_custom_quotes: "Enable Custom Quotes", 
+  quote_offline: "Quote: WAN Offline", quote_disarmed: "Quote: Disarmed", 
+  quote_armed_home: "Quote: Armed Home", quote_armed_away: "Quote: Armed Away", 
+  quote_night: "Quote: Night Mode", quote_hot: "Quote: Hot Weather", 
+  quote_cold: "Quote: Cold Weather", quote_rain: "Quote: Rainy Weather"
 };
 
 class MoglieCardEditor extends HTMLElement {
