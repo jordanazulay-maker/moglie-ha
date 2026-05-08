@@ -212,12 +212,10 @@ class MoglieCard extends HTMLElement {
 
     // Determine patrol status for night mode
     let patrolStatus = "";
-    if (isOffState) {
-      patrolStatus = "System Disarmed";
-    } else if (isHomeState) {
-      patrolStatus = "Armed Home";
+    if (isOffState || isHomeState) {
+      patrolStatus = "The primates haven't started their patrol";
     } else {
-      patrolStatus = "Primates are on patrol";
+      patrolStatus = "The primates are on patrol";
     }
     
     // Combine the base night quote with the alarm state
