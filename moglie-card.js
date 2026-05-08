@@ -1,4 +1,4 @@
-\import { normal_monkey as normal_b64 } from './normal-monkey.js';
+import { normal_monkey as normal_b64 } from './normal-monkey.js';
 import { winter_monkey as winter_b64 } from './winter-monkey.js';
 import { rainy_monkey as rainy_b64 } from './rainy-monkey.js';
 import { summer_monkey as summer_b64 } from './summer-monkey.js';
@@ -85,7 +85,7 @@ class MoglieCard extends HTMLElement {
     const isOffState = alarmState.includes('disarmed') || alarmState === 'off';
     const isHomeState = alarmState.includes('home') || alarmState.includes('night') || alarmState.includes('stay');
 
-    // 2. Weather Logic
+    // 2. Weather Logic (Fix: Safely access properties without optional chaining to prevent older browser crashes)
     const isRaining = weatherState.includes('rain') || weatherState.includes('pour') || weatherState.includes('shower') || weatherState.includes('storm');
     
     let temp = null;
@@ -97,7 +97,11 @@ class MoglieCard extends HTMLElement {
       } else if (!isNaN(parseFloat(weatherState))) {
         temp = parseFloat(weatherState);
       }
-      let unitStr = weatherEntity.attributes?.temperature_unit || weatherEntity.attributes?.unit_of_measurement || 'F';
+      
+      let unitStr = 'F';
+      if (weatherEntity.attributes) {
+        unitStr = weatherEntity.attributes.temperature_unit || weatherEntity.attributes.unit_of_measurement || 'F';
+      }
       isF = String(unitStr).toUpperCase().includes('F');
       isC = String(unitStr).toUpperCase().includes('C');
     }
@@ -110,7 +114,7 @@ class MoglieCard extends HTMLElement {
     // 3. Time Intelligence & Holidays
     const d = new Date();
     const currentHour = d.getHours();
-    const currentDay = d.getDay(); // 0 = Sunday, 6 = Saturday
+    const currentDay = d.getDay(); 
     const isWeekend = currentDay === 0 || currentDay === 6;
 
     const isChristmas = d.getMonth() === 11 && (d.getDate() === 24 || d.getDate() === 25); 
@@ -121,8 +125,8 @@ class MoglieCard extends HTMLElement {
     let isNightTime = nightStart > nightEnd ? (currentHour >= nightStart || currentHour < nightEnd) : (currentHour >= nightStart && currentHour < nightEnd);
     const showNight = (this.config.enable_night_mode !== false) && isNightTime;
 
-    // 4. Cache check to prevent freezing
-    const configHash = JSON.stringify(this.config);
+    // 4. Cache check to prevent freezing (Fix: Removed JSON.stringify to prevent circular reference crash)
+    const configHash = `${this.config.wan_entity}-${this.config.alarm_entity}-${this.config.weather_entity}-${this.config.enable_night_mode}`;
     const statusKey = `${wanState}-${alarmState}-${weatherState}-${showNight}-${isChristmas}-${isAprilFools}-${currentHour}-${configHash}`;
     if (this._lastStatus === statusKey) return; 
     this._lastStatus = statusKey;
