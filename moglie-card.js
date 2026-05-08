@@ -80,7 +80,10 @@ class MoglieCard extends HTMLElement {
     const alrm = (c.use_alarm && c.alarm_entity) ? hass.states[c.alarm_entity] : null;
     const wthr = (c.use_weather && c.weather_entity) ? hass.states[c.weather_entity] : null;
 
-    if (!wan && !alrm && !wthr) return;
+    // The Secret YAML Error Detector
+    const hasBadYaml = hass.states['persistent_notification.invalid_config'] !== undefined;
+
+    if (!wan && !alrm && !wthr && !hasBadYaml) return;
 
     const wState = wan ? wan.state.toLowerCase() : 'on';
     const aState = alrm ? alrm.state.toLowerCase() : 'disarmed';
@@ -89,7 +92,7 @@ class MoglieCard extends HTMLElement {
     const d = new Date();
     const hr = d.getHours();
 
-    const sHash = `${wState}|${aState}|${weState}|${hr}|${d.getDate()}|${c.enable_night_mode}|${c.use_custom_quotes}|${c.hide_moglie}|${c.use_wan}|${c.use_alarm}|${c.use_weather}|${c.enable_hold}`;
+    const sHash = `${wState}|${aState}|${weState}|${hr}|${d.getDate()}|${c.enable_night_mode}|${c.use_custom_quotes}|${c.hide_moglie}|${c.use_wan}|${c.use_alarm}|${c.use_weather}|${c.enable_hold}|${hasBadYaml}`;
     if (this._last === sHash) return; 
     this._last = sHash;
 
@@ -122,7 +125,7 @@ class MoglieCard extends HTMLElement {
     const showNight = c.enable_night_mode !== false && isNight;
 
     let greet = "";
-    if (!showNight && !isXmas && !isApril) {
+    if (!showNight && !isXmas && !isApril && !hasBadYaml) {
       if (hr >= 6 && hr < 11) greet = isWknd ? "Lazy weekend morning! " : "Good morning! I need a banana coffee. ";
       else if (hr >= 11 && hr < 17) greet = isWknd ? "Weekend vibes! " : "Afternoon watch is clear. ";
       else if (hr >= 17 && hr < nS) greet = "Sun's getting low. ";
@@ -172,7 +175,15 @@ class MoglieCard extends HTMLElement {
       quote = aOff ? q.dis : (aHome ? q.home : q.away);
     }
 
-    if (wan && !wanOk) { 
+    // THE OVERRIDE HIERARCHY
+    if (hasBadYaml) {
+      outfit = n_b64;
+      quote = "Uh oh! Looks like some monkey business in your YMAL!";
+      border = "4px dashed var(--error-color, red)";
+      isGrayscale = true;
+      patrolTxt = ""; // Clear patrol text because this is an emergency
+    }
+    else if (wan && !wanOk) { 
       outfit = n_b64; 
       quote = q.off; 
       border = "2px solid var(--disabled-text-color, gray)"; 
@@ -219,7 +230,13 @@ class MoglieCard extends HTMLElement {
     }
 
     this.img.style.filter = isGrayscale ? "grayscale(100%)" : "none";
-    if (isApril && !c.hide_moglie) this.img.classList.add('anti-gravity'); else this.img.classList.remove('anti-gravity');
+    
+    // Apply Anti-Gravity ONLY if it's April Fools
+    if (isApril && !c.hide_moglie) {
+      this.img.classList.add('anti-gravity'); 
+    } else {
+      this.img.classList.remove('anti-gravity');
+    }
 
     this.upd(outfit, quote, border);
   }
