@@ -34,11 +34,17 @@ class MoglieCard extends HTMLElement {
     this.config = config;
 
     if (!this.content) {
-      // 1. Create the HTML *WITHOUT* the massive base64 string inside it
+      // 1. Create the HTML
       this.innerHTML = `
+        <style>
+          /* April Fools Anti-Gravity */
+          .anti-gravity {
+            transform: rotate(180deg);
+          }
+        </style>
         <ha-card>
           <div id="moglie-container" style="padding: 16px; border-radius: 10px; text-align: center; transition: all 0.3s ease; cursor: pointer;">
-            <img id="moglie-image" data-img-src="normal" style="width: 150px; height: 150px; object-fit: contain; transition: all 0.3s ease;" />
+            <img id="moglie-image" data-img-src="normal" style="width: 150px; height: 150px; object-fit: contain; transition: transform 0.5s ease;" />
             <div id="moglie-text" class="text-box" style="margin-top: 10px; font-weight: bold; min-height: 2em;"></div>
           </div>
         </ha-card>
@@ -135,9 +141,14 @@ class MoglieCard extends HTMLElement {
 
     const currentHour = new Date().getHours();
     
-    // Real Christmas Date Logic
+    // Holiday & Easter Egg Date Logic
     const d = new Date();
     const isChristmas = d.getMonth() === 11 && (d.getDate() === 24 || d.getDate() === 25); 
+
+    // --- TEST MODE FOR APRIL FOOLS --- 
+    // Remember to change this back to: d.getMonth() === 3 && d.getDate() === 1;
+    const isAprilFools = true; 
+    // ---------------------------------
     
     const nightStart = parseInt(this.config.night_start) || 22;
     const nightEnd = parseInt(this.config.night_end) || 6;
@@ -180,7 +191,7 @@ class MoglieCard extends HTMLElement {
     const showWinter = isSnowing || isCold;
 
     const configHash = JSON.stringify(this.config);
-    const statusKey = `${wanState}-${alarmState}-${isNightMode}-${isRaining}-${isHot}-${showWinter}-${isChristmas}-${configHash}`;
+    const statusKey = `${wanState}-${alarmState}-${isNightMode}-${isRaining}-${isHot}-${showWinter}-${isChristmas}-${isAprilFools}-${configHash}`;
     if (this._lastStatus === statusKey) return; 
     this._lastStatus = statusKey;
 
@@ -206,10 +217,19 @@ class MoglieCard extends HTMLElement {
     this.content.className = "text-box";
     this.image.style.filter = "none"; 
 
+    // April Fools triggers gravity inversion
+    if (isAprilFools) {
+      this.image.classList.add('anti-gravity');
+    } else {
+      this.image.classList.remove('anti-gravity');
+    }
+
     if (!isWanActive) {
       this.updateUI('normal', normal_b64, quotes.offline, "2px solid var(--disabled-text-color, gray)");
       this.content.classList.add("status-warning");
       this.image.style.filter = "grayscale(100%)";
+    } else if (isAprilFools) {
+      this.updateUI('normal', normal_b64, "Why is the blood rushing to my head? 🙃🍌", alarmBorder);
     } else if (isChristmas) {
       this.updateUI('festive', festive_b64, "The rest of the pack and I wish you a Merry Christmas!", alarmBorder);
     } else if (isNightMode) {
