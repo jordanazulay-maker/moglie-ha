@@ -235,8 +235,8 @@ customElements.define('moglie-card', MoglieCard);
 const M_LBLS = {
   monitored_features: "Features to Monitor",
   wan_entity: "WAN Entity", alarm_entity: "Alarm Entity", weather_entity: "Weather Entity", 
-  tap_action: "Tap Action (e.g. Toggle, Navigate, Service Call)", 
-  hold_action: "Hold Action (e.g. Toggle, Navigate, Service Call)", 
+  tap_action: "Tap Action", 
+  hold_action: "Hold Action", 
   enable_night_mode: "Enable Night Mode", night_start: "Night Start Hour", night_end: "Night End Hour", 
   hide_moglie: "Hide Moglie (Text Only Mode)", use_custom_quotes: "Enable Custom Quotes", 
   quote_offline: "Quote: WAN Offline", quote_disarmed: "Quote: Disarmed", 
@@ -285,10 +285,19 @@ class MoglieCardEditor extends HTMLElement {
     if (this._cfg.use_alarm) s.push({ name: "alarm_entity", selector: { entity: { domain: "alarm_control_panel" } } });
     if (this._cfg.use_weather) s.push({ name: "weather_entity", selector: { entity: { domain: "weather" } } });
 
-    s.push({ type: "grid", schema: [
-      { name: "tap_action", selector: { ui_action: {} } },
-      { name: "hold_action", selector: { ui_action: {} } }
-    ]});
+    // Tap Action Grouping
+    s.push({ name: "tap_action", selector: { ui_action: {} } });
+    if (this._cfg.tap_action?.action === "perform-action") {
+        s.push({ name: "tap_action_perform", label: "Action to Perform", selector: { action: {} } });
+        s.push({ name: "tap_action_data", label: "Action Data (YAML)", selector: { object: {} } });
+    }
+
+    // Hold Action Grouping
+    s.push({ name: "hold_action", selector: { ui_action: {} } });
+    if (this._cfg.hold_action?.action === "perform-action") {
+        s.push({ name: "hold_action_perform", label: "Action to Perform", selector: { action: {} } });
+        s.push({ name: "hold_action_data", label: "Action Data (YAML)", selector: { object: {} } });
+    }
 
     s.push({ name: "enable_night_mode", selector: { boolean: {} } });
 
