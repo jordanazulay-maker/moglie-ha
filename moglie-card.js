@@ -12,6 +12,7 @@ class MoglieCard extends HTMLElement {
   setConfig(config) {
     this.config = config;
     this._last = null; 
+    this._lastTxt = null; // ⚡ ZAP: Cache the raw text to stop innerHTML reflows
     
     if (!this.content) {
       this.innerHTML = `
@@ -42,7 +43,7 @@ class MoglieCard extends HTMLElement {
         if (timer && !moved) { clearTimeout(timer); this.handleAct('tap'); }
       });
       
-      this.content = true; // ⚡ ZAP 1: Mark content as loaded to prevent DOM flickering
+      this.content = true; // ⚡ ZAP: Stop DOM reconstruction
     }
     if (!config.wan_entity && !config.alarm_entity && !config.weather_entity) this.showErr("⚠️ Configure at least one entity (WAN, Alarm, Weather).");
   }
@@ -59,7 +60,10 @@ class MoglieCard extends HTMLElement {
   }
 
   showErr(m) {
-    this.txt.innerHTML = `<div style="margin-bottom:12px;">${m}</div>`;
+    if (this._lastTxt !== m) {
+      this.txt.innerHTML = `<div style="margin-bottom:12px;">${m}</div>`;
+      this._lastTxt = m;
+    }
     this.cont.style.border = "2px dashed red";
     this.img.style.filter = "grayscale(100%)";
   }
@@ -76,15 +80,9 @@ class MoglieCard extends HTMLElement {
     const wState = wan ? wan.state.toLowerCase() : 'on';
     const aState = alrm ? alrm.state.toLowerCase() : 'disarmed';
     const weState = wthr ? wthr.state.toLowerCase() : 'unknown';
-    const tempHash = wthr ? (wthr.attributes?.temperature ?? '') : ''; // ⚡ ZAP 2: Add temperature to hash
 
     const d = new Date();
     const hr = d.getHours();
-    
-    // ⚡ ZAP 2: Check wState, aState, weState AND tempHash before re-rendering
-    const sHash = `${wState}|${aState}|${weState}|${tempHash}|${hr}|${d.getDate()}|${c.enable_night_mode}|${c.use_custom_quotes}`;
-    if (this._last === sHash) return; 
-    this._last = sHash;
 
     const wanOk = /on|connected|true/.test(wState);
     const aOff = /disarmed|off/.test(aState);
@@ -111,6 +109,12 @@ class MoglieCard extends HTMLElement {
     const nE = c.night_end !== undefined && c.night_end !== "" ? parseInt(c.night_end) : 6;
     const isNight = nS > nE ? (hr >= nS || hr < nE) : (hr >= nS && hr < nE);
     const showNight = c.enable_night_mode !== false && isNight;
+
+    // ⚡ ZAP: THE SUPER HASH. We only cache the evaluated logic. 
+    // This stops volatile sensors from constantly triggering redraws.
+    const sHash = `${wanOk}|${aOff}|${aHome}|${isRain}|${isSnow}|${isHot}|${isCold}|${showNight}|${isXmas}|${isApril}|${hr>=6&&hr<11}|${hr>=11&&hr<17}|${isWknd}|${!!wan}|${!!alrm}|${!!wthr}`;
+    if (this._last === sHash) return; 
+    this._last = sHash;
 
     let greet = "";
     if (!showNight && !isXmas && !isApril) {
@@ -149,17 +153,22 @@ class MoglieCard extends HTMLElement {
     else if (isXmas) this.upd(f_b64, "Merry Christmas to the troop!", bdr);
     else if (showNight) this.upd(sl_b64, q.night, "2px solid #673AB7");
     else if (wthr && isRain) this.upd(r_b64, q.rain, "2px solid #2196F3");
-    else if (wthr && (isSnow || isCold)) this.upd(w_b64, q.cold, "2px solid #00BCD4");
+    else if (wthr && (isSnow || isCold)) this.upd(w w_b64, q.cold, "2px solid #00BCD4");
     else if (wthr && isHot) this.upd(s_b64, q.hot, "2px solid #FF9800"); 
     else if (alrm) this.upd(n_b64, aOff ? q.dis : (aHome ? q.home : q.away), bdr);
     else this.upd(n_b64, "Moglie is standing by!", bdr);
   }
 
   upd(img, txt, bdr) {
-    // ⚡ ZAP 3: Securely compare and update base64 values via getAttribute
+    // ⚡ ZAP: Secure attribute check for base64
     if (this.img.getAttribute('src') !== img) this.img.setAttribute('src', img);
     
-    if (this.txt.innerHTML !== txt) this.txt.innerHTML = txt;
+    // ⚡ ZAP: Prevent browser HTML manipulation from busting the text loop
+    if (this._lastTxt !== txt) {
+      this.txt.innerHTML = txt;
+      this._lastTxt = txt;
+    }
+    
     if (this.cont.style.border !== bdr) this.cont.style.border = bdr;
   }
 }
