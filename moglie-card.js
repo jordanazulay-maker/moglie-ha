@@ -12,7 +12,6 @@ class MoglieCard extends HTMLElement {
   setConfig(config) {
     this.config = config;
     this._last = null; 
-    this._lastTxt = null; 
     
     if (!this.content) {
       this.innerHTML = `
@@ -42,8 +41,6 @@ class MoglieCard extends HTMLElement {
       this.cont.addEventListener('pointerup', () => {
         if (timer && !moved) { clearTimeout(timer); this.handleAct('tap'); }
       });
-      
-      this.content = true; 
     }
     if (!config.wan_entity && !config.alarm_entity && !config.weather_entity) this.showErr("⚠️ Configure at least one entity (WAN, Alarm, Weather).");
   }
@@ -60,10 +57,7 @@ class MoglieCard extends HTMLElement {
   }
 
   showErr(m) {
-    if (this._lastTxt !== m) {
-      this.txt.innerHTML = `<div style="margin-bottom:12px;">${m}</div>`;
-      this._lastTxt = m;
-    }
+    this.txt.innerHTML = `<div style="margin-bottom:12px;">${m}</div>`;
     this.cont.style.border = "2px dashed red";
     this.img.style.filter = "grayscale(100%)";
   }
@@ -83,6 +77,9 @@ class MoglieCard extends HTMLElement {
 
     const d = new Date();
     const hr = d.getHours();
+    const sHash = `${wState}|${aState}|${weState}|${hr}|${d.getDate()}|${c.enable_night_mode}|${c.use_custom_quotes}`;
+    if (this._last === sHash) return; 
+    this._last = sHash;
 
     const wanOk = /on|connected|true/.test(wState);
     const aOff = /disarmed|off/.test(aState);
@@ -109,10 +106,6 @@ class MoglieCard extends HTMLElement {
     const nE = c.night_end !== undefined && c.night_end !== "" ? parseInt(c.night_end) : 6;
     const isNight = nS > nE ? (hr >= nS || hr < nE) : (hr >= nS && hr < nE);
     const showNight = c.enable_night_mode !== false && isNight;
-
-    const sHash = `${wanOk}|${aOff}|${aHome}|${isRain}|${isSnow}|${isHot}|${isCold}|${showNight}|${isXmas}|${isApril}|${hr>=6&&hr<11}|${hr>=11&&hr<17}|${isWknd}|${!!wan}|${!!alrm}|${!!wthr}`;
-    if (this._last === sHash) return; 
-    this._last = sHash;
 
     let greet = "";
     if (!showNight && !isXmas && !isApril) {
@@ -151,20 +144,16 @@ class MoglieCard extends HTMLElement {
     else if (isXmas) this.upd(f_b64, "Merry Christmas to the troop!", bdr);
     else if (showNight) this.upd(sl_b64, q.night, "2px solid #673AB7");
     else if (wthr && isRain) this.upd(r_b64, q.rain, "2px solid #2196F3");
-    else if (wthr && (isSnow || isCold)) this.upd(w_b64, q.cold, "2px solid #00BCD4"); // <- The bug was here!
+    else if (wthr && (isSnow || isCold)) this.upd(w_b64, q.cold, "2px solid #00BCD4");
     else if (wthr && isHot) this.upd(s_b64, q.hot, "2px solid #FF9800"); 
     else if (alrm) this.upd(n_b64, aOff ? q.dis : (aHome ? q.home : q.away), bdr);
     else this.upd(n_b64, "Moglie is standing by!", bdr);
   }
 
   upd(img, txt, bdr) {
+    // ⚡ ZAP: Use getAttribute and setAttribute to safely handle massive Base64 Strings ⚡
     if (this.img.getAttribute('src') !== img) this.img.setAttribute('src', img);
-    
-    if (this._lastTxt !== txt) {
-      this.txt.innerHTML = txt;
-      this._lastTxt = txt;
-    }
-    
+    if (this.txt.innerHTML !== txt) this.txt.innerHTML = txt;
     if (this.cont.style.border !== bdr) this.cont.style.border = bdr;
   }
 }
