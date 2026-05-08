@@ -52,3 +52,11 @@ Moglie supports any standard Home Assistant action, allowing you to control your
 
 ### 🤫 Secret Seasonal Anomalies
 * 📅 **???:** Rumor has it Moglie occasionally checks the calendar. Be on the lookout during a certain festive winter holiday or a notoriously silly spring day. He might just show off a rare outfit or completely forget how gravity works... you'll just have to wait and see!
+
+## ⚖️ License
+
+This project is licensed under the **PolyForm Noncommercial License 1.0.0**. 
+
+You are free to use, read, modify, and share Moglie for your own personal Home Assistant dashboards. However, you may **not** use this software for any commercial purposes (e.g., selling it, bundling it into paid setups, etc.). 
+
+For the full legal text, please see the `LICENSE.txt` file in this repository.
