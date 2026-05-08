@@ -17,7 +17,7 @@ Moglie HA, Your smart home companion!
 * **🌐 Connectivity Watchdog:** Instant visual feedback if your WAN (internet) goes offline.
 * **🛡️ Security Awareness:** Dynamic messaging based on your Alarm Control Panel status.
 * **🌙 Night Mode:** Set a custom sleep schedule! Moglie automatically changes into his pajamas during user-defined nighttime hours.
-* **🌧️❄️🌡️ Weather Aware:** Pass in your local weather entity, and Moglie will throw on his raincoat if it starts pouring, his sunglasses if the temperature climbs above 80°F (27°C), or bundle up in his winter gear if it snows or drops below 50°F (10°C)!
+* **🌧️❄️🌡️ Weather Aware:** Pass in your local weather entity, and Moglie will throw on his raincoat if it starts pouring, his sunglasses if the temperature climbs above 80°F (27°C) (and start sweating if the humidity crosses 70%!), or bundle up in his winter gear if it snows or drops below 50°F (10°C)!
 * **✏️ Fully Customizable Text:** You can now customize every single message Moglie says directly in the Visual Editor to fit your exact style.
 * **🙈 Hide Moglie (Text-Only Mode):** Want the info without the monkey? Toggle "Hide Moglie" in the Visual Editor to hide the image and turn the card into a sleek, text-based status feed (e.g., *"MOGLIE'S LATEST UPDATE: System's off!"*).
 * **🎨 Dynamic Visuals:** Card border colors shift dynamically based on status, and Moglie goes grayscale when stranded offline.
@@ -44,6 +44,7 @@ Moglie changes his mood, his outfit, and his card's border color based on what's
 * ☔ **Raining:** Blue border + Rainy Monkey. *"Looks like rain, grabbing my coat!"*
 * ❄️ **Cold/Snow:** Cyan border + Winter Monkey. *"Brrr! It's freezing out there!"*
 * 😎 **Hot:** Yellow-Orange border + Summer Monkey. *"It's boiling! Need a banana smoothie."*
+* 🥵 **Hot & Humid:** Yellow-Orange border + Sweaty Monkey. *"It's boiling! Need a banana smoothie."*
 
 ### 🤫 Secret Seasonal Anomalies
 * 📅 **???:** Rumor has it Moglie occasionally checks the calendar. Be on the lookout during a certain festive winter holiday or a notoriously silly spring day. He might just show off a rare outfit or completely forget how gravity works... you'll just have to wait and see!
