@@ -11,6 +11,8 @@ class MoglieCard extends HTMLElement {
 
   setConfig(config) {
     this.config = config;
+    this._last = null; // Clears cache when user edits settings
+    
     if (!this.content) {
       this.innerHTML = `
         <ha-card>
@@ -22,11 +24,33 @@ class MoglieCard extends HTMLElement {
       this.cont = this.querySelector('#m-cont');
       this.img = this.querySelector('#m-img');
       this.txt = this.querySelector('#m-txt');
-      this.cont.addEventListener('click', () => {
-        if (this.config?.alarm_entity) this.dispatchEvent(new CustomEvent('hass-more-info', { bubbles: true, composed: true, detail: { entityId: this.config.alarm_entity } }));
+
+      // Tap & Hold Detector
+      let timer, moved = false;
+      this.cont.addEventListener('pointerdown', () => {
+        moved = false;
+        timer = setTimeout(() => { timer = null; this.handleAction('hold'); }, 500);
+      });
+      this.cont.addEventListener('pointermove', () => { moved = true; if (timer) clearTimeout(timer); });
+      this.cont.addEventListener('pointerup', () => {
+        if (timer && !moved) { clearTimeout(timer); this.handleAction('tap'); }
       });
     }
     if (!config.wan_entity && !config.alarm_entity && !config.weather_entity) this.showErr("⚠️ Configure at least one entity (WAN, Alarm, Weather).");
+  }
+
+  // Action Dispatcher
+  handleAction(action) {
+    const cfg = this.config[`${action}_action`];
+    if (!cfg) {
+      // Default fallback: open the alarm panel on tap if nothing is set
+      if (action === 'tap' && this.config.alarm_entity) {
+        this.dispatchEvent(new CustomEvent('hass-more-info', { bubbles: true, composed: true, detail: { entityId: this.config.alarm_entity } }));
+      }
+      return;
+    }
+    // Fire native HA action
+    this.dispatchEvent(new CustomEvent('hass-action', { bubbles: true, composed: true, detail: { config: this.config, action: action } }));
   }
 
   showErr(m) {
@@ -133,6 +157,8 @@ const M_SCHEMA = [
   { name: "wan_entity", selector: { entity: { domain: "binary_sensor" } } },
   { name: "alarm_entity", selector: { entity: { domain: "alarm_control_panel" } } },
   { name: "weather_entity", selector: { entity: { domain: "weather" } } },
+  { name: "tap_action", selector: { ui_action: {} } },
+  { name: "hold_action", selector: { ui_action: {} } },
   { name: "enable_night_mode", label: "Enable Night Mode", selector: { boolean: {} } },
   { name: "night_start", selector: { number: { min: 0, max: 23, mode: "box" } } },
   { name: "night_end", selector: { number: { min: 0, max: 23, mode: "box" } } },
@@ -143,7 +169,7 @@ const M_SCHEMA = [
 ];
 
 const M_LBLS = {
-  wan_entity: "WAN Entity", alarm_entity: "Alarm Entity", weather_entity: "Weather Entity", enable_night_mode: "Enable Night Mode", night_start: "Night Start Hour", night_end: "Night End Hour", quote_offline: "Quote: WAN Offline", quote_disarmed: "Quote: Disarmed", quote_armed_home: "Quote: Armed Home", quote_armed_away: "Quote: Armed Away", quote_night: "Quote: Night Mode", quote_hot: "Quote: Hot Weather", quote_cold: "Quote: Cold Weather", quote_rain: "Quote: Rainy Weather"
+  wan_entity: "WAN Entity", alarm_entity: "Alarm Entity", weather_entity: "Weather Entity", tap_action: "Tap Action", hold_action: "Hold Action", enable_night_mode: "Enable Night Mode", night_start: "Night Start Hour", night_end: "Night End Hour", quote_offline: "Quote: WAN Offline", quote_disarmed: "Quote: Disarmed", quote_armed_home: "Quote: Armed Home", quote_armed_away: "Quote: Armed Away", quote_night: "Quote: Night Mode", quote_hot: "Quote: Hot Weather", quote_cold: "Quote: Cold Weather", quote_rain: "Quote: Rainy Weather"
 };
 
 class MoglieCardEditor extends HTMLElement {
