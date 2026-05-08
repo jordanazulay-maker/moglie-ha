@@ -7,6 +7,7 @@ import { festive_monkey as festive_b64 } from './festive-monkey.js';
 
 class MoglieCard extends HTMLElement {
   static getConfigElement() { return document.createElement("moglie-card-editor"); }
+  
   static getStubConfig() {
     return { wan_entity: "", alarm_entity: "", weather_entity: "", night_start: 22, night_end: 6 };
   }
@@ -28,7 +29,7 @@ class MoglieCard extends HTMLElement {
     }
 
     if (!config.wan_entity && !config.alarm_entity && !config.weather_entity) {
-      this.showError("⚠️ Please configure at least one entity (WAN, Alarm, or Weather).");
+      this.showError("⚠️ Configure at least one entity (WAN, Alarm, or Weather).");
     }
   }
 
@@ -42,12 +43,14 @@ class MoglieCard extends HTMLElement {
     this._hass = hass;
     if (!this.config) return;
 
-    const hasWan = !!this.config.wan_entity && hass.states[this.config.wan_entity];
-    const hasAlarm = !!this.config.alarm_entity && hass.states[this.config.alarm_entity];
-    const hasWeather = !!this.config.weather_entity && hass.states[this.config.weather_entity];
+    // 1. Identify which entities actually exist
+    const hasWan = this.config.wan_entity && hass.states[this.config.wan_entity];
+    const hasAlarm = this.config.alarm_entity && hass.states[this.config.alarm_entity];
+    const hasWeather = this.config.weather_entity && hass.states[this.config.weather_entity];
 
     if (!hasWan && !hasAlarm && !hasWeather) return;
 
+    // 2. Fetch states safely (prevents the 'fatal error' crash)
     const wanState = hasWan ? String(hass.states[this.config.wan_entity].state).toLowerCase() : 'on';
     const alarmState = hasAlarm ? String(hass.states[this.config.alarm_entity].state).toLowerCase() : 'disarmed';
     const weatherState = hasWeather ? String(hass.states[this.config.weather_entity].state).toLowerCase() : 'unknown';
@@ -56,20 +59,24 @@ class MoglieCard extends HTMLElement {
     const isOffState = alarmState.includes('disarmed') || alarmState === 'off';
     const isHomeState = alarmState.includes('home') || alarmState.includes('night') || alarmState.includes('stay');
 
+    // 3. Dynamic Quotes (No more lying about WAN)
     const quotes = {
       offline: this.config.quote_offline || "WAN connection lost!",
       night: this.config.quote_night || "Zzz... Moglie is sleeping...",
       disarmed: this.config.quote_disarmed || "System's off! Taking a banana break.",
       armedHome: this.config.quote_armed_home || (hasWan ? "Welcome Home! WAN is strong." : "Welcome Home! Everything is secure."),
-      armedAway: this.config.quote_armed_away || (hasWan ? "WAN is stable. I'll watch the trees!" : "I'm watching the trees!")
+      armedAway: this.config.quote_armed_away || (hasWan ? "WAN is stable. I'm watching the trees!" : "I'm watching the trees!")
     };
 
-    let border = "2px solid gray";
+    // 4. Border Logic
+    let border = "2px solid var(--primary-color, #03a9f4)";
     if (hasAlarm) {
       border = isOffState ? "2px solid orange" : (isHomeState ? "2px solid green" : "2px solid red");
     }
 
+    // 5. Update UI based on priority
     this.image.style.filter = "none";
+    
     if (hasWan && !isWanActive) {
       this.updateUI('normal', normal_b64, quotes.offline, "2px solid gray");
       this.image.style.filter = "grayscale(100%)";
@@ -82,7 +89,7 @@ class MoglieCard extends HTMLElement {
   }
 
   updateUI(key, img, text, border) {
-    this.image.src = img;
+    if (this.image.src !== img) this.image.src = img;
     this.content.innerHTML = text;
     this.container.style.border = border;
   }
