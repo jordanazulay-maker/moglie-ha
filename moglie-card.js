@@ -7,7 +7,7 @@ import { festive_monkey as f_b64 } from './festive-monkey.js';
 
 class MoglieCard extends HTMLElement {
   static getConfigElement() { return document.createElement("moglie-card-editor"); }
-  static getStubConfig() { return { wan_entity: "", alarm_entity: "", weather_entity: "", enable_night_mode: true, night_start: 22, night_end: 6 }; }
+  static getStubConfig() { return { wan_entity: "", alarm_entity: "", weather_entity: "", enable_night_mode: true, night_start: 22, night_end: 6, use_custom_quotes: false }; }
 
   setConfig(config) {
     this.config = config;
@@ -70,7 +70,7 @@ class MoglieCard extends HTMLElement {
 
     const d = new Date();
     const hr = d.getHours();
-    const sHash = `${wState}|${aState}|${weState}|${hr}|${d.getDate()}|${c.enable_night_mode}`;
+    const sHash = `${wState}|${aState}|${weState}|${hr}|${d.getDate()}|${c.enable_night_mode}|${c.use_custom_quotes}`;
     if (this._last === sHash) return; 
     this._last = sHash;
 
@@ -113,15 +113,16 @@ class MoglieCard extends HTMLElement {
       else nTxt = "The canopy is empty tonight. <br><small style='color:#F44336;font-weight:bold;'>(Primates are on HIGH ALERT in the dark!)</small>";
     }
 
+    const uQ = c.use_custom_quotes;
     const q = {
-      off: c.quote_offline || "Moglie is stranded. The WAN connection has been lost!",
-      cold: c.quote_cold || "Brrr! It's freezing out there!",
-      rain: c.quote_rain || "Looks like rain, grabbing my coat!",
-      hot: c.quote_hot || "It's boiling! Need a banana smoothie.",
-      dis: c.quote_disarmed || `${greet}System's off! The primates ditched their post for a banana run.`,
-      home: c.quote_armed_home || `${greet}${isWknd ? "The troop is relaxing in the branches. " : "The troop is home. "}The primates are on perimeter patrol.`,
-      away: c.quote_armed_away || "The troop is away. The primates are watching the trees!",
-      night: c.quote_night || nTxt
+      off: (uQ && c.quote_offline) || "Moglie is stranded. The WAN connection has been lost!",
+      cold: (uQ && c.quote_cold) || "Brrr! It's freezing out there!",
+      rain: (uQ && c.quote_rain) || "Looks like rain, grabbing my coat!",
+      hot: (uQ && c.quote_hot) || "It's boiling! Need a banana smoothie.",
+      dis: (uQ && c.quote_disarmed) || `${greet}System's off! The primates ditched their post for a banana run.`,
+      home: (uQ && c.quote_armed_home) || `${greet}${isWknd ? "The troop is relaxing in the branches. " : "The troop is home. "}The primates are on perimeter patrol.`,
+      away: (uQ && c.quote_armed_away) || "The troop is away. The primates are watching the trees!",
+      night: (uQ && c.quote_night) || nTxt
     };
 
     let bdr = "2px solid #03a9f4";
@@ -149,35 +150,43 @@ class MoglieCard extends HTMLElement {
 }
 customElements.define('moglie-card', MoglieCard);
 
-const M_SCHEMA = [
-  { name: "wan_entity", selector: { entity: { domain: "binary_sensor" } } },
-  { name: "alarm_entity", selector: { entity: { domain: "alarm_control_panel" } } },
-  { name: "weather_entity", selector: { entity: { domain: "weather" } } },
-  { name: "tap_action", selector: { ui_action: {} } },
-  { name: "hold_action", selector: { ui_action: {} } },
-  { name: "enable_night_mode", label: "Enable Night Mode", selector: { boolean: {} } },
-  { name: "night_start", selector: { number: { min: 0, max: 23, mode: "box" } } },
-  { name: "night_end", selector: { number: { min: 0, max: 23, mode: "box" } } },
-  { name: "quote_offline", selector: { text: {} } }, { name: "quote_disarmed", selector: { text: {} } },
-  { name: "quote_armed_home", selector: { text: {} } }, { name: "quote_armed_away", selector: { text: {} } },
-  { name: "quote_night", selector: { text: {} } }, { name: "quote_hot", selector: { text: {} } },
-  { name: "quote_cold", selector: { text: {} } }, { name: "quote_rain", selector: { text: {} } }
-];
-
 const M_LBLS = {
-  wan_entity: "WAN Entity", alarm_entity: "Alarm Entity", weather_entity: "Weather Entity", tap_action: "Tap Action", hold_action: "Hold Action", enable_night_mode: "Enable Night Mode", night_start: "Night Start Hour", night_end: "Night End Hour", quote_offline: "Quote: WAN Offline", quote_disarmed: "Quote: Disarmed", quote_armed_home: "Quote: Armed Home", quote_armed_away: "Quote: Armed Away", quote_night: "Quote: Night Mode", quote_hot: "Quote: Hot Weather", quote_cold: "Quote: Cold Weather", quote_rain: "Quote: Rainy Weather"
+  wan_entity: "WAN Entity", alarm_entity: "Alarm Entity", weather_entity: "Weather Entity", tap_action: "Tap Action", hold_action: "Hold Action", enable_night_mode: "Enable Night Mode", night_start: "Night Start Hour", night_end: "Night End Hour", use_custom_quotes: "Enable Custom Quotes", quote_offline: "Quote: WAN Offline", quote_disarmed: "Quote: Disarmed", quote_armed_home: "Quote: Armed Home", quote_armed_away: "Quote: Armed Away", quote_night: "Quote: Night Mode", quote_hot: "Quote: Hot Weather", quote_cold: "Quote: Cold Weather", quote_rain: "Quote: Rainy Weather"
 };
 
 class MoglieCardEditor extends HTMLElement {
-  setConfig(config) { this._cfg = config; if (this._f) this._f.data = config; else this.render(); }
+  setConfig(config) { this._cfg = config; if (this._f) { this._f.data = config; this._upd(); } else this.render(); }
   set hass(hass) { this._h = hass; if (this._f) this._f.hass = hass; else this.render(); }
+
+  _upd() {
+    const s = [
+      { name: "wan_entity", selector: { entity: { domain: "binary_sensor" } } },
+      { name: "alarm_entity", selector: { entity: { domain: "alarm_control_panel" } } },
+      { name: "weather_entity", selector: { entity: { domain: "weather" } } },
+      { name: "tap_action", selector: { ui_action: {} } },
+      { name: "hold_action", selector: { ui_action: {} } },
+      { name: "enable_night_mode", selector: { boolean: {} } },
+      { name: "night_start", selector: { number: { min: 0, max: 23, mode: "box" } } },
+      { name: "night_end", selector: { number: { min: 0, max: 23, mode: "box" } } },
+      { name: "use_custom_quotes", selector: { boolean: {} } }
+    ];
+    if (this._cfg.use_custom_quotes) {
+      s.push(
+        { name: "quote_offline", selector: { text: {} } }, { name: "quote_disarmed", selector: { text: {} } },
+        { name: "quote_armed_home", selector: { text: {} } }, { name: "quote_armed_away", selector: { text: {} } },
+        { name: "quote_night", selector: { text: {} } }, { name: "quote_hot", selector: { text: {} } },
+        { name: "quote_cold", selector: { text: {} } }, { name: "quote_rain", selector: { text: {} } }
+      );
+    }
+    this._f.schema = s;
+  }
 
   render() {
     if (!this._h || !this._cfg || this._f) return;
     this._f = document.createElement("ha-form");
     this._f.hass = this._h;
     this._f.data = this._cfg;
-    this._f.schema = M_SCHEMA;
+    this._upd();
     this._f.computeLabel = (s) => M_LBLS[s.name] || s.name;
     this._f.addEventListener("value-changed", (e) => this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: e.detail.value }, bubbles: true, composed: true })));
     this.appendChild(this._f);
