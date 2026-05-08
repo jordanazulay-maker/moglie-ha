@@ -1,4 +1,4 @@
-import { normal_monkey as normal_b64 } from './normal-monkey.js';
+\import { normal_monkey as normal_b64 } from './normal-monkey.js';
 import { winter_monkey as winter_b64 } from './winter-monkey.js';
 import { rainy_monkey as rainy_b64 } from './rainy-monkey.js';
 import { summer_monkey as summer_b64 } from './summer-monkey.js';
@@ -107,7 +107,7 @@ class MoglieCard extends HTMLElement {
     const isCold = temp !== null && ((isF && temp < 50) || (isC && temp < 10));
     const showWinter = isSnowing || isCold;
 
-    // 3. LEVEL 2: Time Intelligence & Holidays
+    // 3. Time Intelligence & Holidays
     const d = new Date();
     const currentHour = d.getHours();
     const currentDay = d.getDay(); // 0 = Sunday, 6 = Saturday
@@ -142,9 +142,15 @@ class MoglieCard extends HTMLElement {
     // 6. Build The Pack vs Primates Quotes
     let nightText = "";
     if (hasAlarm) {
-      if (isHomeState) nightText = "The pack is sleeping safely. <br><small style='opacity: 0.8;'>(The primates are on night patrol.)</small>";
-      else if (isOffState) nightText = "The pack is sleeping... <br><small style='color: orange;'>(But the primates are off duty! Who is watching the trees?!)</small>";
-      else nightText = "The pack is away. <br><small style='opacity: 0.8;'>(The primates hold the night watch.)</small>";
+      if (isHomeState) {
+        nightText = "The pack is fast asleep in the den. <br><small style='color: var(--success-color, #4CAF50); font-weight: bold;'>(Primates are silently securing the perimeter.)</small>";
+      } 
+      else if (isOffState) {
+        nightText = "The pack is sleeping... <br><small style='color: var(--warning-color, orange); font-weight: bold;'>(But the primates are off duty! Who is watching the trees?!)</small>";
+      } 
+      else {
+        nightText = "The den is empty tonight. <br><small style='color: var(--error-color, #F44336); font-weight: bold;'>(Primates are on HIGH ALERT in the dark!)</small>";
+      }
     } else {
       nightText = "The pack is sleeping...";
     }
