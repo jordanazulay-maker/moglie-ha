@@ -41,6 +41,8 @@ class MoglieCard extends HTMLElement {
       this.cont.addEventListener('pointerup', () => {
         if (timer && !moved) { clearTimeout(timer); this.handleAct('tap'); }
       });
+      
+      this.content = true; // ⚡ ZAP 1: Mark content as loaded to prevent DOM flickering
     }
     if (!config.wan_entity && !config.alarm_entity && !config.weather_entity) this.showErr("⚠️ Configure at least one entity (WAN, Alarm, Weather).");
   }
@@ -74,10 +76,13 @@ class MoglieCard extends HTMLElement {
     const wState = wan ? wan.state.toLowerCase() : 'on';
     const aState = alrm ? alrm.state.toLowerCase() : 'disarmed';
     const weState = wthr ? wthr.state.toLowerCase() : 'unknown';
+    const tempHash = wthr ? (wthr.attributes?.temperature ?? '') : ''; // ⚡ ZAP 2: Add temperature to hash
 
     const d = new Date();
     const hr = d.getHours();
-    const sHash = `${wState}|${aState}|${weState}|${hr}|${d.getDate()}|${c.enable_night_mode}|${c.use_custom_quotes}`;
+    
+    // ⚡ ZAP 2: Check wState, aState, weState AND tempHash before re-rendering
+    const sHash = `${wState}|${aState}|${weState}|${tempHash}|${hr}|${d.getDate()}|${c.enable_night_mode}|${c.use_custom_quotes}`;
     if (this._last === sHash) return; 
     this._last = sHash;
 
@@ -151,7 +156,9 @@ class MoglieCard extends HTMLElement {
   }
 
   upd(img, txt, bdr) {
-    if (this.img.src !== img) this.img.src = img;
+    // ⚡ ZAP 3: Securely compare and update base64 values via getAttribute
+    if (this.img.getAttribute('src') !== img) this.img.setAttribute('src', img);
+    
     if (this.txt.innerHTML !== txt) this.txt.innerHTML = txt;
     if (this.cont.style.border !== bdr) this.cont.style.border = bdr;
   }
