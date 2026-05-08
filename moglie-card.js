@@ -12,7 +12,7 @@ class MoglieCard extends HTMLElement {
   setConfig(config) {
     this.config = config;
     this._last = null; 
-    this._lastTxt = null; // ⚡ ZAP: Cache the raw text to stop innerHTML reflows
+    this._lastTxt = null; 
     
     if (!this.content) {
       this.innerHTML = `
@@ -43,7 +43,7 @@ class MoglieCard extends HTMLElement {
         if (timer && !moved) { clearTimeout(timer); this.handleAct('tap'); }
       });
       
-      this.content = true; // ⚡ ZAP: Stop DOM reconstruction
+      this.content = true; 
     }
     if (!config.wan_entity && !config.alarm_entity && !config.weather_entity) this.showErr("⚠️ Configure at least one entity (WAN, Alarm, Weather).");
   }
@@ -110,8 +110,6 @@ class MoglieCard extends HTMLElement {
     const isNight = nS > nE ? (hr >= nS || hr < nE) : (hr >= nS && hr < nE);
     const showNight = c.enable_night_mode !== false && isNight;
 
-    // ⚡ ZAP: THE SUPER HASH. We only cache the evaluated logic. 
-    // This stops volatile sensors from constantly triggering redraws.
     const sHash = `${wanOk}|${aOff}|${aHome}|${isRain}|${isSnow}|${isHot}|${isCold}|${showNight}|${isXmas}|${isApril}|${hr>=6&&hr<11}|${hr>=11&&hr<17}|${isWknd}|${!!wan}|${!!alrm}|${!!wthr}`;
     if (this._last === sHash) return; 
     this._last = sHash;
@@ -153,17 +151,15 @@ class MoglieCard extends HTMLElement {
     else if (isXmas) this.upd(f_b64, "Merry Christmas to the troop!", bdr);
     else if (showNight) this.upd(sl_b64, q.night, "2px solid #673AB7");
     else if (wthr && isRain) this.upd(r_b64, q.rain, "2px solid #2196F3");
-    else if (wthr && (isSnow || isCold)) this.upd(w w_b64, q.cold, "2px solid #00BCD4");
+    else if (wthr && (isSnow || isCold)) this.upd(w_b64, q.cold, "2px solid #00BCD4"); // <- The bug was here!
     else if (wthr && isHot) this.upd(s_b64, q.hot, "2px solid #FF9800"); 
     else if (alrm) this.upd(n_b64, aOff ? q.dis : (aHome ? q.home : q.away), bdr);
     else this.upd(n_b64, "Moglie is standing by!", bdr);
   }
 
   upd(img, txt, bdr) {
-    // ⚡ ZAP: Secure attribute check for base64
     if (this.img.getAttribute('src') !== img) this.img.setAttribute('src', img);
     
-    // ⚡ ZAP: Prevent browser HTML manipulation from busting the text loop
     if (this._lastTxt !== txt) {
       this.txt.innerHTML = txt;
       this._lastTxt = txt;
