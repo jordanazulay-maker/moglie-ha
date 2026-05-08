@@ -8,10 +8,15 @@ import { festive_monkey as f_b64 } from './festive-monkey.js';
 
 class MoglieCard extends HTMLElement {
   static getConfigElement() { return document.createElement("moglie-card-editor"); }
-  static getStubConfig() { return { wan_entity: "", alarm_entity: "", weather_entity: "", enable_night_mode: true, night_start: 22, night_end: 6, use_custom_quotes: false, hide_moglie: false }; }
+  static getStubConfig() { return { use_wan: false, use_alarm: false, use_weather: false, wan_entity: "", alarm_entity: "", weather_entity: "", enable_night_mode: true, night_start: 22, night_end: 6, use_custom_quotes: false, hide_moglie: false }; }
 
   setConfig(config) {
-    this.config = config;
+    // Clone config and set legacy fallbacks so existing users don't break
+    this.config = { ...config };
+    if (this.config.use_wan === undefined) this.config.use_wan = !!this.config.wan_entity;
+    if (this.config.use_alarm === undefined) this.config.use_alarm = !!this.config.alarm_entity;
+    if (this.config.use_weather === undefined) this.config.use_weather = !!this.config.weather_entity;
+    
     this._last = null;
 
     if (!this.content) {
@@ -43,7 +48,13 @@ class MoglieCard extends HTMLElement {
         if (timer && !moved) { clearTimeout(timer); this.handleAct('tap'); }
       });
     }
-    if (!config.wan_entity && !config.alarm_entity && !config.weather_entity) this.showErr("⚠️ Configure at least one entity (WAN, Alarm, Weather).");
+
+    // Update error state to respect toggles
+    if (!(this.config.use_wan && this.config.wan_entity) && 
+        !(this.config.use_alarm && this.config.alarm_entity) && 
+        !(this.config.use_weather && this.config.weather_entity)) {
+      this.showErr("⚠️ Enable and configure at least one entity (WAN, Alarm, Weather).");
+    }
   }
 
   handleAct(a) {
@@ -66,9 +77,11 @@ class MoglieCard extends HTMLElement {
   set hass(hass) {
     if (!this.config) return;
     const c = this.config;
-    const wan = c.wan_entity ? hass.states[c.wan_entity] : null;
-    const alrm = c.alarm_entity ? hass.states[c.alarm_entity] : null;
-    const wthr = c.weather_entity ? hass.states[c.weather_entity] : null;
+    
+    // Only grab states if the toggle is ON and the entity is provided
+    const wan = (c.use_wan && c.wan_entity) ? hass.states[c.wan_entity] : null;
+    const alrm = (c.use_alarm && c.alarm_entity) ? hass.states[c.alarm_entity] : null;
+    const wthr = (c.use_weather && c.weather_entity) ? hass.states[c.weather_entity] : null;
 
     if (!wan && !alrm && !wthr) return;
 
@@ -79,7 +92,7 @@ class MoglieCard extends HTMLElement {
     const d = new Date();
     const hr = d.getHours();
 
-    const sHash = `${wState}|${aState}|${weState}|${hr}|${d.getDate()}|${c.enable_night_mode}|${c.use_custom_quotes}|${c.hide_moglie}`;
+    const sHash = `${wState}|${aState}|${weState}|${hr}|${d.getDate()}|${c.enable_night_mode}|${c.use_custom_quotes}|${c.hide_moglie}|${c.use_wan}|${c.use_alarm}|${c.use_weather}`;
     if (this._last === sHash) return; 
     this._last = sHash;
 
@@ -118,7 +131,6 @@ class MoglieCard extends HTMLElement {
       else if (hr >= 17 && hr < nS) greet = "Sun's getting low. ";
     }
 
-    // --- 1. SEPARATE THE PATROL SUBTEXT --- //
     let patrolTxt = "";
     if (alrm) {
       if (aHome) {
@@ -141,7 +153,6 @@ class MoglieCard extends HTMLElement {
       else nTxt = "The canopy is empty tonight.";
     }
 
-    // --- 2. BASE QUOTES (Without the subtext baked in) --- //
     const uQ = c.use_custom_quotes;
     const q = {
       off: (uQ && c.quote_offline) || "Moglie is stranded. The WAN connection has been lost!",
@@ -169,7 +180,7 @@ class MoglieCard extends HTMLElement {
       quote = q.off; 
       border = "2px solid gray"; 
       isGrayscale = true; 
-      patrolTxt = ""; // Clear patrol status if network is dead
+      patrolTxt = ""; 
     }
     else if (isApril) { 
       outfit = n_b64; 
@@ -200,7 +211,6 @@ class MoglieCard extends HTMLElement {
       border = "2px solid #FF9800"; 
     }
 
-    // --- 3. MERGE THEM TOGETHER --- //
     quote += patrolTxt;
 
     if (c.hide_moglie) {
@@ -226,30 +236,57 @@ class MoglieCard extends HTMLElement {
 customElements.define('moglie-card', MoglieCard);
 
 const M_LBLS = {
+  use_wan: "Monitor WAN Status", use_alarm: "Monitor Security Alarm", use_weather: "Monitor Weather",
   wan_entity: "WAN Entity", alarm_entity: "Alarm Entity", weather_entity: "Weather Entity", tap_action: "Tap Action", hold_action: "Hold Action", enable_night_mode: "Enable Night Mode", night_start: "Night Start Hour", night_end: "Night End Hour", hide_moglie: "Hide Moglie (Text Only Mode)", use_custom_quotes: "Enable Custom Quotes", quote_offline: "Quote: WAN Offline", quote_disarmed: "Quote: Disarmed", quote_armed_home: "Quote: Armed Home", quote_armed_away: "Quote: Armed Away", quote_night: "Quote: Night Mode", quote_hot: "Quote: Hot Weather", quote_cold: "Quote: Cold Weather", quote_rain: "Quote: Rainy Weather"
 };
 
 class MoglieCardEditor extends HTMLElement {
-  setConfig(config) { this._cfg = config; if (this._f) { this._f.data = config; this._upd(); } else this.render(); }
+  setConfig(config) { 
+    this._cfg = { ...config }; 
+    // Legacy fallback so existing cards don't lose their settings
+    if (this._cfg.use_wan === undefined) this._cfg.use_wan = !!this._cfg.wan_entity;
+    if (this._cfg.use_alarm === undefined) this._cfg.use_alarm = !!this._cfg.alarm_entity;
+    if (this._cfg.use_weather === undefined) this._cfg.use_weather = !!this._cfg.weather_entity;
+
+    if (this._f) { this._f.data = this._cfg; this._upd(); } else this.render(); 
+  }
+  
   set hass(hass) { this._h = hass; if (this._f) this._f.hass = hass; else this.render(); }
 
   _upd() {
     const s = [
-      { name: "wan_entity", selector: { entity: { domain: "binary_sensor" } } },
-      { name: "alarm_entity", selector: { entity: { domain: "alarm_control_panel" } } },
-      { name: "weather_entity", selector: { entity: { domain: "weather" } } },
       { type: "grid", schema: [
-        { name: "tap_action", selector: { ui_action: {} } },
-        { name: "hold_action", selector: { ui_action: {} } }
-      ]},
-      { name: "enable_night_mode", selector: { boolean: {} } },
-      { type: "grid", schema: [
+        { name: "use_wan", selector: { boolean: {} } },
+        { name: "use_alarm", selector: { boolean: {} } },
+        { name: "use_weather", selector: { boolean: {} } }
+      ]}
+    ];
+
+    // Conditionally render entity pickers
+    if (this._cfg.use_wan) s.push({ name: "wan_entity", selector: { entity: { domain: "binary_sensor" } } });
+    if (this._cfg.use_alarm) s.push({ name: "alarm_entity", selector: { entity: { domain: "alarm_control_panel" } } });
+    if (this._cfg.use_weather) s.push({ name: "weather_entity", selector: { entity: { domain: "weather" } } });
+
+    s.push({ type: "grid", schema: [
+      { name: "tap_action", selector: { ui_action: {} } },
+      { name: "hold_action", selector: { ui_action: {} } }
+    ]});
+
+    s.push({ name: "enable_night_mode", selector: { boolean: {} } });
+
+    // Hide night schedule if night mode is off
+    if (this._cfg.enable_night_mode !== false) {
+      s.push({ type: "grid", schema: [
         { name: "night_start", selector: { number: { min: 0, max: 23, mode: "box" } } },
         { name: "night_end", selector: { number: { min: 0, max: 23, mode: "box" } } }
-      ]},
+      ]});
+    }
+
+    s.push(
       { name: "hide_moglie", selector: { boolean: {} } },
       { name: "use_custom_quotes", selector: { boolean: {} } }
-    ];
+    );
+
     if (this._cfg.use_custom_quotes) {
       s.push(
         { name: "quote_offline", selector: { text: {} } }, { name: "quote_disarmed", selector: { text: {} } },
