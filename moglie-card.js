@@ -3,6 +3,7 @@ import { winter_monkey as winter_b64 } from './winter-monkey.js';
 import { rainy_monkey as rainy_b64 } from './rainy-monkey.js';
 import { summer_monkey as summer_b64 } from './summer-monkey.js';
 import { sleepy_monkey as sleepy_b64 } from './sleepy-monkey.js';
+import { festive_monkey as festive_b64 } from './festive-monkey.js';
 
 console.info(
   `%c🐒 MOGLIE-HA %c a monkey has appeared! `,
@@ -133,6 +134,8 @@ class MoglieCard extends HTMLElement {
     const isHomeState = alarmState.includes('home') || alarmState.includes('night') || alarmState.includes('stay') || alarmState.includes('partial');
 
     const currentHour = new Date().getHours();
+    const d = new Date();
+    const isChristmas = d.getMonth() === 11 && (d.getDate() === 24 || d.getDate() === 25); 
     const nightStart = parseInt(this.config.night_start) || 22;
     const nightEnd = parseInt(this.config.night_end) || 6;
     
@@ -174,7 +177,7 @@ class MoglieCard extends HTMLElement {
     const showWinter = isSnowing || isCold;
 
     const configHash = JSON.stringify(this.config);
-    const statusKey = `${wanState}-${alarmState}-${isNightMode}-${isRaining}-${isHot}-${showWinter}-${configHash}`;
+    const statusKey = `${wanState}-${alarmState}-${isNightMode}-${isRaining}-${isHot}-${showWinter}-${isChristmas}-${configHash}`;
     if (this._lastStatus === statusKey) return; 
     this._lastStatus = statusKey;
 
@@ -196,6 +199,8 @@ class MoglieCard extends HTMLElement {
       this.updateUI('normal', normal_b64, quotes.offline, "2px solid var(--disabled-text-color, gray)");
       this.content.classList.add("status-warning");
       this.image.style.filter = "grayscale(100%)";
+    } else if (isChristmas) {
+      this.updateUI('festive', festive_b64, "The rest of the pack and I wish you a merry christmas", "2px solid #D32F2F");
     } else if (isNightMode) {
       this.updateUI('sleepy', sleepy_b64, quotes.night, "2px solid #673AB7");
     } else if (isRaining) {
