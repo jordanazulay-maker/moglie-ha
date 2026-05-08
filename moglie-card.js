@@ -211,7 +211,7 @@ class MoglieCard extends HTMLElement {
       this.content.classList.add("status-warning");
       this.image.style.filter = "grayscale(100%)";
     } else if (isChristmas) {
-      this.updateUI('festive', festive_b64, "The rest of the pack and I wish you a merry christmas", alarmBorder);
+      this.updateUI('festive', festive_b64, "The rest of the pack and I wish you a Merry Christmas!", alarmBorder);
     } else if (isNightMode) {
       this.updateUI('sleepy', sleepy_b64, quotes.night, "2px solid #673AB7");
     } else if (isRaining) {
