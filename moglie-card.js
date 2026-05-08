@@ -124,7 +124,7 @@ class MoglieCard extends HTMLElement {
     if (this._lastStatus === statusKey) return; 
     this._lastStatus = statusKey;
 
-    // 5. Build Night Mode Text explicitly
+    // 5. Build Night Mode Text explicitly (with Patrol subtitle)
     let baseNightQuote = this.config.quote_night || "Zzz... Moglie is sleeping...";
     let patrolText = "";
     if (hasAlarm) {
@@ -254,6 +254,9 @@ class MoglieCardEditor extends HTMLElement {
 }
 customElements.define("moglie-card-editor", MoglieCardEditor);
 
+/* -------------------------------------------------------------------
+   CARD REGISTRATION (Required to show up in Dashboard)
+------------------------------------------------------------------- */
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: "moglie-card",
