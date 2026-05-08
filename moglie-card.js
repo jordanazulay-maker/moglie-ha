@@ -144,11 +144,7 @@ class MoglieCard extends HTMLElement {
     // Holiday & Easter Egg Date Logic
     const d = new Date();
     const isChristmas = d.getMonth() === 11 && (d.getDate() === 24 || d.getDate() === 25); 
-
-    // --- TEST MODE FOR APRIL FOOLS --- 
-    // Remember to change this back to: d.getMonth() === 3 && d.getDate() === 1;
-    const isAprilFools = true; 
-    // ---------------------------------
+    const isAprilFools = d.getMonth() === 3 && d.getDate() === 1;
     
     const nightStart = parseInt(this.config.night_start) || 22;
     const nightEnd = parseInt(this.config.night_end) || 6;
@@ -229,7 +225,7 @@ class MoglieCard extends HTMLElement {
       this.content.classList.add("status-warning");
       this.image.style.filter = "grayscale(100%)";
     } else if (isAprilFools) {
-      this.updateUI('normal', normal_b64, "Why is the blood rushing to my head? 🙃🍌", alarmBorder);
+      this.updateUI('normal', normal_b64, "Why is the blood rushing to my head?", alarmBorder);
     } else if (isChristmas) {
       this.updateUI('festive', festive_b64, "The rest of the pack and I wish you a Merry Christmas!", alarmBorder);
     } else if (isNightMode) {
