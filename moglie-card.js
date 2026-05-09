@@ -176,14 +176,34 @@ class MoglieCard extends HTMLElement {
 
 // Editor handles RTL setup automatically
 class MoglieCardEditor extends HTMLElement {
-  setConfig(config) { this._cfg = config; this.render(); }
+  setConfig(config) { 
+    this._cfg = config; 
+    this.render(); 
+  }
+  
   set hass(hass) { 
     this._h = hass;
     const lang = (hass.language || "en").split("-")[0];
     if (lang === "he" || lang === "ar") this.style.direction = "rtl";
+    
+    // Update the form's hass object if the form exists
+    if (this._f) {
+      this._f.hass = hass;
+    }
+    // Trigger a render when hass is set
+    this.render();
   }
+  
   render() {
-    if (!this._h || this._f) return;
+    // If hass isn't ready yet, wait.
+    if (!this._h) return;
+    
+    // If the form already exists, just update its data and return
+    if (this._f) {
+      this._f.data = this._cfg;
+      return;
+    }
+
     this._f = document.createElement("ha-form");
     this._f.hass = this._h;
     this._f.data = this._cfg;
