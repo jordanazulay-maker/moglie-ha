@@ -1,3 +1,4 @@
+// moglie-localization.js
 export const MOGLIE_TRANSLATIONS = {
   "en": {
     "off": "Moglie is stranded. The WAN connection has been lost!",
@@ -41,11 +42,74 @@ export const MOGLIE_TRANSLATIONS = {
     "away": "La tropa está fuera. ¡Vigilando los árboles!",
     "night": "La tropa está durmiendo en la copa de los árboles...",
     "morning": "¡Buen día! Necesito un café de banana. ",
-    "afternoon": "La guardia de la tarde está despejada. ",
-    "evening": "El sol está bajando. ",
+    "afternoon": "La tarde está tranquila. ",
+    "evening": "El sol se está poniendo. ",
     "p_patrol": "(Primates en patrulla perimetral)",
     "p_off": "(Primates fuera de servicio)",
     "p_alert": "(¡ALERTA MÁXIMA!)"
+  },
+  "fr": {
+    "off": "Moglie est isolé. Connexion perdue !",
+    "rain": "On dirait qu'il pleut, je prends mon manteau !",
+    "cold": "Brrr ! Il fait glacial dehors !",
+    "hot": "C'est la canicule ! Besoin d'un smoothie à la banane.",
+    "dis": "Système désactivé ! La troupe se repose.",
+    "home": "La troupe est à la maison.",
+    "away": "La troupe est partie. Surveillance des arbres !",
+    "night": "La troupe dort dans la canopée...",
+    "morning": "Bon matin ! Un café à la banane, s'il vous plaît. ",
+    "afternoon": "L'après-midi est calme. ",
+    "evening": "Le soleil décline. ",
+    "p_patrol": "(Primates en patrouille)",
+    "p_off": "(Primates au repos)",
+    "p_alert": "(ALERTE MAXIMALE !)"
+  },
+  "de": {
+    "off": "Moglie ist isoliert. Internetverbindung verloren!",
+    "rain": "Es regnet wohl, ich schnappe mir meine Jacke!",
+    "cold": "Brrr! Es ist eiskalt draußen!",
+    "hot": "Es ist kochend heiß! Brauche einen Bananen-Smoothie.",
+    "dis": "System aus! Die Truppe entspannt sich.",
+    "home": "Die Truppe ist zu Hause.",
+    "away": "Die Truppe ist weg. Wir bewachen die Bäume!",
+    "night": "Die Truppe schläft in den Baumkronen...",
+    "morning": "Guten Morgen! Ich brauche einen Bananen-Kaffee. ",
+    "afternoon": "Nachmittagswache ist bereit. ",
+    "evening": "Die Sonne geht unter. ",
+    "p_patrol": "(Affen auf Patrouille)",
+    "p_off": "(Affen außer Dienst)",
+    "p_alert": "(HOCHALARM!)"
+  },
+  "it": {
+    "off": "Moglie è isolato. Connessione persa!",
+    "rain": "Sembra che piova, prendo il cappotto!",
+    "cold": "Brrr! Si gela fuori!",
+    "hot": "Si bolle! Voglio uno smoothie alla banana.",
+    "dis": "Sistema spento! Il branco si riposa.",
+    "home": "Il branco è a casa.",
+    "away": "Il branco è fuori. Sorvegliamo gli alberi!",
+    "night": "Il branco dorme sulla chioma degli alberi...",
+    "morning": "Buongiorno! Ho bisogno di un caffè alla banana. ",
+    "afternoon": "Pomeriggio tranquillo di guardia. ",
+    "evening": "Il sole sta calando. ",
+    "p_patrol": "(Scimmie in pattuglia)",
+    "p_off": "(Scimmie a riposo)",
+    "p_alert": "(MASSIMA ALLERTA!)"
+  },
+  "pt": {
+    "off": "Moglie está isolado. Conexão perdida!",
+    "rain": "Parece que vai chover, vou buscar meu casaco!",
+    "cold": "Brrr! Está um gelo lá fora!",
+    "hot": "Que calor! Preciso de um batido de banana.",
+    "dis": "Sistema desligado! A tropa está relaxando.",
+    "home": "A tropa está em casa.",
+    "away": "A tropa saiu. Vigia nos galhos!",
+    "night": "A tropa dorme na copa das árvores...",
+    "morning": "Bom dia! Preciso de um café de banana. ",
+    "afternoon": "Tarde tranquila por aqui. ",
+    "evening": "O sol está se pondo. ",
+    "p_patrol": "(Primatas em patrulha)",
+    "p_off": "(Primatas fora de serviço)",
+    "p_alert": "(ALERTA MÁXIMA!)"
   }
-  // ... You can continue adding fr, de, it using the same keys!
 };
