@@ -207,11 +207,40 @@ class MoglieCardEditor extends HTMLElement {
     this._f = document.createElement("ha-form");
     this._f.hass = this._h;
     this._f.data = this._cfg;
+    
+    // Clean, grouped schema configuration
     this._f.schema = [
       { name: "wan_entity", selector: { entity: { domain: "binary_sensor" } } },
       { name: "alarm_entity", selector: { entity: { domain: "alarm_control_panel" } } },
-      { name: "weather_entity", selector: { entity: { domain: "weather" } } }
+      { name: "weather_entity", selector: { entity: { domain: "weather" } } },
+      { name: "tap_action", selector: { ui_action: {} } },
+      {
+        type: "grid",
+        name: "",
+        schema: [
+          { name: "enable_night_mode", selector: { boolean: {} } },
+          { name: "hide_moglie", selector: { boolean: {} } },
+          { name: "night_start", selector: { number: { min: 0, max: 23, mode: "box" } } },
+          { name: "night_end", selector: { number: { min: 0, max: 23, mode: "box" } } }
+        ]
+      },
+      { name: "use_custom_quotes", selector: { boolean: {} } },
+      {
+        type: "grid",
+        name: "",
+        schema: [
+          { name: "quote_offline", selector: { text: {} } },
+          { name: "quote_rain", selector: { text: {} } },
+          { name: "quote_cold", selector: { text: {} } },
+          { name: "quote_hot", selector: { text: {} } },
+          { name: "quote_disarmed", selector: { text: {} } },
+          { name: "quote_armed_home", selector: { text: {} } },
+          { name: "quote_armed_away", selector: { text: {} } },
+          { name: "quote_night", selector: { text: {} } }
+        ]
+      }
     ];
+
     this._f.addEventListener("value-changed", (e) => {
       this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: e.detail.value }, bubbles: true, composed: true }));
     });
