@@ -22,7 +22,7 @@ class MoglieCard extends HTMLElement {
           .anti-gravity { transform: rotate(180deg); }
           #m-cont { padding: 16px; border-radius: 10px; text-align: center; transition: all 0.3s ease; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; }
           #m-img { width: 100%; max-width: 150px; height: auto; aspect-ratio: 1/1; object-fit: contain; transition: transform 0.5s ease; z-index: 1; }
-          #m-txt { margin-bottom: 15px; font-weight: bold; min-height: 3em; width: 95%; line-height: 1.4; color: var(--primary-text-color); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+          #m-txt { margin-bottom: 15px; font-weight: bold; min-height: 3.5em; width: 95%; line-height: 1.4; color: var(--primary-text-color); display: flex; flex-direction: column; align-items: center; justify-content: center; }
           .rtl { direction: rtl; text-align: right; }
           .hidden { display: none !important; }
         </style>
@@ -51,7 +51,6 @@ class MoglieCard extends HTMLElement {
     let i = 0;
     const type = () => {
       if (i < message.length) {
-        // Handle HTML tags for typewriter
         if (message.charAt(i) === '<') {
           let end = message.indexOf('>', i);
           this.txt.innerHTML += message.substring(i, end + 1);
@@ -88,9 +87,9 @@ class MoglieCard extends HTMLElement {
     const alrm = (c.use_alarm && c.alarm_entity) ? hass.states[c.alarm_entity] : null;
     const wthr = (c.use_weather && c.weather_entity) ? hass.states[c.weather_entity] : null;
 
-    if (c.use_wan && c.wan_entity && !wan) return this.showErr("Check WAN Entity");
-    if (c.use_alarm && c.alarm_entity && !alrm) return this.showErr("Check Alarm Entity");
-    if (c.use_weather && c.weather_entity && !wthr) return this.showErr("Check Weather Entity");
+    if (c.use_wan && c.wan_entity && !wan) return this.showErr("I think the primates found a problem in your config. Check your YAML!");
+    if (c.use_alarm && c.alarm_entity && !alrm) return this.showErr("I think the primates found a problem in your config. Check your YAML!");
+    if (c.use_weather && c.weather_entity && !wthr) return this.showErr("I think the primates found a problem in your config. Check your YAML!");
 
     const wState = wan ? wan.state.toLowerCase() : 'on';
     const aState = alrm ? alrm.state.toLowerCase() : 'disarmed';
@@ -102,7 +101,6 @@ class MoglieCard extends HTMLElement {
     if (this._last === sHash) return; 
     this._last = sHash;
 
-    // --- ENVIRO LOGIC ---
     const wanOk = /on|connected|true/.test(wState);
     const aOff = /disarmed|off/.test(aState);
     const aHome = /home|stay|night/.test(aState);
@@ -118,13 +116,20 @@ class MoglieCard extends HTMLElement {
     const isNight = nS > nE ? (hr >= nS || hr < nE) : (hr >= nS && hr < nE);
     const showNight = c.enable_night_mode !== false && isNight;
 
-    // --- QUOTE SELECTION ---
+    // Greeting Logic
+    let greet = "";
+    if (!showNight) {
+        if (hr >= 6 && hr < 11) greet = defaultQuotes.morning;
+        else if (hr >= 11 && hr < 17) greet = defaultQuotes.afternoon;
+        else if (hr >= 17 && hr < nS) greet = defaultQuotes.evening;
+    }
+
     const uQ = c.use_custom_quotes;
     const q = {
       off: (uQ && c.quote_offline) || defaultQuotes.off,
       rain: (uQ && c.quote_rain) || defaultQuotes.rain,
-      dis: (uQ && c.quote_disarmed) || defaultQuotes.dis,
-      home: (uQ && c.quote_armed_home) || defaultQuotes.home,
+      dis: (uQ && c.quote_disarmed) || (greet + defaultQuotes.dis),
+      home: (uQ && c.quote_armed_home) || (greet + defaultQuotes.home),
       away: (uQ && c.quote_armed_away) || defaultQuotes.away,
       night: (uQ && c.quote_night) || defaultQuotes.night,
       hot: (uQ && c.quote_hot) || defaultQuotes.hot,
@@ -133,7 +138,6 @@ class MoglieCard extends HTMLElement {
 
     let outfit = n_b64, quote = q.home, border = "2px solid #4CAF50", isGrayscale = false;
 
-    // Priority Check
     if (!wanOk) { 
         outfit = n_b64; quote = q.off; border = "2px solid gray"; isGrayscale = true; 
     } else if (showNight) { 
@@ -150,12 +154,11 @@ class MoglieCard extends HTMLElement {
         outfit = n_b64; quote = q.away; border = "2px solid #F44336";
     }
 
-    // --- PATROL SUBTEXT ---
     let patrolTxt = "";
     if (alrm && wanOk) {
-      if (aHome) patrolTxt = `<br><small style="color:#4CAF50;">(Primates on perimeter patrol)</small>`;
-      else if (aOff) patrolTxt = `<br><small style="color:orange;">(Primates off duty)</small>`;
-      else patrolTxt = `<br><small style="color:#F44336;">(HIGH ALERT!)</small>`;
+      if (aHome) patrolTxt = `<br><small style="color:#4CAF50;">${defaultQuotes.p_patrol}</small>`;
+      else if (aOff) patrolTxt = `<br><small style="color:orange;">${defaultQuotes.p_off}</small>`;
+      else patrolTxt = `<br><small style="color:#F44336;">${defaultQuotes.p_alert}</small>`;
     }
 
     this.img.src = outfit;
