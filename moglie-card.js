@@ -20,35 +20,20 @@ class MoglieCard extends HTMLElement {
       this.innerHTML = `
         <style>
           .anti-gravity { transform: rotate(180deg); }
-          #m-cont { padding: 16px; border-radius: 10px; text-align: center; transition: all 0.3s ease; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+          #m-cont { padding: 16px; border-radius: 10px; text-align: center; transition: all 0.3s ease; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; }
           #m-img { width: 100%; max-width: 150px; height: auto; aspect-ratio: 1/1; object-fit: contain; transition: transform 0.5s ease; z-index: 1; }
           
-          #speech-bubble {
-            position: relative;
-            background: var(--card-background-color, white);
-            border: 2px solid var(--primary-text-color);
-            border-radius: 15px;
-            padding: 10px;
-            margin-bottom: 15px;
-            min-height: 2em;
-            width: 85%;
-            font-weight: bold;
+          /* Clean Floating Text Styling */
+          #m-txt { 
+            margin-bottom: 15px; 
+            font-weight: bold; 
+            min-height: 2.5em; 
+            width: 90%; 
+            line-height: 1.4;
+            color: var(--primary-text-color);
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
-          }
-          #speech-bubble:after {
-            content: '';
-            position: absolute;
-            bottom: -12px;
-            left: 50%;
-            border-width: 12px 12px 0;
-            border-style: solid;
-            border-color: var(--primary-text-color) transparent;
-            display: block;
-            width: 0;
-            transform: translateX(-50%);
           }
           
           .rtl { direction: rtl; text-align: right; }
@@ -56,16 +41,13 @@ class MoglieCard extends HTMLElement {
         </style>
         <ha-card>
           <div id="m-cont">
-            <div id="speech-bubble">
-                <div id="m-txt"></div>
-            </div>
+            <div id="m-txt" class="${this.config.hide_moglie ? 'hidden' : ''}"></div>
             <img id="m-img" src="${n_b64}" />
           </div>
         </ha-card>`;
       this.cont = this.querySelector('#m-cont');
       this.img = this.querySelector('#m-img');
       this.txt = this.querySelector('#m-txt');
-      this.bubble = this.querySelector('#speech-bubble');
 
       this.cont.addEventListener('click', () => {
           this.img.style.transform = "scale(1.1) rotate(5deg)";
@@ -106,10 +88,10 @@ class MoglieCard extends HTMLElement {
     // Detect Language and Set RTL
     const lang = (hass.language || "en").split("-")[0];
     const defaultQuotes = MOGLIE_TRANSLATIONS[lang] || MOGLIE_TRANSLATIONS["en"];
+    
     if (lang === "he") this.txt.classList.add('rtl'); else this.txt.classList.remove('rtl');
-    if (c.hide_moglie) this.bubble.classList.add('hidden'); else this.bubble.classList.remove('hidden');
+    if (c.hide_moglie) this.txt.classList.add('hidden'); else this.txt.classList.remove('hidden');
 
-    // System Check
     const wan = (c.use_wan && c.wan_entity) ? hass.states[c.wan_entity] : null;
     const alrm = (c.use_alarm && c.alarm_entity) ? hass.states[c.alarm_entity] : null;
     const wthr = (c.use_weather && c.weather_entity) ? hass.states[c.weather_entity] : null;
@@ -135,7 +117,6 @@ class MoglieCard extends HTMLElement {
     let t = null, isRain = /(rain|pour|storm)/.test(weState);
     if (wthr) t = parseFloat(wthr.attributes?.temperature ?? 70);
 
-    // Build Quote using Localization
     const uQ = c.use_custom_quotes;
     const q = {
       off: (uQ && c.quote_offline) || defaultQuotes.off,
