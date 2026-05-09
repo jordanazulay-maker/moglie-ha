@@ -5,6 +5,7 @@ import { summer_monkey as s_b64 } from './summer-monkey.js';
 import { sweaty_monkey as sw_b64 } from './sweaty-monkey.js';
 import { sleepy_monkey as sl_b64 } from './sleepy-monkey.js';
 import { festive_monkey as f_b64 } from './festive-monkey.js';
+import { MOGLIE_TRANSLATIONS } from './moglie-localization.js';
 
 class MoglieCard extends HTMLElement {
   static getConfigElement() { return document.createElement("moglie-card-editor"); }
@@ -12,96 +13,110 @@ class MoglieCard extends HTMLElement {
 
   setConfig(config) {
     this.config = { ...config };
-    if (this.config.use_wan === undefined) this.config.use_wan = !!this.config.wan_entity;
-    if (this.config.use_alarm === undefined) this.config.use_alarm = !!this.config.alarm_entity;
-    if (this.config.use_weather === undefined) this.config.use_weather = !!this.config.weather_entity;
-    
     this._last = null;
+    this._typing = false;
 
     if (!this.content) {
       this.innerHTML = `
         <style>
           .anti-gravity { transform: rotate(180deg); }
-          #m-cont { padding: 16px; border-radius: 10px; text-align: center; transition: all 0.3s ease; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-          #m-img { width: 100%; max-width: 150px; height: auto; aspect-ratio: 1/1; object-fit: contain; transition: transform 0.5s ease; }
-          #m-txt { margin-top: 10px; font-weight: bold; min-height: 2em; width: 100%; }
+          #m-cont { padding: 16px; border-radius: 10px; text-align: center; transition: all 0.3s ease; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+          #m-img { width: 100%; max-width: 150px; height: auto; aspect-ratio: 1/1; object-fit: contain; transition: transform 0.5s ease; z-index: 1; }
+          
+          #speech-bubble {
+            position: relative;
+            background: var(--card-background-color, white);
+            border: 2px solid var(--primary-text-color);
+            border-radius: 15px;
+            padding: 10px;
+            margin-bottom: 15px;
+            min-height: 2em;
+            width: 85%;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+          }
+          #speech-bubble:after {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 50%;
+            border-width: 12px 12px 0;
+            border-style: solid;
+            border-color: var(--primary-text-color) transparent;
+            display: block;
+            width: 0;
+            transform: translateX(-50%);
+          }
+          
+          .rtl { direction: rtl; text-align: right; }
+          .hidden { display: none !important; }
         </style>
         <ha-card>
           <div id="m-cont">
+            <div id="speech-bubble">
+                <div id="m-txt"></div>
+            </div>
             <img id="m-img" src="${n_b64}" />
-            <div id="m-txt"></div>
           </div>
         </ha-card>`;
       this.cont = this.querySelector('#m-cont');
       this.img = this.querySelector('#m-img');
       this.txt = this.querySelector('#m-txt');
+      this.bubble = this.querySelector('#speech-bubble');
 
-      let timer, moved = false;
-      this.cont.addEventListener('pointerdown', () => {
-        moved = false;
-        timer = setTimeout(() => { timer = null; this.handleAct('hold'); }, 500);
-      });
-      this.cont.addEventListener('pointermove', () => { moved = true; if (timer) clearTimeout(timer); });
-      this.cont.addEventListener('pointercancel', () => { if (timer) clearTimeout(timer); });
-      this.cont.addEventListener('pointerup', () => {
-        if (timer && !moved) { clearTimeout(timer); this.handleAct('tap'); }
+      this.cont.addEventListener('click', () => {
+          this.img.style.transform = "scale(1.1) rotate(5deg)";
+          setTimeout(() => { this.img.style.transform = "scale(1) rotate(0deg)"; }, 200);
+          this.handleAct('tap');
       });
     }
   }
 
-  handleAct(a) {
-    const act = this.config[a + '_action'];
-    if (!act) {
-      if (a === 'tap' && this.config.alarm_entity) {
-        this.dispatchEvent(new CustomEvent('hass-more-info', { bubbles: true, composed: true, detail: { entityId: this.config.alarm_entity } }));
+  typeMessage(message) {
+    if (this._typing) return;
+    this._typing = true;
+    this.txt.innerHTML = "";
+    let i = 0;
+    const type = () => {
+      if (i < message.length) {
+        this.txt.innerHTML += message.charAt(i);
+        i++;
+        setTimeout(type, 40);
+      } else {
+        this._typing = false;
       }
-      return;
-    }
-    this.dispatchEvent(new CustomEvent('hass-action', { bubbles: true, composed: true, detail: { config: this.config, action: a } }));
+    };
+    type();
   }
 
   showErr(m) {
-    if (this.img) {
-      this.img.setAttribute('src', n_b64); // Ensure normal monkey is loaded
-      this.img.style.filter = "grayscale(100%) opacity(0.6)"; // Make him gray
-      this.img.style.display = "block"; // Make sure he isn't hidden
-    }
-    if (this.txt) {
-      this.txt.innerHTML = `<div style="margin-bottom:12px; color: #ff5252;">${m}</div>`;
-    }
-    if (this.cont) {
-      this.cont.style.border = "2px dashed #ff5252";
-    }
+    this.img.setAttribute('src', n_b64);
+    this.img.style.filter = "grayscale(100%) opacity(0.6)";
+    this.txt.innerHTML = `<span style="color: #ff5252;">${m}</span>`;
+    this.cont.style.border = "2px dashed #ff5252";
   }
 
   set hass(hass) {
     if (!this.config) return;
     const c = this.config;
 
-    // --- SMART ERROR CHECKING ---
-    let configError = false;
-    
-    // 1. Check if a feature is checked ON, but the entity doesn't exist in HA
-    if (c.use_wan && c.wan_entity && !hass.states[c.wan_entity]) configError = true;
-    if (c.use_alarm && c.alarm_entity && !hass.states[c.alarm_entity]) configError = true;
-    if (c.use_weather && c.weather_entity && !hass.states[c.weather_entity]) configError = true;
-    
-    // 2. Check if NO features are enabled at all
-    if (!(c.use_wan && c.wan_entity) && !(c.use_alarm && c.alarm_entity) && !(c.use_weather && c.weather_entity)) {
-      configError = true;
-    }
+    // Detect Language and Set RTL
+    const lang = (hass.language || "en").split("-")[0];
+    const defaultQuotes = MOGLIE_TRANSLATIONS[lang] || MOGLIE_TRANSLATIONS["en"];
+    if (lang === "he") this.txt.classList.add('rtl'); else this.txt.classList.remove('rtl');
+    if (c.hide_moglie) this.bubble.classList.add('hidden'); else this.bubble.classList.remove('hidden');
 
-    if (configError) {
-      this.showErr("I think the primates found a problem in your config. Check your YAML!");
-      return; // Stop running so the card doesn't crash!
-    }
-    // --- END ERROR CHECKING ---
-    
+    // System Check
     const wan = (c.use_wan && c.wan_entity) ? hass.states[c.wan_entity] : null;
     const alrm = (c.use_alarm && c.alarm_entity) ? hass.states[c.alarm_entity] : null;
     const wthr = (c.use_weather && c.weather_entity) ? hass.states[c.weather_entity] : null;
 
-    if (!wan && !alrm && !wthr) return;
+    if (c.use_wan && c.wan_entity && !wan) return this.showErr("Check WAN Entity");
+    if (c.use_alarm && c.alarm_entity && !alrm) return this.showErr("Check Alarm Entity");
+    if (c.use_weather && c.weather_entity && !wthr) return this.showErr("Check Weather Entity");
 
     const wState = wan ? wan.state.toLowerCase() : 'on';
     const aState = alrm ? alrm.state.toLowerCase() : 'disarmed';
@@ -109,253 +124,50 @@ class MoglieCard extends HTMLElement {
 
     const d = new Date();
     const hr = d.getHours();
-
-    const sHash = `${wState}|${aState}|${weState}|${hr}|${d.getDate()}|${c.enable_night_mode}|${c.use_custom_quotes}|${c.hide_moglie}|${c.use_wan}|${c.use_alarm}|${c.use_weather}`;
+    const sHash = `${wState}|${aState}|${weState}|${hr}|${lang}|${c.hide_moglie}`;
     if (this._last === sHash) return; 
     this._last = sHash;
 
     const wanOk = /on|connected|true/.test(wState);
     const aOff = /disarmed|off/.test(aState);
-    const aHome = /home|night|stay/.test(aState);
+    const aHome = /home|stay|night/.test(aState);
 
-    let t = null, h = null, isF = true, isC = false;
-    if (wthr) {
-      t = parseFloat(wthr.attributes?.temperature ?? weState);
-      h = parseFloat(wthr.attributes?.humidity ?? 0);
-      const unit = (wthr.attributes?.temperature_unit || wthr.attributes?.unit_of_measurement || 'F').toUpperCase();
-      isF = unit.includes('F');
-      isC = unit.includes('C');
-    }
-    const isRain = /(rain|pour|shower|storm)/.test(weState);
-    const isSnow = /(snow|hail)/.test(weState);
-    const isHot = t !== null && (isF ? t >= 80 : t >= 27);
-    const isCold = t !== null && (isF ? t < 50 : t < 10);
-    const isHumid = h > 70;
+    let t = null, isRain = /(rain|pour|storm)/.test(weState);
+    if (wthr) t = parseFloat(wthr.attributes?.temperature ?? 70);
 
-    const isWknd = d.getDay() === 0 || d.getDay() === 6;
-    const mo = d.getMonth(), dt = d.getDate();
-    const isXmas = mo === 11 && (dt === 24 || dt === 25); 
-    const isApril = mo === 3 && dt === 1;
-
-    const nS = c.night_start !== undefined && c.night_start !== "" ? parseInt(c.night_start) : 22;
-    const nE = c.night_end !== undefined && c.night_end !== "" ? parseInt(c.night_end) : 6;
-    const isNight = nS > nE ? (hr >= nS || hr < nE) : (hr >= nS && hr < nE);
-    const showNight = c.enable_night_mode !== false && isNight;
-
-    let greet = "";
-    if (!showNight && !isXmas && !isApril) {
-      if (hr >= 6 && hr < 11) greet = isWknd ? "Lazy weekend morning! " : "Good morning! I need a banana coffee. ";
-      else if (hr >= 11 && hr < 17) greet = isWknd ? "Weekend vibes! " : "Afternoon watch is clear. ";
-      else if (hr >= 17 && hr < nS) greet = "Sun's getting low. ";
-    }
-
-    let patrolTxt = "";
-    if (alrm) {
-      if (aHome) {
-        patrolTxt = showNight 
-          ? "<br><small style='color:#4CAF50;font-weight:bold;'>(Primates are silently securing the perimeter.)</small>" 
-          : "<br><small style='color:#4CAF50;font-weight:bold;'>(Primates are on perimeter patrol.)</small>";
-      } else if (aOff) {
-        patrolTxt = "<br><small style='color:orange;font-weight:bold;'>(But the primates are off duty! Who is watching the trees?!)</small>";
-      } else {
-        patrolTxt = showNight 
-          ? "<br><small style='color:#F44336;font-weight:bold;'>(Primates are on HIGH ALERT in the dark!)</small>" 
-          : "<br><small style='color:#F44336;font-weight:bold;'>(Primates are on HIGH ALERT!)</small>";
-      }
-    }
-
-    let nTxt = "The troop is sleeping...";
-    if (alrm) {
-      if (aHome) nTxt = "The troop is fast asleep in the canopy.";
-      else if (aOff) nTxt = "The troop is sleeping...";
-      else nTxt = "The canopy is empty tonight.";
-    }
-
+    // Build Quote using Localization
     const uQ = c.use_custom_quotes;
     const q = {
-      off: (uQ && c.quote_offline) || "Moglie is stranded. The WAN connection has been lost!",
-      cold: (uQ && c.quote_cold) || "Brrr! It's freezing out there!",
-      rain: (uQ && c.quote_rain) || "Looks like rain, grabbing my coat!",
-      hot: (uQ && c.quote_hot) || "It's boiling! Need a banana smoothie.",
-      dis: (uQ && c.quote_disarmed) || `${greet}System's off! The troop is relaxing.`,
-      home: (uQ && c.quote_armed_home) || `${greet}${isWknd ? "The troop is relaxing in the branches." : "The troop is home."}`,
-      away: (uQ && c.quote_armed_away) || "The troop is away.",
-      night: (uQ && c.quote_night) || nTxt
+      off: (uQ && c.quote_offline) || defaultQuotes.off,
+      rain: (uQ && c.quote_rain) || defaultQuotes.rain,
+      dis: (uQ && c.quote_disarmed) || defaultQuotes.dis,
+      home: (uQ && c.quote_armed_home) || defaultQuotes.home,
+      away: (uQ && c.quote_armed_away) || defaultQuotes.away,
+      night: (uQ && c.quote_night) || defaultQuotes.night,
+      hot: (uQ && c.quote_hot) || defaultQuotes.hot,
+      cold: (uQ && c.quote_cold) || defaultQuotes.cold
     };
 
-    let outfit = n_b64;
-    let quote = "Moglie is standing by!";
-    let border = "2px solid #03a9f4";
-    let isGrayscale = false;
+    let outfit = n_b64, quote = q.home, border = "2px solid #4CAF50", isGrayscale = false;
 
-    if (alrm) {
-      border = aOff ? "2px solid orange" : (aHome ? "2px solid #4CAF50" : "2px solid #F44336");
-      quote = aOff ? q.dis : (aHome ? q.home : q.away);
-    }
+    if (!wanOk) { outfit = n_b64; quote = q.off; border = "2px solid gray"; isGrayscale = true; }
+    else if (hr > 22 || hr < 6) { outfit = sl_b64; quote = q.night; border = "2px solid #673AB7"; }
+    else if (isRain) { outfit = r_b64; quote = q.rain; border = "2px solid #2196F3"; }
+    else if (t < 50) { outfit = w_b64; quote = q.cold; border = "2px solid #00BCD4"; }
+    else if (t > 80) { outfit = s_b64; quote = q.hot; border = "2px solid #FF9800"; }
+    else if (aOff) { outfit = n_b64; quote = q.dis; border = "2px solid orange"; }
 
-    if (wan && !wanOk) { 
-      outfit = n_b64; 
-      quote = q.off; 
-      border = "2px solid gray"; 
-      isGrayscale = true; 
-      patrolTxt = ""; 
-    }
-    else if (isApril) { 
-      outfit = n_b64; 
-      quote = "Why is the blood rushing to my head?"; 
-    }
-    else if (isXmas) { 
-      outfit = f_b64; 
-      quote = "Merry Christmas to the troop!"; 
-    }
-    else if (showNight) { 
-      outfit = sl_b64; 
-      quote = q.night; 
-      border = "2px solid #673AB7"; 
-    }
-    else if (wthr && isRain) { 
-      outfit = r_b64; 
-      quote = q.rain; 
-      border = "2px solid #2196F3"; 
-    }
-    else if (wthr && (isSnow || isCold)) { 
-      outfit = w_b64; 
-      quote = q.cold; 
-      border = "2px solid #00BCD4"; 
-    }
-    else if (wthr && isHot) { 
-      outfit = isHumid ? sw_b64 : s_b64; 
-      quote = q.hot; 
-      border = "2px solid #FF9800"; 
-    }
-
-    quote += patrolTxt;
-
-    if (c.hide_moglie) {
-      this.img.style.display = "none";
-      let cleanQuote = quote.replace(/<br>|<small.*?>|<\/small>/g, ' ').replace(/\s+/g, ' ').trim();
-      quote = `<div style="color: gray; font-size: 0.85em; text-transform: uppercase; margin-bottom: 4px;">Moglie's latest update:</div><i>"${cleanQuote}"</i>`;
-    } else {
-      this.img.style.display = "block";
-    }
-
+    this.img.src = outfit;
     this.img.style.filter = isGrayscale ? "grayscale(100%)" : "none";
-    if (isApril && !c.hide_moglie) this.img.classList.add('anti-gravity'); else this.img.classList.remove('anti-gravity');
-
-    this.upd(outfit, quote, border);
+    this.cont.style.border = border;
+    this.typeMessage(quote);
   }
-
-  upd(img, txt, bdr) {
-    if (this.img.getAttribute('src') !== img) this.img.setAttribute('src', img);
-    if (this.txt.innerHTML !== txt) this.txt.innerHTML = txt;
-    if (this.cont.style.border !== bdr) this.cont.style.border = bdr;
+  
+  handleAct(a) {
+    const act = this.config[a + '_action'];
+    if (!act && a === 'tap' && this.config.alarm_entity) {
+      this.dispatchEvent(new CustomEvent('hass-more-info', { bubbles: true, composed: true, detail: { entityId: this.config.alarm_entity } }));
+    }
   }
 }
 customElements.define('moglie-card', MoglieCard);
-
-const M_LBLS = {
-  monitored_features: "Features to Monitor",
-  wan_entity: "WAN Entity", alarm_entity: "Alarm Entity", weather_entity: "Weather Entity", 
-  tap_action: "Tap Action (e.g. Toggle, Navigate, Service Call)", 
-  hold_action: "Hold Action (e.g. Toggle, Navigate, Service Call)", 
-  enable_night_mode: "Enable Night Mode", night_start: "Night Start Hour", night_end: "Night End Hour", 
-  hide_moglie: "Hide Moglie (Text Only Mode)", use_custom_quotes: "Enable Custom Quotes", 
-  quote_offline: "Quote: WAN Offline", quote_disarmed: "Quote: Disarmed", 
-  quote_armed_home: "Quote: Armed Home", quote_armed_away: "Quote: Armed Away", 
-  quote_night: "Quote: Night Mode", quote_hot: "Quote: Hot Weather", 
-  quote_cold: "Quote: Cold Weather", quote_rain: "Quote: Rainy Weather"
-};
-
-class MoglieCardEditor extends HTMLElement {
-  setConfig(config) { 
-    this._cfg = { ...config }; 
-    
-    if (this._cfg.use_wan === undefined) this._cfg.use_wan = !!this._cfg.wan_entity;
-    if (this._cfg.use_alarm === undefined) this._cfg.use_alarm = !!this._cfg.alarm_entity;
-    if (this._cfg.use_weather === undefined) this._cfg.use_weather = !!this._cfg.weather_entity;
-
-    this._cfg.monitored_features = [];
-    if (this._cfg.use_wan) this._cfg.monitored_features.push("wan");
-    if (this._cfg.use_alarm) this._cfg.monitored_features.push("alarm");
-    if (this._cfg.use_weather) this._cfg.monitored_features.push("weather");
-
-    if (this._f) { this._f.data = this._cfg; this._upd(); } else this.render(); 
-  }
-  
-  set hass(hass) { this._h = hass; if (this._f) this._f.hass = hass; else this.render(); }
-
-  _upd() {
-    const s = [
-      { 
-        name: "monitored_features", 
-        selector: { 
-          select: { 
-            multiple: true, 
-            mode: "dropdown",
-            options: [
-              { label: "WAN Status", value: "wan" },
-              { label: "Security Alarm", value: "alarm" },
-              { label: "Weather", value: "weather" }
-            ]
-          } 
-        } 
-      }
-    ];
-
-    if (this._cfg.use_wan) s.push({ name: "wan_entity", selector: { entity: { domain: "binary_sensor" } } });
-    if (this._cfg.use_alarm) s.push({ name: "alarm_entity", selector: { entity: { domain: "alarm_control_panel" } } });
-    if (this._cfg.use_weather) s.push({ name: "weather_entity", selector: { entity: { domain: "weather" } } });
-
-    s.push({ type: "grid", schema: [
-      { name: "tap_action", selector: { ui_action: {} } },
-      { name: "hold_action", selector: { ui_action: {} } }
-    ]});
-
-    s.push({ name: "enable_night_mode", selector: { boolean: {} } });
-
-    if (this._cfg.enable_night_mode !== false) {
-      s.push({ type: "grid", schema: [
-        { name: "night_start", selector: { number: { min: 0, max: 23, mode: "box" } } },
-        { name: "night_end", selector: { number: { min: 0, max: 23, mode: "box" } } }
-      ]});
-    }
-
-    s.push(
-      { name: "hide_moglie", selector: { boolean: {} } },
-      { name: "use_custom_quotes", selector: { boolean: {} } }
-    );
-
-    if (this._cfg.use_custom_quotes) {
-      s.push(
-        { name: "quote_offline", selector: { text: {} } }, { name: "quote_disarmed", selector: { text: {} } },
-        { name: "quote_armed_home", selector: { text: {} } }, { name: "quote_armed_away", selector: { text: {} } },
-        { name: "quote_night", selector: { text: {} } }, { name: "quote_hot", selector: { text: {} } },
-        { name: "quote_cold", selector: { text: {} } }, { name: "quote_rain", selector: { text: {} } }
-      );
-    }
-    this._f.schema = s;
-  }
-
-  render() {
-    if (!this._h || !this._cfg || this._f) return;
-    this._f = document.createElement("ha-form");
-    this._f.hass = this._h;
-    this._f.data = this._cfg;
-    this._upd();
-    this._f.computeLabel = (s) => M_LBLS[s.name] || s.name;
-    this._f.addEventListener("value-changed", (e) => {
-      const newConfig = { ...e.detail.value };
-      const feats = newConfig.monitored_features || [];
-      newConfig.use_wan = feats.includes("wan");
-      newConfig.use_alarm = feats.includes("alarm");
-      newConfig.use_weather = feats.includes("weather");
-
-      this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: newConfig }, bubbles: true, composed: true }));
-    });
-    this.appendChild(this._f);
-  }
-}
-customElements.define("moglie-card-editor", MoglieCardEditor);
-
-window.customCards = window.customCards || [];
-window.customCards.push({ type: "moglie-card", name: "Moglie HA", description: "Moglie Troop & Canopy Monitor", preview: true });
