@@ -12,26 +12,48 @@
             <div style="margin-bottom: 16px;">
               <h3 style="margin-bottom: 8px;">🐒 Moglie Settings</h3>
               <p style="font-size: 0.9em; color: var(--secondary-text-color);">
-                Link Moglie to a Home Assistant entity to bring the monkey to life.
+                Configure Moglie's environment, network, and security trackers!
               </p>
             </div>
             
-            <div style="margin-bottom: 16px;">
-              <label style="display: block; font-weight: bold; margin-bottom: 4px;">Tracked Entity (Required):</label>
-              <input type="text" id="editor-entity" 
-                     placeholder="e.g., person.jordan or binary_sensor.moglie_status" 
-                     value="${this.config.entity || ''}" 
-                     style="width: 100%; padding: 8px; border: 1px solid var(--divider-color, #ccc); border-radius: 4px; background: var(--card-background-color); color: var(--primary-text-color);">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+              <div>
+                <label style="display: block; font-weight: bold; font-size: 0.8em;">WAN Entity (Network):</label>
+                <input type="text" id="wan_entity" placeholder="binary_sensor.wan" value="${this.config.wan_entity || ''}" style="width: 100%; padding: 4px;">
+              </div>
+              <div>
+                <label style="display: block; font-weight: bold; font-size: 0.8em;">Alarm Entity (Security):</label>
+                <input type="text" id="alarm_entity" placeholder="alarm_control_panel.home" value="${this.config.alarm_entity || ''}" style="width: 100%; padding: 4px;">
+              </div>
+              <div>
+                <label style="display: block; font-weight: bold; font-size: 0.8em;">Weather Entity:</label>
+                <input type="text" id="weather_entity" placeholder="weather.home" value="${this.config.weather_entity || ''}" style="width: 100%; padding: 4px;">
+              </div>
+              <div>
+                <label style="display: block; font-weight: bold; font-size: 0.8em;">Temperature Entity:</label>
+                <input type="text" id="temp_entity" placeholder="sensor.outside_temp" value="${this.config.temp_entity || ''}" style="width: 100%; padding: 4px;">
+              </div>
+              <div>
+                <label style="display: block; font-weight: bold; font-size: 0.8em;">Humidity Entity:</label>
+                <input type="text" id="humidity_entity" placeholder="sensor.outside_humidity" value="${this.config.humidity_entity || ''}" style="width: 100%; padding: 4px;">
+              </div>
             </div>
-            
-            <div style="font-size: 0.8em; color: var(--secondary-text-color); margin-top: 10px;">
-              <i>Note: Moglie will automatically turn gray if the system detects an error with this entity.</i>
+
+            <div style="margin-bottom: 16px;">
+               <label style="display: flex; align-items: center; font-weight: bold; font-size: 0.9em;">
+                 <input type="checkbox" id="hide_moglie" ${this.config.hide_moglie ? 'checked' : ''} style="margin-right: 8px;">
+                 Hide Moglie (Text-Only Mode)
+               </label>
             </div>
           </div>
         `;
         
-        const input = this.querySelector('#editor-entity');
-        input.addEventListener('focusout', this.valueChanged.bind(this));
+        // Add listeners to save config
+        const inputs = this.querySelectorAll('input');
+        inputs.forEach(input => {
+          input.addEventListener('change', this.valueChanged.bind(this));
+        });
+        
         this.contentBuilt = true;
       }
     }
@@ -39,9 +61,10 @@
     valueChanged(ev) {
       if (!this.config) return;
       const target = ev.target;
-      if (this.config.entity === target.value) return;
+      const value = target.type === 'checkbox' ? target.checked : target.value;
+      if (this.config[target.id] === value) return;
 
-      const newConfig = { ...this.config, entity: target.value };
+      const newConfig = { ...this.config, [target.id]: value };
 
       const event = new Event("config-changed", { bubbles: true, composed: true });
       event.detail = { config: newConfig };
@@ -53,22 +76,19 @@
 
 
   // ==========================================================
-  // 2. THE MAIN MOGLIE CARD ENGINE (PNG VERSION)
+  // 2. THE MAIN MOGLIE CARD ENGINE
   // ==========================================================
   class MoglieCard extends HTMLElement {
     
-    // Link the card to our custom visual editor
     static getConfigElement() { return document.createElement("moglie-card-editor"); }
-    static getStubConfig() { return { entity: "binary_sensor.moglie_status" }; }
+    static getStubConfig() { return { alarm_entity: "", wan_entity: "" }; }
 
     setConfig(config) {
       this.config = config;
     }
 
-    // PNG Routing Engine
     getMonkeyUrl(type) {
       const baseUrl = "/hacsfiles/moglie-ha/";
-      
       const images = {
         "festive": "festive.png",
         "normal": "normal.png",
@@ -78,90 +98,135 @@
         "winter": "winter.png",
         "sleepy": "sleepy.png"
       };
-
       return `${baseUrl}${images[type] || "normal.png"}`;
     }
 
     set hass(hass) {
-      // 1. Missing Entity Check
-      if (!this.config || !this.config.entity) {
-        this.renderStatus("Please use the editor to assign an Entity.", true);
-        return;
-      }
-
-      const entityId = this.config.entity;
-      const stateObj = hass.states[entityId];
-
-      // 2. System Error Check
-      if (!stateObj || stateObj.state === 'unavailable' || stateObj.state === 'unknown') {
-        this.renderStatus(`System Error: ${entityId} is Unavailable`, true);
-        return;
-      }
-
       if (!this.content) { this.initCard(); }
-      this.updateCard(stateObj);
-    }
-
-    renderStatus(msg, isError = false) {
-      this.innerHTML = `
-        <ha-card style="padding: 16px; text-align: center; border: ${isError ? '2px solid #ff5252' : 'none'}; background: ${isError ? 'var(--secondary-background-color, #2c2c2c)' : 'var(--ha-card-background, white)'};">
-          <div style="filter: grayscale(100%); opacity: 0.3;">
-            <img src="/hacsfiles/moglie-ha/normal.png" width="100" onerror="this.style.display='none'">
-          </div>
-          <div style="margin-top: 10px; color: ${isError ? '#ff5252' : 'var(--primary-text-color)'}; font-weight: bold;">
-            ${msg}
-          </div>
-        </ha-card>
-      `;
-      this.content = null; 
+      this.updateCard(hass);
     }
 
     initCard() {
-      // Using the exact HTML IDs from your uploaded file
       this.innerHTML = `
         <style>
-            #moglie-container { padding: 16px; text-align: center; transition: all 0.5s; }
+            #moglie-container { 
+              padding: 16px; 
+              text-align: center; 
+              transition: all 0.5s;
+              border-radius: var(--ha-card-border-radius, 12px);
+              background: var(--ha-card-background, white);
+              cursor: pointer;
+            }
             .monkey-img { width: 100%; max-width: 200px; transition: filter 0.5s; }
+            .hidden { display: none !important; }
         </style>
         <ha-card id="moglie-container">
             <img id="monkey-pic" class="monkey-img" src="">
-            <div id="status-text" style="margin-top: 10px; font-weight: bold;"></div>
+            <div id="status-text" style="margin-top: 10px; font-weight: bold; color: var(--primary-text-color);"></div>
         </ha-card>
       `;
       this.content = this.querySelector("#moglie-container");
+      
+      // Setup Action (Tap defaults to more-info on the alarm entity)
+      this.content.addEventListener('click', () => {
+        if (this.config.alarm_entity) {
+          const event = new Event('hass-more-info', { bubbles: true, composed: true });
+          event.detail = { entityId: this.config.alarm_entity };
+          this.dispatchEvent(event);
+        }
+      });
     }
 
-    updateCard(stateObj) {
-      const status = stateObj.state;
+    updateCard(hass) {
       const img = this.querySelector("#monkey-pic");
       const text = this.querySelector("#status-text");
+      const container = this.content;
 
-      // Logic from your uploaded file for choosing the monkey
-      let type = "normal";
-      const hour = new Date().getHours();
+      // Extract Entity States
+      const getS = (ent) => (this.config[ent] && hass.states[this.config[ent]]) ? hass.states[this.config[ent]].state : null;
       
-      if (hour > 22 || hour < 6) {
-          type = "sleepy";
-      } else if (status === "on" || status === "home") {
-          type = "festive";
-      }
+      const wanState = getS('wan_entity');
+      const alarmState = getS('alarm_entity');
+      const weatherState = getS('weather_entity');
+      const temp = parseFloat(getS('temp_entity'));
+      const humidity = parseFloat(getS('humidity_entity'));
 
-      // Fetch the PNG instead of the Base64 array
-      img.src = this.getMonkeyUrl(type);
-      text.textContent = stateObj.attributes.friendly_name || "Moglie";
+      // 1. Base Variables
+      let type = "normal";
+      let borderColor = "transparent";
+      let message = "Moglie is watching the trees...";
+      let isOffline = false;
 
-      // VISUAL CHECK: Turn gray if state is 'off'
-      if (status === "off" || status === "not_home") {
-          img.style.filter = "grayscale(100%) opacity(0.5)";
-          this.content.style.background = "#444";
+      // 2. Network Priority (Top Level Override)
+      if (wanState === "off" || wanState === "disconnected") {
+          isOffline = true;
+          borderColor = "gray";
+          message = "Moglie is stranded. The WAN connection has been lost!";
       } else {
-          img.style.filter = "none";
-          this.content.style.background = "var(--ha-card-background, white)";
+          // 3. Security Checks (Sets base border/message)
+          if (alarmState === "armed_home") {
+              borderColor = "green";
+              message = "The troop is home. The primates are on perimeter patrol.";
+          } else if (alarmState === "disarmed") {
+              borderColor = "orange";
+              message = "System's off! The troop is relaxing.";
+          } else if (alarmState && alarmState.startsWith("armed_")) {
+              borderColor = "red";
+              message = "The troop is away. The primates are watching the trees!";
+          }
+
+          // 4. Environmental Checks (Overrides type, message, and borders)
+          const hour = new Date().getHours();
+          const nightStart = this.config.night_start || 22;
+          const nightEnd = this.config.night_end || 6;
+          const isNight = (hour >= nightStart || hour < nightEnd);
+
+          if (isNight) {
+              type = "sleepy";
+              borderColor = "purple";
+              message = "Zzz... Moglie is sleeping...";
+          } else if (weatherState === "rainy" || weatherState === "pouring") {
+              type = "rainy";
+              borderColor = "blue";
+              message = "Looks like rain, grabbing my coat!";
+          } else if (!isNaN(temp) && temp < 50 || weatherState === "snowy") {
+              type = "winter";
+              borderColor = "cyan";
+              message = "Brrr! It's freezing out there!";
+          } else if (!isNaN(temp) && temp > 80) {
+              if (!isNaN(humidity) && humidity > 70) {
+                  type = "sweaty";
+              } else {
+                  type = "summer";
+              }
+              borderColor = "#ffb347"; // Yellow-Orange
+              message = "It's boiling! Need a banana smoothie.";
+          }
       }
+
+      // 5. Secret Anomaly (Festive Fallback)
+      const date = new Date();
+      if (date.getMonth() === 11 && date.getDate() === 25) { // Christmas logic fallback
+          type = "festive";
+          message = "Happy Holidays from the troop!";
+      }
+
+      // Apply Visuals
+      if (this.config.hide_moglie) {
+          img.classList.add("hidden");
+          message = `MOGLIE'S LATEST UPDATE: ${message}`;
+      } else {
+          img.classList.remove("hidden");
+          img.src = this.getMonkeyUrl(type);
+      }
+
+      img.style.filter = isOffline ? "grayscale(100%)" : "none";
+      container.style.border = borderColor !== "transparent" ? `3px solid ${borderColor}` : "none";
+      text.textContent = message;
     }
 
     getCardSize() {
-      return 3;
+      return this.config.hide_moglie ? 1 : 3;
     }
   }
 
@@ -171,7 +236,7 @@
   window.customCards.push({
     type: "moglie-card",
     name: "Moglie Card",
-    description: "System-aware monkey status card.",
+    description: "Moglie monitors your WAN, security, and weather!",
     preview: true
   });
 })();
