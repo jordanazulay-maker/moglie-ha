@@ -12,16 +12,16 @@ class MoglieCard extends HTMLElement {
   
   static getStubConfig() { 
     return { 
-      use_tap_entity: false,
-      use_hold_entity: false,
-      tap_entity: "", 
-      hold_entity: "",
       use_wan: false, 
       use_alarm: false, 
       use_weather: false, 
       wan_entity: "", 
       alarm_entity: "", 
       weather_entity: "", 
+      use_tap_entity: false,
+      use_hold_entity: false,
+      tap_entity: "", 
+      hold_entity: "",
       enable_night_mode: true, 
       night_start: 22, 
       night_end: 6, 
@@ -213,7 +213,7 @@ class MoglieCard extends HTMLElement {
     const act = this.config[a + '_action'];
     
     // Determine which entity to inject based on the action type
-    let targetEntity = this.config.entity;
+    let targetEntity = "";
     if (a === 'tap' && this.config.use_tap_entity) targetEntity = this.config.tap_entity;
     if (a === 'hold' && this.config.use_hold_entity) targetEntity = this.config.hold_entity;
 
@@ -255,15 +255,26 @@ class MoglieCardEditor extends HTMLElement {
   }
 
   _computeSchema() {
-    const hasTap = this._cfg?.use_tap_entity;
-    const hasHold = this._cfg?.use_hold_entity;
+    const c = this._cfg || {};
 
     return [
-      { name: "wan_entity", selector: { entity: { domain: "binary_sensor" } } },
-      { name: "alarm_entity", selector: { entity: { domain: "alarm_control_panel" } } },
-      { name: "weather_entity", selector: { entity: { domain: "weather" } } },
+      // NEW: Integrations toggles mapped side-by-side at the top
+      {
+        type: "grid",
+        name: "",
+        schema: [
+          { name: "use_wan", selector: { boolean: {} } },
+          { name: "use_alarm", selector: { boolean: {} } },
+          { name: "use_weather", selector: { boolean: {} } }
+        ]
+      },
       
-      // Toggles mapped side-by-side
+      // NEW: Conditionally show entity selectors only if their toggles are true
+      ...(c.use_wan ? [{ name: "wan_entity", selector: { entity: { domain: "binary_sensor" } } }] : []),
+      ...(c.use_alarm ? [{ name: "alarm_entity", selector: { entity: { domain: "alarm_control_panel" } } }] : []),
+      ...(c.use_weather ? [{ name: "weather_entity", selector: { entity: { domain: "weather" } } }] : []),
+      
+      // Action entity Toggles mapped side-by-side
       {
         type: "grid",
         name: "",
@@ -273,14 +284,14 @@ class MoglieCardEditor extends HTMLElement {
         ]
       },
       
-      // Conditionally show the entities mapped side-by-side (if toggled on)
-      ...(hasTap || hasHold ? [
+      // Conditionally show the tap/hold entities mapped side-by-side (if toggled on)
+      ...(c.use_tap_entity || c.use_hold_entity ? [
         {
           type: "grid",
           name: "",
           schema: [
-            ...(hasTap ? [{ name: "tap_entity", selector: { entity: {} } }] : []),
-            ...(hasHold ? [{ name: "hold_entity", selector: { entity: {} } }] : [])
+            ...(c.use_tap_entity ? [{ name: "tap_entity", selector: { entity: {} } }] : []),
+            ...(c.use_hold_entity ? [{ name: "hold_entity", selector: { entity: {} } }] : [])
           ]
         }
       ] : []),
@@ -302,7 +313,7 @@ class MoglieCardEditor extends HTMLElement {
         schema: [
           { name: "enable_night_mode", selector: { boolean: {} } },
           { name: "hide_moglie", selector: { boolean: {} } },
-          ...(this._cfg?.enable_night_mode !== false ? [
+          ...(c.enable_night_mode !== false ? [
             { name: "night_start", selector: { number: { min: 0, max: 23, mode: "box" } } },
             { name: "night_end", selector: { number: { min: 0, max: 23, mode: "box" } } }
           ] : [])
@@ -311,7 +322,7 @@ class MoglieCardEditor extends HTMLElement {
       
       // Custom quotes
       { name: "use_custom_quotes", selector: { boolean: {} } },
-      ...(this._cfg?.use_custom_quotes ? [
+      ...(c.use_custom_quotes ? [
         {
           type: "grid",
           name: "",
