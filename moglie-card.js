@@ -34,7 +34,6 @@ class MoglieCard extends HTMLElement {
     this.config = { ...config };
     this._last = null;
     
-    // Typing bug fix: Removed the boolean flag, we will use a timer reference instead
     if (!this.cont) {
       this.innerHTML = `
         <style>
@@ -56,10 +55,12 @@ class MoglieCard extends HTMLElement {
       this.txt = this.querySelector('#m-txt');
 
       let isHold = false;
+      let isTouch = false; // BUG FIX: Tracks mobile touch to prevent ghost clicks
       let pressTimer;
 
       const startPress = () => {
         isHold = false;
+        if (pressTimer) clearTimeout(pressTimer);
         pressTimer = setTimeout(() => {
           isHold = true;
           this.img.style.transform = "scale(1.1) rotate(-5deg)";
@@ -72,11 +73,13 @@ class MoglieCard extends HTMLElement {
         if (pressTimer) clearTimeout(pressTimer);
       };
 
-      this.cont.addEventListener('mousedown', startPress);
-      this.cont.addEventListener('mouseup', endPress);
-      this.cont.addEventListener('mouseleave', endPress);
-      this.cont.addEventListener('touchstart', startPress, { passive: true });
+      // BUG FIX: Mobile Double-Action prevention
+      this.cont.addEventListener('touchstart', () => { isTouch = true; startPress(); }, { passive: true });
       this.cont.addEventListener('touchend', endPress);
+      
+      this.cont.addEventListener('mousedown', () => { if (!isTouch) startPress(); });
+      this.cont.addEventListener('mouseup', () => { if (!isTouch) endPress(); });
+      this.cont.addEventListener('mouseleave', () => { if (!isTouch) endPress(); });
 
       this.cont.addEventListener('click', () => {
         if (isHold) return; 
@@ -88,21 +91,20 @@ class MoglieCard extends HTMLElement {
   }
 
   typeMessage(message) {
-    // FIXED: Clear the previous typing timer if HA rapidly updates state
+    // BUG FIX: Stop any running typewriter loops so they don't overlap when HA updates fast
     if (this._typeTimer) clearTimeout(this._typeTimer);
     
-    this.txt.innerHTML = "";
     let i = 0;
     const type = () => {
       if (i < message.length) {
+        // BUG FIX: Safely skip HTML tags instantly so colors don't bleed out of bounds
         if (message.charAt(i) === '<') {
           let end = message.indexOf('>', i);
-          this.txt.innerHTML += message.substring(i, end + 1);
-          i = end + 1;
+          i = end !== -1 ? end + 1 : i + 1;
         } else {
-          this.txt.innerHTML += message.charAt(i);
           i++;
         }
+        this.txt.innerHTML = message.substring(0, i);
         this._typeTimer = setTimeout(type, 30);
       }
     };
@@ -110,6 +112,9 @@ class MoglieCard extends HTMLElement {
   }
 
   showErr(m) {
+    // BUG FIX: Stop typewriter loop if an error happens while typing
+    if (this._typeTimer) clearTimeout(this._typeTimer);
+    
     this.img.setAttribute('src', n_b64);
     this.img.style.filter = "grayscale(100%) opacity(0.6)";
     this.txt.innerHTML = `<span style="color: #ff5252;">${m}</span>`;
@@ -169,16 +174,18 @@ class MoglieCard extends HTMLElement {
     }
 
     const uQ = c.use_custom_quotes;
+    
+    // BUG FIX: Attached "greet +" to all weather and alarm quotes so Moglie is always polite!
     const q = {
       nice_day: (uQ && c.quote_nice_day),
-      off: (uQ && c.quote_offline) || safeStr(defaultQuotes.off),
-      rain: (uQ && c.quote_rain) || safeStr(defaultQuotes.rain),
+      off: (uQ && c.quote_offline) || safeStr(defaultQuotes.off), // Panic state, no greeting
+      rain: greet + ((uQ && c.quote_rain) || safeStr(defaultQuotes.rain)),
       dis: greet + ((uQ && c.quote_disarmed) || safeStr(defaultQuotes.dis)), 
       home: greet + ((uQ && c.quote_armed_home) || safeStr(defaultQuotes.home)), 
-      away: (uQ && c.quote_armed_away) || safeStr(defaultQuotes.away),
-      night: (uQ && c.quote_night) || safeStr(defaultQuotes.night),
-      hot: (uQ && c.quote_hot) || safeStr(defaultQuotes.hot),
-      cold: (uQ && c.quote_cold) || safeStr(defaultQuotes.cold)
+      away: greet + ((uQ && c.quote_armed_away) || safeStr(defaultQuotes.away)),
+      night: (uQ && c.quote_night) || safeStr(defaultQuotes.night), // Asleep state, no greeting
+      hot: greet + ((uQ && c.quote_hot) || safeStr(defaultQuotes.hot)),
+      cold: greet + ((uQ && c.quote_cold) || safeStr(defaultQuotes.cold))
     };
 
     let outfit = n_b64, quote = "", border = "2px solid #4CAF50", isGrayscale = false;
@@ -208,8 +215,6 @@ class MoglieCard extends HTMLElement {
         if (q.nice_day) {
             quote = greet + q.nice_day; 
         } else {
-            // FIXED: Cleaned up dead logic here! 
-            // 'greet' now natively holds the coffee + preparing for day text perfectly.
             quote = greet ? greet.trim() : "Hello!";
         }
     }
