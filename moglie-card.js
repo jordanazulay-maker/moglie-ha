@@ -9,13 +9,30 @@ import { MOGLIE_TRANSLATIONS } from './moglie-localization.js';
 
 class MoglieCard extends HTMLElement {
   static getConfigElement() { return document.createElement("moglie-card-editor"); }
-  static getStubConfig() { return { use_wan: false, use_alarm: false, use_weather: false, wan_entity: "", alarm_entity: "", weather_entity: "", enable_night_mode: true, night_start: 22, night_end: 6, use_custom_quotes: false, hide_moglie: false }; }
+  
+  static getStubConfig() { 
+    return { 
+      entity: "", 
+      use_wan: false, 
+      use_alarm: false, 
+      use_weather: false, 
+      wan_entity: "", 
+      alarm_entity: "", 
+      weather_entity: "", 
+      enable_night_mode: true, 
+      night_start: 22, 
+      night_end: 6, 
+      use_custom_quotes: false, 
+      hide_moglie: false 
+    }; 
+  }
 
   setConfig(config) {
     this.config = { ...config };
     this._last = null;
     this._typing = false;
 
+    // Ensure we only build the HTML and attach event listeners once
     if (!this.cont) {
       this.innerHTML = `
         <style>
@@ -36,7 +53,6 @@ class MoglieCard extends HTMLElement {
       this.img = this.querySelector('#m-img');
       this.txt = this.querySelector('#m-txt');
 
-      // Add a timer system for hold actions
       let isHold = false;
       let pressTimer;
 
@@ -44,27 +60,26 @@ class MoglieCard extends HTMLElement {
         isHold = false;
         pressTimer = setTimeout(() => {
           isHold = true;
-          // Visual feedback for hold
           this.img.style.transform = "scale(1.1) rotate(-5deg)";
           setTimeout(() => { this.img.style.transform = "scale(1) rotate(0deg)"; }, 200);
           this.handleAct('hold');
-        }, 500); // 500 milliseconds = hold
+        }, 500); 
       };
 
       const endPress = () => {
         if (pressTimer) clearTimeout(pressTimer);
       };
 
-      // Event listeners to start and stop the hold timer
+      // Hold events
       this.cont.addEventListener('mousedown', startPress);
       this.cont.addEventListener('mouseup', endPress);
       this.cont.addEventListener('mouseleave', endPress);
       this.cont.addEventListener('touchstart', startPress, { passive: true });
       this.cont.addEventListener('touchend', endPress);
 
-      // Standard click (Tap) listener
+      // Tap events
       this.cont.addEventListener('click', () => {
-        if (isHold) return; // Prevent tap if a hold just happened
+        if (isHold) return; // Ignore click if a hold action just completed
         this.img.style.transform = "scale(1.1) rotate(5deg)";
         setTimeout(() => { this.img.style.transform = "scale(1) rotate(0deg)"; }, 200);
         this.handleAct('tap');
@@ -109,8 +124,6 @@ class MoglieCard extends HTMLElement {
     const defaultQuotes = MOGLIE_TRANSLATIONS[lang] || MOGLIE_TRANSLATIONS["en"];
     
     if (lang === "he" || lang === "ar") this.txt.classList.add('rtl'); else this.txt.classList.remove('rtl');
-    
-    // Target this.img instead of this.txt
     if (c.hide_moglie) this.img.classList.add('hidden'); else this.img.classList.remove('hidden');
 
     const wan = (c.use_wan && c.wan_entity) ? hass.states[c.wan_entity] : null;
@@ -199,7 +212,7 @@ class MoglieCard extends HTMLElement {
   handleAct(a) {
     const act = this.config[a + '_action'];
     
-    // If a user has configured a custom action, let Home Assistant process it
+    // Process native HA custom actions if defined
     if (act && act.action && act.action !== 'none') {
       this.dispatchEvent(new CustomEvent('hass-action', {
         bubbles: true,
@@ -207,7 +220,7 @@ class MoglieCard extends HTMLElement {
         detail: { config: this.config, action: a }
       }));
     } 
-    // Default fallback if no tap action is set
+    // Fallback: If no action is set, act as a More Info dialog for the alarm (legacy behavior)
     else if (!act && a === 'tap' && this.config.alarm_entity) {
       this.dispatchEvent(new CustomEvent('hass-more-info', { 
         bubbles: true, 
@@ -237,6 +250,7 @@ class MoglieCardEditor extends HTMLElement {
 
   _computeSchema() {
     return [
+      { name: "entity", selector: { entity: {} } }, // The Main Entity selector (Needed for generic HA Actions like Toggle)
       { name: "wan_entity", selector: { entity: { domain: "binary_sensor" } } },
       { name: "alarm_entity", selector: { entity: { domain: "alarm_control_panel" } } },
       { name: "weather_entity", selector: { entity: { domain: "weather" } } },
