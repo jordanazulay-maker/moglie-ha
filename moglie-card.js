@@ -80,16 +80,16 @@ class MoglieCard extends HTMLElement {
     const lang = (hass.language || "en").split("-")[0];
     const defaultQuotes = MOGLIE_TRANSLATIONS[lang] || MOGLIE_TRANSLATIONS["en"];
     
-    if (lang === "he") this.txt.classList.add('rtl'); else this.txt.classList.remove('rtl');
+    if (lang === "he" || lang === "ar") this.txt.classList.add('rtl'); else this.txt.classList.remove('rtl');
     if (c.hide_moglie) this.txt.classList.add('hidden'); else this.txt.classList.remove('hidden');
 
     const wan = (c.use_wan && c.wan_entity) ? hass.states[c.wan_entity] : null;
     const alrm = (c.use_alarm && c.alarm_entity) ? hass.states[c.alarm_entity] : null;
     const wthr = (c.use_weather && c.weather_entity) ? hass.states[c.weather_entity] : null;
 
-    if (c.use_wan && c.wan_entity && !wan) return this.showErr(defaultQuotes.error || "Configuration Error");
-    if (c.use_alarm && c.alarm_entity && !alrm) return this.showErr(defaultQuotes.error || "Configuration Error");
-    if (c.use_weather && c.weather_entity && !wthr) return this.showErr(defaultQuotes.error || "Configuration Error");
+    if ((c.use_wan && !wan) || (c.use_alarm && !alrm) || (c.use_weather && !wthr)) {
+        return this.showErr(defaultQuotes.error);
+    }
 
     const wState = wan ? wan.state.toLowerCase() : 'on';
     const aState = alrm ? alrm.state.toLowerCase() : 'disarmed';
@@ -174,41 +174,24 @@ class MoglieCard extends HTMLElement {
   }
 }
 
-// ==========================================
-// TRANSLATED VISUAL EDITOR
-// ==========================================
+// Editor handles RTL setup automatically
 class MoglieCardEditor extends HTMLElement {
-  setConfig(config) { 
-    this._cfg = { ...config }; 
-    if (this._f) this._f.data = this._cfg; else this.render(); 
-  }
-  
+  setConfig(config) { this._cfg = config; this.render(); }
   set hass(hass) { 
-    this._h = hass; 
-    if (this._f) this._f.hass = hass; 
+    this._h = hass;
     const lang = (hass.language || "en").split("-")[0];
-    if (lang === "he") this.style.direction = "rtl";
+    if (lang === "he" || lang === "ar") this.style.direction = "rtl";
   }
-
   render() {
     if (!this._h || this._f) return;
-    const lang = (this._h.language || "en").split("-")[0];
-    const trans = MOGLIE_TRANSLATIONS[lang] || MOGLIE_TRANSLATIONS["en"];
-
     this._f = document.createElement("ha-form");
     this._f.hass = this._h;
     this._f.data = this._cfg;
-
     this._f.schema = [
-      { name: "monitored_features", selector: { select: { multiple: true, options: ["wan", "alarm", "weather"] } } },
       { name: "wan_entity", selector: { entity: { domain: "binary_sensor" } } },
       { name: "alarm_entity", selector: { entity: { domain: "alarm_control_panel" } } },
       { name: "weather_entity", selector: { entity: { domain: "weather" } } }
     ];
-
-    // This converts internal names to localized labels in the Setup UI
-    this._f.computeLabel = (s) => trans[s.name] || s.name;
-
     this._f.addEventListener("value-changed", (e) => {
       this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: e.detail.value }, bubbles: true, composed: true }));
     });
