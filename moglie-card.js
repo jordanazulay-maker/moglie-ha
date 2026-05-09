@@ -87,9 +87,9 @@ class MoglieCard extends HTMLElement {
     const alrm = (c.use_alarm && c.alarm_entity) ? hass.states[c.alarm_entity] : null;
     const wthr = (c.use_weather && c.weather_entity) ? hass.states[c.weather_entity] : null;
 
-    if (c.use_wan && c.wan_entity && !wan) return this.showErr("I think the primates found a problem in your config. Check your YAML!");
-    if (c.use_alarm && c.alarm_entity && !alrm) return this.showErr("I think the primates found a problem in your config. Check your YAML!");
-    if (c.use_weather && c.weather_entity && !wthr) return this.showErr("I think the primates found a problem in your config. Check your YAML!");
+    if (c.use_wan && c.wan_entity && !wan) return this.showErr(defaultQuotes.error || "Configuration Error");
+    if (c.use_alarm && c.alarm_entity && !alrm) return this.showErr(defaultQuotes.error || "Configuration Error");
+    if (c.use_weather && c.weather_entity && !wthr) return this.showErr(defaultQuotes.error || "Configuration Error");
 
     const wState = wan ? wan.state.toLowerCase() : 'on';
     const aState = alrm ? alrm.state.toLowerCase() : 'disarmed';
@@ -116,7 +116,6 @@ class MoglieCard extends HTMLElement {
     const isNight = nS > nE ? (hr >= nS || hr < nE) : (hr >= nS && hr < nE);
     const showNight = c.enable_night_mode !== false && isNight;
 
-    // Greeting Logic
     let greet = "";
     if (!showNight) {
         if (hr >= 6 && hr < 11) greet = defaultQuotes.morning;
@@ -174,4 +173,51 @@ class MoglieCard extends HTMLElement {
     }
   }
 }
+
+// ==========================================
+// TRANSLATED VISUAL EDITOR
+// ==========================================
+class MoglieCardEditor extends HTMLElement {
+  setConfig(config) { 
+    this._cfg = { ...config }; 
+    if (this._f) this._f.data = this._cfg; else this.render(); 
+  }
+  
+  set hass(hass) { 
+    this._h = hass; 
+    if (this._f) this._f.hass = hass; 
+    const lang = (hass.language || "en").split("-")[0];
+    if (lang === "he") this.style.direction = "rtl";
+  }
+
+  render() {
+    if (!this._h || this._f) return;
+    const lang = (this._h.language || "en").split("-")[0];
+    const trans = MOGLIE_TRANSLATIONS[lang] || MOGLIE_TRANSLATIONS["en"];
+
+    this._f = document.createElement("ha-form");
+    this._f.hass = this._h;
+    this._f.data = this._cfg;
+
+    this._f.schema = [
+      { name: "monitored_features", selector: { select: { multiple: true, options: ["wan", "alarm", "weather"] } } },
+      { name: "wan_entity", selector: { entity: { domain: "binary_sensor" } } },
+      { name: "alarm_entity", selector: { entity: { domain: "alarm_control_panel" } } },
+      { name: "weather_entity", selector: { entity: { domain: "weather" } } }
+    ];
+
+    // This converts internal names to localized labels in the Setup UI
+    this._f.computeLabel = (s) => trans[s.name] || s.name;
+
+    this._f.addEventListener("value-changed", (e) => {
+      this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: e.detail.value }, bubbles: true, composed: true }));
+    });
+    this.appendChild(this._f);
+  }
+}
+
+customElements.define("moglie-card-editor", MoglieCardEditor);
 customElements.define('moglie-card', MoglieCard);
+
+window.customCards = window.customCards || [];
+window.customCards.push({ type: "moglie-card", name: "Moglie HA", description: "Smart Mascot Monitor", preview: true });
