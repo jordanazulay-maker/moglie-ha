@@ -1,7 +1,7 @@
 (function() {
   class MoglieCard extends HTMLElement {
-    // 1. Tell Home Assistant the card exists for the 'Add Card' menu
-    static getConfigElement() { return document.createElement("moglie-card-editor"); }
+    
+    // 1. Provide default YAML for the card picker (Custom Editor crash fixed)
     static getStubConfig() { return { entity: "binary_sensor.moglie_status" }; }
 
     // 2. Validate the YAML configuration immediately
@@ -26,6 +26,7 @@
         "on": "festive.png",
         "home": "festive.png",
         "off": "normal.png",
+        "not_home": "normal.png",
         "rainy": "rainy.png",
         "summer": "summer.png",
         "sweaty": "sweaty.png",
@@ -42,7 +43,7 @@
 
       // 4. SYSTEM CHECK: If the entity is broken, show the "Gray Error" state
       if (!stateObj || stateObj.state === 'unavailable' || stateObj.state === 'unknown') {
-        this.renderStatus(`System Error: ${entityId} Unavailable`, true);
+        this.renderStatus(`System Error: ${entityId} is Unavailable`, true);
         return;
       }
 
@@ -97,7 +98,7 @@
 
   customElements.define('moglie-card', MoglieCard);
 
-  // Register in the Card Picker so it never disappears again
+  // Register in the Card Picker so it never disappears
   window.customCards = window.customCards || [];
   window.customCards.push({
     type: "moglie-card",
