@@ -174,8 +174,11 @@ class MoglieCard extends HTMLElement {
       nice_day: (uQ && c.quote_nice_day),
       off: (uQ && c.quote_offline) || safeStr(defaultQuotes.off),
       rain: (uQ && c.quote_rain) || safeStr(defaultQuotes.rain),
-      dis: (uQ && c.quote_disarmed) || safeStr(defaultQuotes.dis), // Removed redundant 'greet +'
-      home: (uQ && c.quote_armed_home) || safeStr(defaultQuotes.home), // Removed redundant 'greet +'
+      
+      // FIXED: Restored 'greet +' so Moglie says Good Morning before the alarm status
+      dis: greet + ((uQ && c.quote_disarmed) || safeStr(defaultQuotes.dis)), 
+      home: greet + ((uQ && c.quote_armed_home) || safeStr(defaultQuotes.home)), 
+      
       away: (uQ && c.quote_armed_away) || safeStr(defaultQuotes.away),
       night: (uQ && c.quote_night) || safeStr(defaultQuotes.night),
       hot: (uQ && c.quote_hot) || safeStr(defaultQuotes.hot),
@@ -203,14 +206,19 @@ class MoglieCard extends HTMLElement {
             outfit = n_b64; quote = q.home; border = "2px solid #4CAF50";
         }
     } else {
-        // FALLBACK LOGIC: Uses full greeting, removes redundant strings
         outfit = n_b64; 
         border = "2px solid #4CAF50";
         
         if (q.nice_day) {
-            quote = q.nice_day; // Now cleanly shows only your custom quote without gluing the monkey phrase to it
+            quote = greet + q.nice_day; 
         } else {
-            quote = greet ? greet.trim() : "Hello!";
+            // FIXED: If alarm is off, combine the coffee greeting with the primate "preparing for the day" logic!
+            let niceQuote = "";
+            if (hr >= 6 && hr < 11) niceQuote = safeStr(defaultQuotes.day_morning);
+            else if (hr >= 11 && hr < 17) niceQuote = safeStr(defaultQuotes.day_afternoon);
+            else niceQuote = safeStr(defaultQuotes.day_evening);
+            
+            quote = niceQuote ? (greet + niceQuote) : (greet ? greet.trim() : "Hello!");
         }
     }
 
