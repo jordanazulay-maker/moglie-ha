@@ -131,11 +131,11 @@ class MoglieCard extends HTMLElement {
     const wthr = (c.use_weather && c.weather_entity) ? hass.states[c.weather_entity] : null;
 
     if ((c.use_wan && !wan) || (c.use_alarm && !alrm) || (c.use_weather && !wthr)) {
-        return this.showErr(defaultQuotes.error);
+        return this.showErr(defaultQuotes.error || "Entity not found");
     }
 
     const wState = wan ? wan.state.toLowerCase() : 'on';
-    const aState = alrm ? alrm.state.toLowerCase() : 'disarmed';
+    const aState = alrm ? alrm.state.toLowerCase() : 'none';
     const weState = wthr ? wthr.state.toLowerCase() : 'unknown';
 
     const d = new Date();
@@ -144,12 +144,14 @@ class MoglieCard extends HTMLElement {
     if (this._last === sHash) return; 
     this._last = sHash;
 
-    const wanOk = /on|connected|true/.test(wState);
-    const aOff = /disarmed|off/.test(aState);
-    const aHome = /home|stay|night/.test(aState);
+    // Isolate integration logic to their specific toggles
+    const wanOk = c.use_wan ? /on|connected|true/.test(wState) : true;
+    const aOff = c.use_alarm ? /disarmed|off/.test(aState) : false;
+    const aHome = c.use_alarm ? /home|stay|night/.test(aState) : false;
     
-    let t = null, h = null, isRain = /(rain|pour|storm)/.test(weState);
-    if (wthr) {
+    let t = null, h = null, isRain = false;
+    if (c.use_weather && wthr) {
+      isRain = /(rain|pour|storm)/.test(weState);
       t = parseFloat(wthr.attributes?.temperature ?? 70);
       h = parseFloat(wthr.attributes?.humidity ?? 0);
     }
@@ -159,48 +161,62 @@ class MoglieCard extends HTMLElement {
     const isNight = nS > nE ? (hr >= nS || hr < nE) : (hr >= nS && hr < nE);
     const showNight = c.enable_night_mode !== false && isNight;
 
+    // Safety net: prevents "undefined" from ever showing up if a translation is missing
+    const safeStr = (s) => s || "";
+
     let greet = "";
     if (!showNight) {
-        if (hr >= 6 && hr < 11) greet = defaultQuotes.morning;
-        else if (hr >= 11 && hr < 17) greet = defaultQuotes.afternoon;
-        else if (hr >= 17 && hr < nS) greet = defaultQuotes.evening;
+        if (hr >= 6 && hr < 11) greet = safeStr(defaultQuotes.morning);
+        else if (hr >= 11 && hr < 17) greet = safeStr(defaultQuotes.afternoon);
+        else if (hr >= 17 && hr < nS) greet = safeStr(defaultQuotes.evening);
     }
 
     const uQ = c.use_custom_quotes;
     const q = {
-      off: (uQ && c.quote_offline) || defaultQuotes.off,
-      rain: (uQ && c.quote_rain) || defaultQuotes.rain,
-      dis: (uQ && c.quote_disarmed) || (greet + defaultQuotes.dis),
-      home: (uQ && c.quote_armed_home) || (greet + defaultQuotes.home),
-      away: (uQ && c.quote_armed_away) || defaultQuotes.away,
-      night: (uQ && c.quote_night) || defaultQuotes.night,
-      hot: (uQ && c.quote_hot) || defaultQuotes.hot,
-      cold: (uQ && c.quote_cold) || defaultQuotes.cold
+      off: (uQ && c.quote_offline) || safeStr(defaultQuotes.off),
+      rain: (uQ && c.quote_rain) || safeStr(defaultQuotes.rain),
+      dis: greet + ((uQ && c.quote_disarmed) || safeStr(defaultQuotes.dis)),
+      home: greet + ((uQ && c.quote_armed_home) || safeStr(defaultQuotes.home)),
+      away: (uQ && c.quote_armed_away) || safeStr(defaultQuotes.away),
+      night: (uQ && c.quote_night) || safeStr(defaultQuotes.night),
+      hot: (uQ && c.quote_hot) || safeStr(defaultQuotes.hot),
+      cold: (uQ && c.quote_cold) || safeStr(defaultQuotes.cold)
     };
 
-    let outfit = n_b64, quote = q.home, border = "2px solid #4CAF50", isGrayscale = false;
+    let outfit = n_b64, quote = "", border = "2px solid #4CAF50", isGrayscale = false;
 
-    if (!wanOk) { 
+    if (c.use_wan && !wanOk) { 
         outfit = n_b64; quote = q.off; border = "2px solid gray"; isGrayscale = true; 
     } else if (showNight) { 
         outfit = sl_b64; quote = q.night; border = "2px solid #673AB7"; 
-    } else if (isRain) { 
+    } else if (c.use_weather && isRain) { 
         outfit = r_b64; quote = q.rain; border = "2px solid #2196F3"; 
-    } else if (t !== null && t < 50) { 
+    } else if (c.use_weather && t !== null && t < 50) { 
         outfit = w_b64; quote = q.cold; border = "2px solid #00BCD4"; 
-    } else if (t !== null && t > 80) { 
-        outfit = (h > 70) ? sw_b64 : s_b64; quote = q.hot; border = "2px solid #FF9800"; 
-    } else if (aOff) { 
-        outfit = n_b64; quote = q.dis; border = "2px solid orange"; 
-    } else if (!aHome) {
-        outfit = n_b64; quote = q.away; border = "2px solid #F44336";
+    } else if (c.use_weather && t !== null && t > 80) { 
+        outfit = (h !== null && h > 70) ? sw_b64 : s_b64; quote = q.hot; border = "2px solid #FF9800"; 
+    } else if (c.use_alarm) { 
+        // Only evaluate alarm quotes if the alarm is actually active
+        if (aOff) { 
+            outfit = n_b64; quote = q.dis; border = "2px solid orange"; 
+        } else if (!aHome) {
+            outfit = n_b64; quote = q.away; border = "2px solid #F44336";
+        } else {
+            outfit = n_b64; quote = q.home; border = "2px solid #4CAF50";
+        }
+    } else {
+        // Fallback: The user has no alarm configured, and the weather is nice.
+        // We clean the greet string (removes trailing commas/spaces) and append a '!'
+        outfit = n_b64; 
+        quote = greet ? greet.replace(/[, ]+$/, '') + "!" : "Hello!"; 
+        border = "2px solid #4CAF50";
     }
 
     let patrolTxt = "";
-    if (alrm && wanOk) {
-      if (aHome) patrolTxt = `<br><small style="color:#4CAF50;">${defaultQuotes.p_patrol}</small>`;
-      else if (aOff) patrolTxt = `<br><small style="color:orange;">${defaultQuotes.p_off}</small>`;
-      else patrolTxt = `<br><small style="color:#F44336;">${defaultQuotes.p_alert}</small>`;
+    if (c.use_alarm && alrm && wanOk) {
+      if (aHome) patrolTxt = `<br><small style="color:#4CAF50;">${safeStr(defaultQuotes.p_patrol)}</small>`;
+      else if (aOff) patrolTxt = `<br><small style="color:orange;">${safeStr(defaultQuotes.p_off)}</small>`;
+      else patrolTxt = `<br><small style="color:#F44336;">${safeStr(defaultQuotes.p_alert)}</small>`;
     }
 
     this.img.src = outfit;
@@ -258,7 +274,6 @@ class MoglieCardEditor extends HTMLElement {
     const c = this._cfg || {};
 
     return [
-      // NEW: Integrations toggles mapped side-by-side at the top
       {
         type: "grid",
         name: "",
@@ -269,12 +284,10 @@ class MoglieCardEditor extends HTMLElement {
         ]
       },
       
-      // NEW: Conditionally show entity selectors only if their toggles are true
       ...(c.use_wan ? [{ name: "wan_entity", selector: { entity: { domain: "binary_sensor" } } }] : []),
       ...(c.use_alarm ? [{ name: "alarm_entity", selector: { entity: { domain: "alarm_control_panel" } } }] : []),
       ...(c.use_weather ? [{ name: "weather_entity", selector: { entity: { domain: "weather" } } }] : []),
       
-      // Action entity Toggles mapped side-by-side
       {
         type: "grid",
         name: "",
@@ -284,7 +297,6 @@ class MoglieCardEditor extends HTMLElement {
         ]
       },
       
-      // Conditionally show the tap/hold entities mapped side-by-side (if toggled on)
       ...(c.use_tap_entity || c.use_hold_entity ? [
         {
           type: "grid",
@@ -296,7 +308,6 @@ class MoglieCardEditor extends HTMLElement {
         }
       ] : []),
 
-      // Standard Action selectors
       {
         type: "grid",
         name: "",
@@ -306,7 +317,6 @@ class MoglieCardEditor extends HTMLElement {
         ]
       },
       
-      // Night mode and UI settings
       {
         type: "grid",
         name: "",
@@ -320,7 +330,6 @@ class MoglieCardEditor extends HTMLElement {
         ]
       },
       
-      // Custom quotes
       { name: "use_custom_quotes", selector: { boolean: {} } },
       ...(c.use_custom_quotes ? [
         {
