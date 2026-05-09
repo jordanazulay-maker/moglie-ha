@@ -203,19 +203,14 @@ class MoglieCard extends HTMLElement {
             outfit = n_b64; quote = q.home; border = "2px solid #4CAF50";
         }
     } else {
-        // NEW FALLBACK LOGIC: Uses language DB, Failsafes, or Custom Nice Day Quotes!
+        // FALLBACK LOGIC: Uses full custom greeting without appending redundant strings
         outfit = n_b64; 
         border = "2px solid #4CAF50";
         
         if (q.nice_day) {
             quote = greet + q.nice_day;
         } else {
-            let niceQuote = "";
-            if (hr >= 6 && hr < 11) niceQuote = safeStr(defaultQuotes.day_morning) || "the primates and I are preparing for the day!";
-            else if (hr >= 11 && hr < 17) niceQuote = safeStr(defaultQuotes.day_afternoon) || "it's a beautiful afternoon for some banana snacks!";
-            else niceQuote = safeStr(defaultQuotes.day_evening) || "things are quieting down in the canopy.";
-            
-            quote = greet + niceQuote;
+            quote = greet ? greet.trim() : "Hello!";
         }
     }
 
@@ -341,7 +336,7 @@ class MoglieCardEditor extends HTMLElement {
           type: "grid",
           name: "",
           schema: [
-            { name: "quote_nice_day", selector: { text: {} } }, // Added the new nice day config
+            { name: "quote_nice_day", selector: { text: {} } },
             { name: "quote_offline", selector: { text: {} } },
             { name: "quote_rain", selector: { text: {} } },
             { name: "quote_cold", selector: { text: {} } },
