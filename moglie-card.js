@@ -174,8 +174,8 @@ class MoglieCard extends HTMLElement {
       nice_day: (uQ && c.quote_nice_day),
       off: (uQ && c.quote_offline) || safeStr(defaultQuotes.off),
       rain: (uQ && c.quote_rain) || safeStr(defaultQuotes.rain),
-      dis: greet + ((uQ && c.quote_disarmed) || safeStr(defaultQuotes.dis)),
-      home: greet + ((uQ && c.quote_armed_home) || safeStr(defaultQuotes.home)),
+      dis: (uQ && c.quote_disarmed) || safeStr(defaultQuotes.dis), // Removed redundant 'greet +'
+      home: (uQ && c.quote_armed_home) || safeStr(defaultQuotes.home), // Removed redundant 'greet +'
       away: (uQ && c.quote_armed_away) || safeStr(defaultQuotes.away),
       night: (uQ && c.quote_night) || safeStr(defaultQuotes.night),
       hot: (uQ && c.quote_hot) || safeStr(defaultQuotes.hot),
@@ -203,12 +203,12 @@ class MoglieCard extends HTMLElement {
             outfit = n_b64; quote = q.home; border = "2px solid #4CAF50";
         }
     } else {
-        // FALLBACK LOGIC: Uses full custom greeting without appending redundant strings
+        // FALLBACK LOGIC: Uses full greeting, removes redundant strings
         outfit = n_b64; 
         border = "2px solid #4CAF50";
         
         if (q.nice_day) {
-            quote = greet + q.nice_day;
+            quote = q.nice_day; // Now cleanly shows only your custom quote without gluing the monkey phrase to it
         } else {
             quote = greet ? greet.trim() : "Hello!";
         }
