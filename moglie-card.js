@@ -190,26 +190,12 @@ class MoglieCardEditor extends HTMLElement {
     if (this._f) {
       this._f.hass = hass;
     }
-    // Trigger a render when hass is set
     this.render();
   }
-  
-  render() {
-    // If hass isn't ready yet, wait.
-    if (!this._h) return;
-    
-    // If the form already exists, just update its data and return
-    if (this._f) {
-      this._f.data = this._cfg;
-      return;
-    }
 
-    this._f = document.createElement("ha-form");
-    this._f.hass = this._h;
-    this._f.data = this._cfg;
-    
-    // Clean, grouped schema configuration
-    this._f.schema = [
+  // Generate the schema dynamically based on current configuration
+  _computeSchema() {
+    return [
       { name: "wan_entity", selector: { entity: { domain: "binary_sensor" } } },
       { name: "alarm_entity", selector: { entity: { domain: "alarm_control_panel" } } },
       { name: "weather_entity", selector: { entity: { domain: "weather" } } },
@@ -220,26 +206,49 @@ class MoglieCardEditor extends HTMLElement {
         schema: [
           { name: "enable_night_mode", selector: { boolean: {} } },
           { name: "hide_moglie", selector: { boolean: {} } },
-          { name: "night_start", selector: { number: { min: 0, max: 23, mode: "box" } } },
-          { name: "night_end", selector: { number: { min: 0, max: 23, mode: "box" } } }
+          // Conditionally inject night start/end inputs if night mode is enabled
+          ...(this._cfg?.enable_night_mode !== false ? [
+            { name: "night_start", selector: { number: { min: 0, max: 23, mode: "box" } } },
+            { name: "night_end", selector: { number: { min: 0, max: 23, mode: "box" } } }
+          ] : [])
         ]
       },
       { name: "use_custom_quotes", selector: { boolean: {} } },
-      {
-        type: "grid",
-        name: "",
-        schema: [
-          { name: "quote_offline", selector: { text: {} } },
-          { name: "quote_rain", selector: { text: {} } },
-          { name: "quote_cold", selector: { text: {} } },
-          { name: "quote_hot", selector: { text: {} } },
-          { name: "quote_disarmed", selector: { text: {} } },
-          { name: "quote_armed_home", selector: { text: {} } },
-          { name: "quote_armed_away", selector: { text: {} } },
-          { name: "quote_night", selector: { text: {} } }
-        ]
-      }
+      // Conditionally inject the custom quote fields if the toggle is true
+      ...(this._cfg?.use_custom_quotes ? [
+        {
+          type: "grid",
+          name: "",
+          schema: [
+            { name: "quote_offline", selector: { text: {} } },
+            { name: "quote_rain", selector: { text: {} } },
+            { name: "quote_cold", selector: { text: {} } },
+            { name: "quote_hot", selector: { text: {} } },
+            { name: "quote_disarmed", selector: { text: {} } },
+            { name: "quote_armed_home", selector: { text: {} } },
+            { name: "quote_armed_away", selector: { text: {} } },
+            { name: "quote_night", selector: { text: {} } }
+          ]
+        }
+      ] : [])
     ];
+  }
+  
+  render() {
+    // If hass isn't ready yet, wait.
+    if (!this._h) return;
+    
+    // If the form already exists, update its data AND dynamic schema, then return
+    if (this._f) {
+      this._f.data = this._cfg;
+      this._f.schema = this._computeSchema(); 
+      return;
+    }
+
+    this._f = document.createElement("ha-form");
+    this._f.hass = this._h;
+    this._f.data = this._cfg;
+    this._f.schema = this._computeSchema();
 
     this._f.addEventListener("value-changed", (e) => {
       this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: e.detail.value }, bubbles: true, composed: true }));
