@@ -14,8 +14,7 @@
 
 ## 🌟 Enhanced Features
 
-* **🌍 Fully Multilingual:** Moglie speaks your language! He automatically detects your Home Assistant profile settings and translates all quotes and setup menus. Currently supporting:
-  * **English, Spanish, French, German, Italian, Portuguese, Arabic, and Hebrew.**
+* **🌍 Fully Multilingual:** Moglie speaks your language! He automatically detects your Home Assistant profile settings and translates all quotes and setup menus. Currently supporting **12 languages**.
 * **💬 Custom Quotes:** Don't like the default phrases? Override any state (Rain, Cold, Night, Armed, etc.) with your own custom text directly from the UI!
 * **🎛️ Dynamic Visual Editor:** The setup UI is smarter than ever, automatically grouping and hiding advanced options (like custom quotes and night mode times) until you actually enable them.
 * **👆 Interactive Tap Actions:** Click on Moglie or his text to trigger native Home Assistant actions, like popping open your alarm control panel. 
@@ -26,6 +25,25 @@
 * **🌦️ Environmental Outfits:** Watch Moglie change clothes! He reacts to rain, snow, and extreme temperatures. He even starts to sweat if it’s over 80°F (27°C) with high humidity.
 * **🎨 Clean & Modern UI:** No clunky speech bubbles. Status messages float elegantly above Moglie for a polished, subtitle-style look that fits any dashboard theme.
 * **👻 Stealth Mode:** Need a minimalist dashboard? Toggle "Hide Moglie" to keep his intelligent status text but hide the monkey image.
+
+## 🌍 Supported Languages
+
+Moglie is a worldly monkey and currently supports **12 languages**! The card will automatically detect your Home Assistant language settings and translate Moglie's status updates.
+
+* 🇺🇸 English (`en`)
+* 🇮🇱 Hebrew (`he`)
+* 🇸🇦 Arabic (`ar`)
+* 🇪🇸 Spanish (`es`)
+* 🇫🇷 French (`fr`)
+* 🇩🇪 German (`de`)
+* 🇮🇹 Italian (`it`)
+* 🇵🇹 Portuguese (`pt`)
+* 🇳🇱 Dutch (`nl`)
+* 🇷🇺 Russian (`ru`)
+* 🇯🇵 Japanese (`ja`)
+* 🇨🇳 Chinese - Simplified (`zh-CN`)
+
+*Note: For Right-to-Left (RTL) languages like Hebrew and Arabic, the card automatically adjusts the text direction!*
 
 ## 🐒 How Moglie Reacts
 
