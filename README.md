@@ -15,13 +15,17 @@
 ## 🌟 Enhanced Features
 
 * **🌍 Fully Multilingual:** Moglie speaks your language! He automatically detects your Home Assistant profile settings and translates all quotes and setup menus. Currently supporting:
-  * **English, Spanish, French, German, Italian, Portuguese, and Hebrew.**
+  * **English, Spanish, French, German, Italian, Portuguese, Arabic, and Hebrew.**
+* **💬 Custom Quotes:** Don't like the default phrases? Override any state (Rain, Cold, Night, Armed, etc.) with your own custom text directly from the UI!
+* **🎛️ Dynamic Visual Editor:** The setup UI is smarter than ever, automatically grouping and hiding advanced options (like custom quotes and night mode times) until you actually enable them.
+* **👆 Interactive Tap Actions:** Click on Moglie or his text to trigger native Home Assistant actions, like popping open your alarm control panel. 
 * **✍️ Interactive Typewriter:** Status updates appear word-by-word with a sleek typewriter animation, making Moglie feel like he's actually talking to you.
 * **🌐 Offline-Proof (Base64):** Moglie is built to survive network drops. Since all image data is baked into the code (Base64), he will stay rendered even if your internet is completely severed.
 * **🛡️ Security Patrol:** Moglie watches your Alarm Control Panel. He changes border colors and adds specific "patrol" sub-texts depending on whether the "troop" is home or away.
-* **🇮🇱 RTL Auto-Detection:** For Right-to-Left languages like Hebrew, Moglie automatically flips the entire UI, alignment, and setup interface for a native experience.
+* **🇮🇱 RTL Auto-Detection:** For Right-to-Left languages like Hebrew and Arabic, Moglie automatically flips the entire UI, alignment, and setup interface for a native experience.
 * **🌦️ Environmental Outfits:** Watch Moglie change clothes! He reacts to rain, snow, and extreme temperatures. He even starts to sweat if it’s over 80°F (27°C) with high humidity.
 * **🎨 Clean & Modern UI:** No clunky speech bubbles. Status messages float elegantly above Moglie for a polished, subtitle-style look that fits any dashboard theme.
+* **👻 Stealth Mode:** Need a minimalist dashboard? Toggle "Hide Moglie" to keep his intelligent status text but hide the monkey image.
 
 ## 🐒 How Moglie Reacts
 
@@ -41,15 +45,30 @@ Moglie uses a smart priority engine to decide what's most important:
 * 😎 **Hot:** Sunglasses + Orange border.
 * 🥵 **Humid:** Sweaty Monkey (Triggered by high heat + high humidity).
 
-## 🛠️ Configuration
+## 🚀 Installation via HACS
 
-Moglie features a **Fully Translated Visual Editor**. You don't need to touch YAML to set him up—every setting is available in the UI in your native language.
+Moglie is easily installed via the Home Assistant Community Store (HACS).
 
-```yaml
-type: custom:moglie-card
-wan_entity: binary_sensor.wan_status
-alarm_entity: alarm_control_panel.home_alarm
-weather_entity: weather.home
-enable_night_mode: true
-night_start: 22
-night_end: 6
+1. Go to **HACS** in your Home Assistant instance.
+2. Click on the 3 dots in the top right corner and select **Custom repositories**.
+3. Add the URL of this repository: `https://github.com/jordanazulay-maker/moglie-ha`
+4. Select **Dashboard** as the category and click **Add**.
+5. Close the popup, search for "Moglie HA" in HACS, and click **Download**.
+6. Refresh your browser window. You can now add the "Moglie HA" card to your dashboard!
+
+## 📄 License & Copyright
+
+**Copyright (c) 2026 Jordan Azulay**
+
+This project is licensed under the **PolyForm Noncommercial License 1.0.0**. 
+
+You are free to use, modify, and distribute this software for personal and non-commercial purposes.
+
+**Permitted Uses Include:**
+* Personal use for research, experimentation, and private study.
+* Use by charitable organizations, educational institutions, public research organizations, public safety/health organizations, environmental protection organizations, or government institutions, provided they receive no payment in connection with the software.
+
+**Strictly Prohibited:**
+* Use by any commercial entity or for commercial purposes (including paid smart home installations and consulting) is strictly prohibited without prior permission.
+
+Please see the `LICENSE.txt` file in this repository for the full legal text.
