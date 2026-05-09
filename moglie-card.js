@@ -12,7 +12,7 @@ class MoglieCard extends HTMLElement {
   
   static getStubConfig() { 
     return { 
-      entity: "", 
+      tap_entity: "", 
       use_wan: false, 
       use_alarm: false, 
       use_weather: false, 
@@ -32,7 +32,6 @@ class MoglieCard extends HTMLElement {
     this._last = null;
     this._typing = false;
 
-    // Ensure we only build the HTML and attach event listeners once
     if (!this.cont) {
       this.innerHTML = `
         <style>
@@ -70,16 +69,14 @@ class MoglieCard extends HTMLElement {
         if (pressTimer) clearTimeout(pressTimer);
       };
 
-      // Hold events
       this.cont.addEventListener('mousedown', startPress);
       this.cont.addEventListener('mouseup', endPress);
       this.cont.addEventListener('mouseleave', endPress);
       this.cont.addEventListener('touchstart', startPress, { passive: true });
       this.cont.addEventListener('touchend', endPress);
 
-      // Tap events
       this.cont.addEventListener('click', () => {
-        if (isHold) return; // Ignore click if a hold action just completed
+        if (isHold) return; 
         this.img.style.transform = "scale(1.1) rotate(5deg)";
         setTimeout(() => { this.img.style.transform = "scale(1) rotate(0deg)"; }, 200);
         this.handleAct('tap');
@@ -212,15 +209,16 @@ class MoglieCard extends HTMLElement {
   handleAct(a) {
     const act = this.config[a + '_action'];
     
-    // Process native HA custom actions if defined
+    // Trick HA into thinking tap_entity is the main entity so standard actions (like Toggle) work
+    const actionConfig = { ...this.config, entity: this.config.tap_entity || this.config.entity };
+    
     if (act && act.action && act.action !== 'none') {
       this.dispatchEvent(new CustomEvent('hass-action', {
         bubbles: true,
         composed: true,
-        detail: { config: this.config, action: a }
+        detail: { config: actionConfig, action: a }
       }));
     } 
-    // Fallback: If no action is set, act as a More Info dialog for the alarm (legacy behavior)
     else if (!act && a === 'tap' && this.config.alarm_entity) {
       this.dispatchEvent(new CustomEvent('hass-more-info', { 
         bubbles: true, 
@@ -250,10 +248,10 @@ class MoglieCardEditor extends HTMLElement {
 
   _computeSchema() {
     return [
-      { name: "entity", selector: { entity: {} } }, // The Main Entity selector (Needed for generic HA Actions like Toggle)
       { name: "wan_entity", selector: { entity: { domain: "binary_sensor" } } },
       { name: "alarm_entity", selector: { entity: { domain: "alarm_control_panel" } } },
       { name: "weather_entity", selector: { entity: { domain: "weather" } } },
+      { name: "tap_entity", selector: { entity: {} } }, // Moved below the others and renamed
       {
         type: "grid",
         name: "",
