@@ -1,17 +1,18 @@
 (function() {
+  // 1. HOT-RELOAD SAFETY LOCK: Prevents "Already Defined" crashes when refreshing HA
+  if (customElements.get('moglie-card')) return;
+
   class MoglieCard extends HTMLElement {
     
     static getStubConfig() { return { entity: "binary_sensor.moglie_status" }; }
 
-    // 1. SAFE CONFIGURATION: We no longer throw an error here. 
-    // Throwing an error here crashes the Home Assistant live preview.
     setConfig(config) {
       this.config = config;
     }
 
-    // 2. The Path Engine
+    // 2. THE PNG ENGINE: Now using the official HACS routing path
     getMonkeyUrl(state) {
-      const baseUrl = "/local/community/moglie-ha/";
+      const baseUrl = "/hacsfiles/moglie-ha/";
       
       if (state === 'unavailable' || state === 'unknown') {
         return `${baseUrl}normal.png`; 
@@ -33,7 +34,7 @@
     }
 
     set hass(hass) {
-      // 3. SAFE ENTITY CHECK: We handle the missing entity here instead of setConfig
+      // 3. MISSING ENTITY CHECK
       if (!this.config || !this.config.entity) {
         this.renderStatus("Please define an 'entity' in your YAML.", true);
         return;
@@ -42,6 +43,7 @@
       const entityId = this.config.entity;
       const stateObj = hass.states[entityId];
 
+      // 4. SYSTEM ERROR CHECK
       if (!stateObj || stateObj.state === 'unavailable' || stateObj.state === 'unknown') {
         this.renderStatus(`System Error: ${entityId} is Unavailable`, true);
         return;
@@ -55,7 +57,7 @@
       this.innerHTML = `
         <ha-card style="padding: 16px; text-align: center; border: ${isError ? '2px solid #ff5252' : 'none'}; background: ${isError ? '#2c2c2c' : 'var(--ha-card-background, white)'};">
           <div style="filter: grayscale(100%); opacity: 0.3;">
-            <img src="/local/community/moglie-ha/normal.png" width="100" onerror="this.style.display='none'">
+            <img src="/hacsfiles/moglie-ha/normal.png" width="100" onerror="this.style.display='none'">
           </div>
           <div style="margin-top: 10px; color: ${isError ? '#ff5252' : 'inherit'}; font-weight: bold;">
             ${msg}
@@ -92,7 +94,6 @@
       }
     }
 
-    // Tells Home Assistant roughly how big the card is for dashboard spacing
     getCardSize() {
       return 3;
     }
