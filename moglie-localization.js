@@ -1,6 +1,6 @@
 // moglie-localization.js
 export const MOGLIE_TRANSLATIONS = {
-  "en": {
+  "en": { // English
     "off": "Moglie is stranded. The WAN connection has been lost!",
     "rain": "Looks like rain, grabbing my coat!",
     "cold": "Brrr! It's freezing out there!",
@@ -14,10 +14,11 @@ export const MOGLIE_TRANSLATIONS = {
     "evening": "Sun's getting low. ",
     "p_patrol": "(Primates on perimeter patrol)",
     "p_off": "(Primates off duty)",
-    "p_alert": "(HIGH ALERT!)"
+    "p_alert": "(HIGH ALERT!)",
+    "error": "I think the primates found a problem in your config. Check your YAML!"
   },
-  "he": {
-    "off": "מוליה מנותק. חיבור האינטרנט אבד!",
+  "he": { // Hebrew
+    "off": "מוליה מנותק. חיבור האינטرנט אבד!",
     "rain": "נראה שעומד לרדת גשם, לוקח את המעיל שלי!",
     "cold": "בררר! קפוא בחוץ!",
     "hot": "לוהט בחוץ! צריך שייק בננה קר.",
@@ -25,14 +26,32 @@ export const MOGLIE_TRANSLATIONS = {
     "home": "הלהקה בבית.",
     "away": "הלהקה מחוץ לבית. שומרים על העצים!",
     "night": "הלהקה ישנה בצמרות העצים...",
-    "morning": "בוקר טוב! אני צריך קפה בננה. ",
+    "morning": "בוكر טוב! אני צריך קפה בננה. ",
     "afternoon": "משמרת צהריים שקטה. ",
     "evening": "השמש שוקעת. ",
     "p_patrol": "(הקופים בשמירה היקפית)",
     "p_off": "(הקופים בהפסקה)",
-    "p_alert": "(כוננות גבוהה!)"
+    "p_alert": "(כוננות גבוהה!)",
+    "error": "אני חושב שהקופים מצאו תקלה בהגדרות שלך. בדוק את ה-YAML!"
   },
-  "es": {
+  "ar": { // Arabic
+    "off": "موجلي عالق! فُقد الاتصال بالإنترنت.",
+    "rain": "يبدو أنها ستمطر، سأحضر معطفي!",
+    "cold": "الجو بارد جداً في الخارج!",
+    "hot": "الجو حار جداً! أحتاج لمشروب موز بارد.",
+    "dis": "النظام متوقف! الفريق في استراحة.",
+    "home": "الفريق في المنزل.",
+    "away": "الفريق في الخارج يراقب الأشجار!",
+    "night": "الفريق ينام فوق الأشجار...",
+    "morning": "صباح الخير! أحتاج لقهوة الموز. ",
+    "afternoon": "فترة الظهيرة هادئة. ",
+    "evening": "الشمس بدأت تغيب. ",
+    "p_patrol": "(الفريق في دورية حراسة)",
+    "p_off": "(الفريق في استراحة)",
+    "p_alert": "(في حالة تأهب قصوى!)",
+    "error": "أعتقد أن القردة وجدوا مشكلة في الإعدادات. تحقق من YAML!"
+  },
+  "es": { // Spanish
     "off": "¡Moglie está desconectado! Se perdió la conexión.",
     "rain": "¡Parece que va a llover, buscaré mi abrigo!",
     "cold": "¡Brrr! ¡Hace un frío polar afuera!",
@@ -46,9 +65,10 @@ export const MOGLIE_TRANSLATIONS = {
     "evening": "El sol se está poniendo. ",
     "p_patrol": "(Primates en patrulla perimetral)",
     "p_off": "(Primates fuera de servicio)",
-    "p_alert": "(¡ALERTA MÁXIMA!)"
+    "p_alert": "(¡ALERTA MÁXIMA!)",
+    "error": "Parece que los primates encontraron un problema. ¡Revisa tu YAML!"
   },
-  "fr": {
+  "fr": { // French
     "off": "Moglie est isolé. Connexion perdue !",
     "rain": "On dirait qu'il pleut, je prends mon manteau !",
     "cold": "Brrr ! Il fait glacial dehors !",
@@ -62,9 +82,10 @@ export const MOGLIE_TRANSLATIONS = {
     "evening": "Le soleil décline. ",
     "p_patrol": "(Primates en patrouille)",
     "p_off": "(Primates au repos)",
-    "p_alert": "(ALERTE MAXIMALE !)"
+    "p_alert": "(ALERTE MAXIMALE !)",
+    "error": "Je pense que les primates ont trouvé un problème. Vérifiez votre YAML !"
   },
-  "de": {
+  "de": { // German
     "off": "Moglie ist isoliert. Internetverbindung verloren!",
     "rain": "Es regnet wohl, ich schnappe mir meine Jacke!",
     "cold": "Brrr! Es ist eiskalt draußen!",
@@ -78,9 +99,10 @@ export const MOGLIE_TRANSLATIONS = {
     "evening": "Die Sonne geht unter. ",
     "p_patrol": "(Affen auf Patrouille)",
     "p_off": "(Affen außer Dienst)",
-    "p_alert": "(HOCHALARM!)"
+    "p_alert": "(HOCHALARM!)",
+    "error": "Ich glaube, die Affen haben ein Problem gefunden. Prüfen Sie Ihr YAML!"
   },
-  "it": {
+  "it": { // Italian
     "off": "Moglie è isolato. Connessione persa!",
     "rain": "Sembra che piova, prendo il cappotto!",
     "cold": "Brrr! Si gela fuori!",
@@ -94,9 +116,10 @@ export const MOGLIE_TRANSLATIONS = {
     "evening": "Il sole sta calando. ",
     "p_patrol": "(Scimmie in pattuglia)",
     "p_off": "(Scimmie a riposo)",
-    "p_alert": "(MASSIMA ALLERTA!)"
+    "p_alert": "(MASSIMA ALLERTA!)",
+    "error": "Penso che i primati abbiano trovato un problema. Controlla il tuo YAML!"
   },
-  "pt": {
+  "pt": { // Portuguese
     "off": "Moglie está isolado. Conexão perdida!",
     "rain": "Parece que vai chover, vou buscar meu casaco!",
     "cold": "Brrr! Está um gelo lá fora!",
@@ -110,6 +133,7 @@ export const MOGLIE_TRANSLATIONS = {
     "evening": "O sol está se pondo. ",
     "p_patrol": "(Primatas em patrulha)",
     "p_off": "(Primatas fora de serviço)",
-    "p_alert": "(ALERTA MÁXIMA!)"
+    "p_alert": "(ALERTA MÁXIMA!)",
+    "error": "Acho que os primatas encontraram um problema. Verifique seu YAML!"
   }
 };
