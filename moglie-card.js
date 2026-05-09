@@ -16,7 +16,7 @@ class MoglieCard extends HTMLElement {
     this._last = null;
     this._typing = false;
 
-    if (!this.content) {
+    if (!this.cont) {
       this.innerHTML = `
         <style>
           .anti-gravity { transform: rotate(180deg); }
@@ -36,10 +36,38 @@ class MoglieCard extends HTMLElement {
       this.img = this.querySelector('#m-img');
       this.txt = this.querySelector('#m-txt');
 
-      this.cont.addEventListener('click', () => {
-          this.img.style.transform = "scale(1.1) rotate(5deg)";
+      // Add a timer system for hold actions
+      let isHold = false;
+      let pressTimer;
+
+      const startPress = () => {
+        isHold = false;
+        pressTimer = setTimeout(() => {
+          isHold = true;
+          // Visual feedback for hold
+          this.img.style.transform = "scale(1.1) rotate(-5deg)";
           setTimeout(() => { this.img.style.transform = "scale(1) rotate(0deg)"; }, 200);
-          this.handleAct('tap');
+          this.handleAct('hold');
+        }, 500); // 500 milliseconds = hold
+      };
+
+      const endPress = () => {
+        if (pressTimer) clearTimeout(pressTimer);
+      };
+
+      // Event listeners to start and stop the hold timer
+      this.cont.addEventListener('mousedown', startPress);
+      this.cont.addEventListener('mouseup', endPress);
+      this.cont.addEventListener('mouseleave', endPress);
+      this.cont.addEventListener('touchstart', startPress, { passive: true });
+      this.cont.addEventListener('touchend', endPress);
+
+      // Standard click (Tap) listener
+      this.cont.addEventListener('click', () => {
+        if (isHold) return; // Prevent tap if a hold just happened
+        this.img.style.transform = "scale(1.1) rotate(5deg)";
+        setTimeout(() => { this.img.style.transform = "scale(1) rotate(0deg)"; }, 200);
+        this.handleAct('tap');
       });
     }
   }
@@ -82,7 +110,7 @@ class MoglieCard extends HTMLElement {
     
     if (lang === "he" || lang === "ar") this.txt.classList.add('rtl'); else this.txt.classList.remove('rtl');
     
-    // THE FIX IS HERE: Target this.img instead of this.txt
+    // Target this.img instead of this.txt
     if (c.hide_moglie) this.img.classList.add('hidden'); else this.img.classList.remove('hidden');
 
     const wan = (c.use_wan && c.wan_entity) ? hass.states[c.wan_entity] : null;
@@ -170,8 +198,22 @@ class MoglieCard extends HTMLElement {
   
   handleAct(a) {
     const act = this.config[a + '_action'];
-    if (!act && a === 'tap' && this.config.alarm_entity) {
-      this.dispatchEvent(new CustomEvent('hass-more-info', { bubbles: true, composed: true, detail: { entityId: this.config.alarm_entity } }));
+    
+    // If a user has configured a custom action, let Home Assistant process it
+    if (act && act.action && act.action !== 'none') {
+      this.dispatchEvent(new CustomEvent('hass-action', {
+        bubbles: true,
+        composed: true,
+        detail: { config: this.config, action: a }
+      }));
+    } 
+    // Default fallback if no tap action is set
+    else if (!act && a === 'tap' && this.config.alarm_entity) {
+      this.dispatchEvent(new CustomEvent('hass-more-info', { 
+        bubbles: true, 
+        composed: true, 
+        detail: { entityId: this.config.alarm_entity } 
+      }));
     }
   }
 }
@@ -198,7 +240,14 @@ class MoglieCardEditor extends HTMLElement {
       { name: "wan_entity", selector: { entity: { domain: "binary_sensor" } } },
       { name: "alarm_entity", selector: { entity: { domain: "alarm_control_panel" } } },
       { name: "weather_entity", selector: { entity: { domain: "weather" } } },
-      { name: "tap_action", selector: { ui_action: {} } },
+      {
+        type: "grid",
+        name: "",
+        schema: [
+          { name: "tap_action", selector: { ui_action: {} } },
+          { name: "hold_action", selector: { ui_action: {} } }
+        ]
+      },
       {
         type: "grid",
         name: "",
