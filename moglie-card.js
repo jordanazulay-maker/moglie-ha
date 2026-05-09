@@ -144,7 +144,6 @@ class MoglieCard extends HTMLElement {
     if (this._last === sHash) return; 
     this._last = sHash;
 
-    // Isolate integration logic to their specific toggles
     const wanOk = c.use_wan ? /on|connected|true/.test(wState) : true;
     const aOff = c.use_alarm ? /disarmed|off/.test(aState) : false;
     const aHome = c.use_alarm ? /home|stay|night/.test(aState) : false;
@@ -161,7 +160,6 @@ class MoglieCard extends HTMLElement {
     const isNight = nS > nE ? (hr >= nS || hr < nE) : (hr >= nS && hr < nE);
     const showNight = c.enable_night_mode !== false && isNight;
 
-    // Safety net: prevents "undefined" from ever showing up if a translation is missing
     const safeStr = (s) => s || "";
 
     let greet = "";
@@ -173,6 +171,7 @@ class MoglieCard extends HTMLElement {
 
     const uQ = c.use_custom_quotes;
     const q = {
+      nice_day: (uQ && c.quote_nice_day),
       off: (uQ && c.quote_offline) || safeStr(defaultQuotes.off),
       rain: (uQ && c.quote_rain) || safeStr(defaultQuotes.rain),
       dis: greet + ((uQ && c.quote_disarmed) || safeStr(defaultQuotes.dis)),
@@ -196,7 +195,6 @@ class MoglieCard extends HTMLElement {
     } else if (c.use_weather && t !== null && t > 80) { 
         outfit = (h !== null && h > 70) ? sw_b64 : s_b64; quote = q.hot; border = "2px solid #FF9800"; 
     } else if (c.use_alarm) { 
-        // Only evaluate alarm quotes if the alarm is actually active
         if (aOff) { 
             outfit = n_b64; quote = q.dis; border = "2px solid orange"; 
         } else if (!aHome) {
@@ -205,11 +203,20 @@ class MoglieCard extends HTMLElement {
             outfit = n_b64; quote = q.home; border = "2px solid #4CAF50";
         }
     } else {
-        // Fallback: The user has no alarm configured, and the weather is nice.
-        // We clean the greet string (removes trailing commas/spaces) and append a '!'
+        // NEW FALLBACK LOGIC: Uses language DB, Failsafes, or Custom Nice Day Quotes!
         outfit = n_b64; 
-        quote = greet ? greet.replace(/[, ]+$/, '') + "!" : "Hello!"; 
         border = "2px solid #4CAF50";
+        
+        if (q.nice_day) {
+            quote = greet + q.nice_day;
+        } else {
+            let niceQuote = "";
+            if (hr >= 6 && hr < 11) niceQuote = safeStr(defaultQuotes.day_morning) || "the primates and I are preparing for the day!";
+            else if (hr >= 11 && hr < 17) niceQuote = safeStr(defaultQuotes.day_afternoon) || "it's a beautiful afternoon for some banana snacks!";
+            else niceQuote = safeStr(defaultQuotes.day_evening) || "things are quieting down in the canopy.";
+            
+            quote = greet + niceQuote;
+        }
     }
 
     let patrolTxt = "";
@@ -228,12 +235,10 @@ class MoglieCard extends HTMLElement {
   handleAct(a) {
     const act = this.config[a + '_action'];
     
-    // Determine which entity to inject based on the action type
     let targetEntity = "";
     if (a === 'tap' && this.config.use_tap_entity) targetEntity = this.config.tap_entity;
     if (a === 'hold' && this.config.use_hold_entity) targetEntity = this.config.hold_entity;
 
-    // Trick HA into thinking our specific tap/hold entity is the main entity 
     const actionConfig = { ...this.config, entity: targetEntity };
     
     if (act && act.action && act.action !== 'none') {
@@ -336,6 +341,7 @@ class MoglieCardEditor extends HTMLElement {
           type: "grid",
           name: "",
           schema: [
+            { name: "quote_nice_day", selector: { text: {} } }, // Added the new nice day config
             { name: "quote_offline", selector: { text: {} } },
             { name: "quote_rain", selector: { text: {} } },
             { name: "quote_cold", selector: { text: {} } },
