@@ -12,7 +12,10 @@ class MoglieCard extends HTMLElement {
   
   static getStubConfig() { 
     return { 
+      use_tap_entity: false,
+      use_hold_entity: false,
       tap_entity: "", 
+      hold_entity: "",
       use_wan: false, 
       use_alarm: false, 
       use_weather: false, 
@@ -209,8 +212,13 @@ class MoglieCard extends HTMLElement {
   handleAct(a) {
     const act = this.config[a + '_action'];
     
-    // Trick HA into thinking tap_entity is the main entity so standard actions (like Toggle) work
-    const actionConfig = { ...this.config, entity: this.config.tap_entity || this.config.entity };
+    // Determine which entity to inject based on the action type
+    let targetEntity = this.config.entity;
+    if (a === 'tap' && this.config.use_tap_entity) targetEntity = this.config.tap_entity;
+    if (a === 'hold' && this.config.use_hold_entity) targetEntity = this.config.hold_entity;
+
+    // Trick HA into thinking our specific tap/hold entity is the main entity 
+    const actionConfig = { ...this.config, entity: targetEntity };
     
     if (act && act.action && act.action !== 'none') {
       this.dispatchEvent(new CustomEvent('hass-action', {
@@ -247,11 +255,37 @@ class MoglieCardEditor extends HTMLElement {
   }
 
   _computeSchema() {
+    const hasTap = this._cfg?.use_tap_entity;
+    const hasHold = this._cfg?.use_hold_entity;
+
     return [
       { name: "wan_entity", selector: { entity: { domain: "binary_sensor" } } },
       { name: "alarm_entity", selector: { entity: { domain: "alarm_control_panel" } } },
       { name: "weather_entity", selector: { entity: { domain: "weather" } } },
-      { name: "tap_entity", selector: { entity: {} } }, // Moved below the others and renamed
+      
+      // Toggles mapped side-by-side
+      {
+        type: "grid",
+        name: "",
+        schema: [
+          { name: "use_tap_entity", selector: { boolean: {} } },
+          { name: "use_hold_entity", selector: { boolean: {} } }
+        ]
+      },
+      
+      // Conditionally show the entities mapped side-by-side (if toggled on)
+      ...(hasTap || hasHold ? [
+        {
+          type: "grid",
+          name: "",
+          schema: [
+            ...(hasTap ? [{ name: "tap_entity", selector: { entity: {} } }] : []),
+            ...(hasHold ? [{ name: "hold_entity", selector: { entity: {} } }] : [])
+          ]
+        }
+      ] : []),
+
+      // Standard Action selectors
       {
         type: "grid",
         name: "",
@@ -260,6 +294,8 @@ class MoglieCardEditor extends HTMLElement {
           { name: "hold_action", selector: { ui_action: {} } }
         ]
       },
+      
+      // Night mode and UI settings
       {
         type: "grid",
         name: "",
@@ -272,6 +308,8 @@ class MoglieCardEditor extends HTMLElement {
           ] : [])
         ]
       },
+      
+      // Custom quotes
       { name: "use_custom_quotes", selector: { boolean: {} } },
       ...(this._cfg?.use_custom_quotes ? [
         {
