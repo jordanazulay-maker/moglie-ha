@@ -22,26 +22,13 @@ class MoglieCard extends HTMLElement {
           .anti-gravity { transform: rotate(180deg); }
           #m-cont { padding: 16px; border-radius: 10px; text-align: center; transition: all 0.3s ease; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; }
           #m-img { width: 100%; max-width: 150px; height: auto; aspect-ratio: 1/1; object-fit: contain; transition: transform 0.5s ease; z-index: 1; }
-          
-          /* Clean Floating Text Styling */
-          #m-txt { 
-            margin-bottom: 15px; 
-            font-weight: bold; 
-            min-height: 2.5em; 
-            width: 90%; 
-            line-height: 1.4;
-            color: var(--primary-text-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-          
+          #m-txt { margin-bottom: 15px; font-weight: bold; min-height: 3em; width: 95%; line-height: 1.4; color: var(--primary-text-color); display: flex; flex-direction: column; align-items: center; justify-content: center; }
           .rtl { direction: rtl; text-align: right; }
           .hidden { display: none !important; }
         </style>
         <ha-card>
           <div id="m-cont">
-            <div id="m-txt" class="${this.config.hide_moglie ? 'hidden' : ''}"></div>
+            <div id="m-txt"></div>
             <img id="m-img" src="${n_b64}" />
           </div>
         </ha-card>`;
@@ -64,9 +51,16 @@ class MoglieCard extends HTMLElement {
     let i = 0;
     const type = () => {
       if (i < message.length) {
-        this.txt.innerHTML += message.charAt(i);
-        i++;
-        setTimeout(type, 40);
+        // Handle HTML tags for typewriter
+        if (message.charAt(i) === '<') {
+          let end = message.indexOf('>', i);
+          this.txt.innerHTML += message.substring(i, end + 1);
+          i = end + 1;
+        } else {
+          this.txt.innerHTML += message.charAt(i);
+          i++;
+        }
+        setTimeout(type, 30);
       } else {
         this._typing = false;
       }
@@ -84,8 +78,6 @@ class MoglieCard extends HTMLElement {
   set hass(hass) {
     if (!this.config) return;
     const c = this.config;
-
-    // Detect Language and Set RTL
     const lang = (hass.language || "en").split("-")[0];
     const defaultQuotes = MOGLIE_TRANSLATIONS[lang] || MOGLIE_TRANSLATIONS["en"];
     
@@ -110,13 +102,23 @@ class MoglieCard extends HTMLElement {
     if (this._last === sHash) return; 
     this._last = sHash;
 
+    // --- ENVIRO LOGIC ---
     const wanOk = /on|connected|true/.test(wState);
     const aOff = /disarmed|off/.test(aState);
     const aHome = /home|stay|night/.test(aState);
+    
+    let t = null, h = null, isRain = /(rain|pour|storm)/.test(weState);
+    if (wthr) {
+      t = parseFloat(wthr.attributes?.temperature ?? 70);
+      h = parseFloat(wthr.attributes?.humidity ?? 0);
+    }
 
-    let t = null, isRain = /(rain|pour|storm)/.test(weState);
-    if (wthr) t = parseFloat(wthr.attributes?.temperature ?? 70);
+    const nS = parseInt(c.night_start || 22);
+    const nE = parseInt(c.night_end || 6);
+    const isNight = nS > nE ? (hr >= nS || hr < nE) : (hr >= nS && hr < nE);
+    const showNight = c.enable_night_mode !== false && isNight;
 
+    // --- QUOTE SELECTION ---
     const uQ = c.use_custom_quotes;
     const q = {
       off: (uQ && c.quote_offline) || defaultQuotes.off,
@@ -131,17 +133,35 @@ class MoglieCard extends HTMLElement {
 
     let outfit = n_b64, quote = q.home, border = "2px solid #4CAF50", isGrayscale = false;
 
-    if (!wanOk) { outfit = n_b64; quote = q.off; border = "2px solid gray"; isGrayscale = true; }
-    else if (hr > 22 || hr < 6) { outfit = sl_b64; quote = q.night; border = "2px solid #673AB7"; }
-    else if (isRain) { outfit = r_b64; quote = q.rain; border = "2px solid #2196F3"; }
-    else if (t < 50) { outfit = w_b64; quote = q.cold; border = "2px solid #00BCD4"; }
-    else if (t > 80) { outfit = s_b64; quote = q.hot; border = "2px solid #FF9800"; }
-    else if (aOff) { outfit = n_b64; quote = q.dis; border = "2px solid orange"; }
+    // Priority Check
+    if (!wanOk) { 
+        outfit = n_b64; quote = q.off; border = "2px solid gray"; isGrayscale = true; 
+    } else if (showNight) { 
+        outfit = sl_b64; quote = q.night; border = "2px solid #673AB7"; 
+    } else if (isRain) { 
+        outfit = r_b64; quote = q.rain; border = "2px solid #2196F3"; 
+    } else if (t !== null && t < 50) { 
+        outfit = w_b64; quote = q.cold; border = "2px solid #00BCD4"; 
+    } else if (t !== null && t > 80) { 
+        outfit = (h > 70) ? sw_b64 : s_b64; quote = q.hot; border = "2px solid #FF9800"; 
+    } else if (aOff) { 
+        outfit = n_b64; quote = q.dis; border = "2px solid orange"; 
+    } else if (!aHome) {
+        outfit = n_b64; quote = q.away; border = "2px solid #F44336";
+    }
+
+    // --- PATROL SUBTEXT ---
+    let patrolTxt = "";
+    if (alrm && wanOk) {
+      if (aHome) patrolTxt = `<br><small style="color:#4CAF50;">(Primates on perimeter patrol)</small>`;
+      else if (aOff) patrolTxt = `<br><small style="color:orange;">(Primates off duty)</small>`;
+      else patrolTxt = `<br><small style="color:#F44336;">(HIGH ALERT!)</small>`;
+    }
 
     this.img.src = outfit;
     this.img.style.filter = isGrayscale ? "grayscale(100%)" : "none";
     this.cont.style.border = border;
-    this.typeMessage(quote);
+    this.typeMessage(quote + patrolTxt);
   }
   
   handleAct(a) {
