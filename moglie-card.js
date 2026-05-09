@@ -25,6 +25,7 @@ class MoglieCard extends HTMLElement {
       enable_night_mode: true, 
       night_start: 22, 
       night_end: 6, 
+      enable_typing: true, // NEW: Default to enabled
       use_custom_quotes: false, 
       hide_moglie: false 
     }; 
@@ -55,7 +56,7 @@ class MoglieCard extends HTMLElement {
       this.txt = this.querySelector('#m-txt');
 
       let isHold = false;
-      let isTouch = false; // BUG FIX: Tracks mobile touch to prevent ghost clicks
+      let isTouch = false;
       let pressTimer;
 
       const startPress = () => {
@@ -73,10 +74,8 @@ class MoglieCard extends HTMLElement {
         if (pressTimer) clearTimeout(pressTimer);
       };
 
-      // BUG FIX: Mobile Double-Action prevention
       this.cont.addEventListener('touchstart', () => { isTouch = true; startPress(); }, { passive: true });
       this.cont.addEventListener('touchend', endPress);
-      
       this.cont.addEventListener('mousedown', () => { if (!isTouch) startPress(); });
       this.cont.addEventListener('mouseup', () => { if (!isTouch) endPress(); });
       this.cont.addEventListener('mouseleave', () => { if (!isTouch) endPress(); });
@@ -91,13 +90,17 @@ class MoglieCard extends HTMLElement {
   }
 
   typeMessage(message) {
-    // BUG FIX: Stop any running typewriter loops so they don't overlap when HA updates fast
     if (this._typeTimer) clearTimeout(this._typeTimer);
     
+    // NEW: If typing is disabled, show full text instantly and skip the loop
+    if (this.config.enable_typing === false) {
+      this.txt.innerHTML = message;
+      return;
+    }
+
     let i = 0;
     const type = () => {
       if (i < message.length) {
-        // BUG FIX: Safely skip HTML tags instantly so colors don't bleed out of bounds
         if (message.charAt(i) === '<') {
           let end = message.indexOf('>', i);
           i = end !== -1 ? end + 1 : i + 1;
@@ -112,9 +115,7 @@ class MoglieCard extends HTMLElement {
   }
 
   showErr(m) {
-    // BUG FIX: Stop typewriter loop if an error happens while typing
     if (this._typeTimer) clearTimeout(this._typeTimer);
-    
     this.img.setAttribute('src', n_b64);
     this.img.style.filter = "grayscale(100%) opacity(0.6)";
     this.txt.innerHTML = `<span style="color: #ff5252;">${m}</span>`;
@@ -174,16 +175,14 @@ class MoglieCard extends HTMLElement {
     }
 
     const uQ = c.use_custom_quotes;
-    
-    // BUG FIX: Attached "greet +" to all weather and alarm quotes so Moglie is always polite!
     const q = {
       nice_day: (uQ && c.quote_nice_day),
-      off: (uQ && c.quote_offline) || safeStr(defaultQuotes.off), // Panic state, no greeting
+      off: (uQ && c.quote_offline) || safeStr(defaultQuotes.off),
       rain: greet + ((uQ && c.quote_rain) || safeStr(defaultQuotes.rain)),
       dis: greet + ((uQ && c.quote_disarmed) || safeStr(defaultQuotes.dis)), 
       home: greet + ((uQ && c.quote_armed_home) || safeStr(defaultQuotes.home)), 
       away: greet + ((uQ && c.quote_armed_away) || safeStr(defaultQuotes.away)),
-      night: (uQ && c.quote_night) || safeStr(defaultQuotes.night), // Asleep state, no greeting
+      night: (uQ && c.quote_night) || safeStr(defaultQuotes.night),
       hot: greet + ((uQ && c.quote_hot) || safeStr(defaultQuotes.hot)),
       cold: greet + ((uQ && c.quote_cold) || safeStr(defaultQuotes.cold))
     };
@@ -209,14 +208,9 @@ class MoglieCard extends HTMLElement {
             outfit = n_b64; quote = q.home; border = "2px solid #4CAF50";
         }
     } else {
-        outfit = n_b64; 
-        border = "2px solid #4CAF50";
-        
-        if (q.nice_day) {
-            quote = greet + q.nice_day; 
-        } else {
-            quote = greet ? greet.trim() : "Hello!";
-        }
+      outfit = n_b64; 
+      border = "2px solid #4CAF50";
+      quote = q.nice_day ? (greet + q.nice_day) : (greet ? greet.trim() : "Hello!");
     }
 
     let patrolTxt = "";
@@ -234,11 +228,9 @@ class MoglieCard extends HTMLElement {
   
   handleAct(a) {
     const act = this.config[a + '_action'];
-    
     let targetEntity = "";
     if (a === 'tap' && this.config.use_tap_entity) targetEntity = this.config.tap_entity;
     if (a === 'hold' && this.config.use_hold_entity) targetEntity = this.config.hold_entity;
-
     const actionConfig = { ...this.config, entity: targetEntity };
     
     if (act && act.action && act.action !== 'none') {
@@ -268,16 +260,12 @@ class MoglieCardEditor extends HTMLElement {
     this._h = hass;
     const lang = (hass.language || "en").split("-")[0];
     if (lang === "he" || lang === "ar") this.style.direction = "rtl";
-    
-    if (this._f) {
-      this._f.hass = hass;
-    }
+    if (this._f) this._f.hass = hass;
     this.render();
   }
 
   _computeSchema() {
     const c = this._cfg || {};
-
     return [
       {
         type: "grid",
@@ -288,11 +276,9 @@ class MoglieCardEditor extends HTMLElement {
           { name: "use_weather", selector: { boolean: {} } }
         ]
       },
-      
       ...(c.use_wan ? [{ name: "wan_entity", selector: { entity: { domain: "binary_sensor" } } }] : []),
       ...(c.use_alarm ? [{ name: "alarm_entity", selector: { entity: { domain: "alarm_control_panel" } } }] : []),
       ...(c.use_weather ? [{ name: "weather_entity", selector: { entity: { domain: "weather" } } }] : []),
-      
       {
         type: "grid",
         name: "",
@@ -301,7 +287,6 @@ class MoglieCardEditor extends HTMLElement {
           { name: "use_hold_entity", selector: { boolean: {} } }
         ]
       },
-      
       ...(c.use_tap_entity || c.use_hold_entity ? [
         {
           type: "grid",
@@ -312,7 +297,6 @@ class MoglieCardEditor extends HTMLElement {
           ]
         }
       ] : []),
-
       {
         type: "grid",
         name: "",
@@ -321,20 +305,19 @@ class MoglieCardEditor extends HTMLElement {
           { name: "hold_action", selector: { ui_action: {} } }
         ]
       },
-      
       {
         type: "grid",
         name: "",
         schema: [
           { name: "enable_night_mode", selector: { boolean: {} } },
           { name: "hide_moglie", selector: { boolean: {} } },
+          { name: "enable_typing", selector: { boolean: {} } }, // NEW Toggle in Editor
           ...(c.enable_night_mode !== false ? [
             { name: "night_start", selector: { number: { min: 0, max: 23, mode: "box" } } },
             { name: "night_end", selector: { number: { min: 0, max: 23, mode: "box" } } }
           ] : [])
         ]
       },
-      
       { name: "use_custom_quotes", selector: { boolean: {} } },
       ...(c.use_custom_quotes ? [
         {
@@ -358,18 +341,15 @@ class MoglieCardEditor extends HTMLElement {
   
   render() {
     if (!this._h) return;
-    
     if (this._f) {
       this._f.data = this._cfg;
       this._f.schema = this._computeSchema(); 
       return;
     }
-
     this._f = document.createElement("ha-form");
     this._f.hass = this._h;
     this._f.data = this._cfg;
     this._f.schema = this._computeSchema();
-
     this._f.addEventListener("value-changed", (e) => {
       this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: e.detail.value }, bubbles: true, composed: true }));
     });
