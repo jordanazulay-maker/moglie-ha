@@ -1,364 +1,243 @@
-import { normal_monkey as n_b64 } from './normal-monkey.js';
-import { winter_monkey as w_b64 } from './winter-monkey.js';
-import { rainy_monkey as r_b64 } from './rainy-monkey.js';
-import { summer_monkey as s_b64 } from './summer-monkey.js';
-import { sweaty_monkey as sw_b64 } from './sweaty-monkey.js';
-import { sleepy_monkey as sl_b64 } from './sleepy-monkey.js';
-import { festive_monkey as f_b64 } from './festive-monkey.js';
-import { MOGLIE_TRANSLATIONS } from './moglie-localization.js';
-
-class MoglieCard extends HTMLElement {
-  static getConfigElement() { return document.createElement("moglie-card-editor"); }
-  
-  static getStubConfig() { 
-    return { 
-      use_wan: false, 
-      use_alarm: false, 
-      use_weather: false, 
-      wan_entity: "", 
-      alarm_entity: "", 
-      weather_entity: "", 
-      use_tap_entity: false,
-      use_hold_entity: false,
-      tap_entity: "", 
-      hold_entity: "",
-      enable_night_mode: true, 
-      night_start: 22, 
-      night_end: 6, 
-      use_custom_quotes: false, 
-      hide_moglie: false 
-    }; 
+// moglie-localization.js
+export const MOGLIE_TRANSLATIONS = {
+  "en": { // English
+    "off": "Moglie is stranded. The WAN connection has been lost!",
+    "rain": "Looks like rain, grabbing my coat!",
+    "cold": "Brrr! It's freezing out there!",
+    "hot": "It's boiling! Need a banana smoothie.",
+    "dis": "System's off! The troop is relaxing.",
+    "home": "The troop is home.",
+    "away": "The troop is away. Watching the trees!",
+    "night": "The troop is sleeping in the canopy...",
+    "morning": "Good morning! I need a banana coffee. ",
+    "afternoon": "Afternoon watch is clear. ",
+    "evening": "Sun's getting low. ",
+    "p_patrol": "(Primates on perimeter patrol)",
+    "p_off": "(Primates off duty)",
+    "p_alert": "(HIGH ALERT!)",
+    "error": "I think the primates found a problem in your config. Check your YAML!",
+    "day_morning": "the primates and I are preparing for the day!",
+    "day_afternoon": "it's a beautiful afternoon for some banana snacks!",
+    "day_evening": "things are quieting down in the canopy."
+  },
+  "he": { // Hebrew
+    "off": "מוליה מנותק. חיבור האינטרנט אבד!",
+    "rain": "נראה שעומד לרדת גשם, לוקח את המעיל שלי!",
+    "cold": "בררר! קפוא בחוץ!",
+    "hot": "לוהט בחוץ! צריך שייק בננה קר.",
+    "dis": "המערכת כבויה! הלהקה נחה.",
+    "home": "הלהקה בבית.",
+    "away": "הלהקה מחוץ לבית. שומרים על העצים!",
+    "night": "הלהקה ישנה בצמרות העצים...",
+    "morning": "בוקר טוב! אני צריך קפה בננה. ",
+    "afternoon": "משמרת צהריים שקטה. ",
+    "evening": "השמש שוקעת. ",
+    "p_patrol": "(הקופים בשמירה היקפית)",
+    "p_off": "(הקופים בהפסקה)",
+    "p_alert": "(כוננות גבוהה!)",
+    "error": "אני חושב שהקופים מצאו תקלה בהגדרות שלך. בדוק את ה-YAML!",
+    "day_morning": "הקופים ואני מתכוננים ליום חדש!",
+    "day_afternoon": "זה אחר הצהריים מושלם לחטיפי בננה!",
+    "day_evening": "העניינים נרגעים בצמרות העצים."
+  },
+  "ar": { // Arabic
+    "off": "موجلي عالق! فُقد الاتصال بالإنترنت.",
+    "rain": "يبدو أنها ستمطر، سأحضر معطفي!",
+    "cold": "الجو بارد جداً في الخارج!",
+    "hot": "الجو حار جداً! أحتاج لمشروب موز بارد.",
+    "dis": "النظام متوقف! الفريق في استراحة.",
+    "home": "الفريق في المنزل.",
+    "away": "الفريق في الخارج يراقب الأشجار!",
+    "night": "الفريق ينام فوق الأشجار...",
+    "morning": "صباح الخير! أحتاج لقهوة الموز. ",
+    "afternoon": "فترة الظهيرة هادئة. ",
+    "evening": "الشمس بدأت تغيب. ",
+    "p_patrol": "(الفريق في دورية حراسة)",
+    "p_off": "(الفريق في استراحة)",
+    "p_alert": "(في حالة تأهب قصوى!)",
+    "error": "أعتقد أن القردة وجدوا مشكلة في الإعدادات. تحقق من YAML!",
+    "day_morning": "الرئيسيات وأنا نستعد لليوم!",
+    "day_afternoon": "إنه وقت ظهيرة جميل لبعض وجبات الموز الخفيفة!",
+    "day_evening": "الأمور تهدأ في المظلة."
+  },
+  "es": { // Spanish
+    "off": "¡Moglie está desconectado! Se perdió la conexión.",
+    "rain": "¡Parece que va a llover, buscaré mi abrigo!",
+    "cold": "¡Brrr! ¡Hace un frío polar afuera!",
+    "hot": "¡Qué calor! Necesito un batido de banana.",
+    "dis": "¡Sistema apagado! La tropa está descansando.",
+    "home": "La tropa está en casa.",
+    "away": "La tropa está fuera. ¡Vigilando los árboles!",
+    "night": "La tropa está durmiendo en la copa de los árboles...",
+    "morning": "¡Buen día! Necesito un café de banana. ",
+    "afternoon": "La tarde está tranquila. ",
+    "evening": "El sol se está poniendo. ",
+    "p_patrol": "(Primates en patrulla perimetral)",
+    "p_off": "(Primates fuera de servicio)",
+    "p_alert": "(¡ALERTA MÁXIMA!)",
+    "error": "Parece que los primates encontraron un problema. ¡Revisa tu YAML!",
+    "day_morning": "¡los primates y yo nos preparamos para el día!",
+    "day_afternoon": "¡es una hermosa tarde para unos bocadillos de plátano!",
+    "day_evening": "las cosas se están calmando en el dosel."
+  },
+  "fr": { // French
+    "off": "Moglie est isolé. Connexion perdue !",
+    "rain": "On dirait qu'il pleut, je prends mon manteau !",
+    "cold": "Brrr ! Il fait glacial dehors !",
+    "hot": "C'est la canicule ! Besoin d'un smoothie à la banane.",
+    "dis": "Système désactivé ! La troupe se repose.",
+    "home": "La troupe est à la maison.",
+    "away": "La troupe est partie. Surveillance des arbres !",
+    "night": "La troupe dort dans la canopée...",
+    "morning": "Bon matin ! Un café à la banane, s'il vous plaît. ",
+    "afternoon": "L'après-midi est calme. ",
+    "evening": "Le soleil décline. ",
+    "p_patrol": "(Primates en patrouille)",
+    "p_off": "(Primates au repos)",
+    "p_alert": "(ALERTE MAXIMALE !)",
+    "error": "Je pense que les primates ont trouvé un problème. Vérifiez votre YAML !",
+    "day_morning": "les primates et moi nous préparons pour la journée !",
+    "day_afternoon": "c'est un bel après-midi pour quelques collations à la banane !",
+    "day_evening": "les choses se calment dans la canopée."
+  },
+  "de": { // German
+    "off": "Moglie ist isoliert. Internetverbindung verloren!",
+    "rain": "Es regnet wohl, ich schnappe mir meine Jacke!",
+    "cold": "Brrr! Es ist eiskalt draußen!",
+    "hot": "Es ist kochend heiß! Brauche einen Bananen-Smoothie.",
+    "dis": "System aus! Die Truppe entspannt sich.",
+    "home": "Die Truppe ist zu Hause.",
+    "away": "Die Truppe ist weg. Wir bewachen die Bäume!",
+    "night": "Die Truppe schläft in den Baumkronen...",
+    "morning": "Guten Morgen! Ich brauche einen Bananen-Kaffee. ",
+    "afternoon": "Nachmittagswache ist bereit. ",
+    "evening": "Die Sonne geht unter. ",
+    "p_patrol": "(Affen auf Patrouille)",
+    "p_off": "(Affen außer Dienst)",
+    "p_alert": "(HOCHALARM!)",
+    "error": "Ich glaube, die Affen haben ein Problem gefunden. Prüfen Sie Ihr YAML!",
+    "day_morning": "die Primaten und ich bereiten uns auf den Tag vor!",
+    "day_afternoon": "es ist ein wunderschöner Nachmittag für ein paar Bananensnacks!",
+    "day_evening": "in den Baumkronen wird es langsam ruhig."
+  },
+  "it": { // Italian
+    "off": "Moglie è isolato. Connessione persa!",
+    "rain": "Sembra che piova, prendo il cappotto!",
+    "cold": "Brrr! Si gela fuori!",
+    "hot": "Si bolle! Voglio uno smoothie alla banana.",
+    "dis": "Sistema spento! Il branco si riposa.",
+    "home": "Il branco è a casa.",
+    "away": "Il branco è fuori. Sorvegliamo gli alberi!",
+    "night": "Il branco dorme sulla chioma degli alberi...",
+    "morning": "Buongiorno! Ho bisogno di un caffè alla banana. ",
+    "afternoon": "Pomeriggio tranquillo di guardia. ",
+    "evening": "Il sole sta calando. ",
+    "p_patrol": "(Scimmie in pattuglia)",
+    "p_off": "(Scimmie a riposo)",
+    "p_alert": "(MASSIMA ALLERTA!)",
+    "error": "Penso che i primati abbiano trovato un problema. Controlla il tuo YAML!",
+    "day_morning": "i primati e io ci prepariamo per la giornata!",
+    "day_afternoon": "è un bel pomeriggio per degli snack alla banana!",
+    "day_evening": "tutto si sta tranquillizzando tra le fronde."
+  },
+  "pt": { // Portuguese
+    "off": "Moglie está isolado. Conexão perdida!",
+    "rain": "Parece que vai chover, vou buscar meu casaco!",
+    "cold": "Brrr! Está um gelo lá fora!",
+    "hot": "Que calor! Preciso de um batido de banana.",
+    "dis": "Sistema desligado! A tropa está relaxando.",
+    "home": "A tropa está em casa.",
+    "away": "A tropa saiu. Vigia nos galhos!",
+    "night": "A tropa dorme na copa das árvores...",
+    "morning": "Bom dia! Preciso de um café de banana. ",
+    "afternoon": "Tarde tranquila por aqui. ",
+    "evening": "O sol está se pondo. ",
+    "p_patrol": "(Primatas em patrulha)",
+    "p_off": "(Primatas fora de serviço)",
+    "p_alert": "(ALERTA MÁXIMA!)",
+    "error": "Acho que os primatas encontraram um problema. Verifique seu YAML!",
+    "day_morning": "os primatas e eu estamos nos preparando para o dia!",
+    "day_afternoon": "é uma bela tarde para alguns lanches de banana!",
+    "day_evening": "as coisas estão se acalmando no dossel."
+  },
+  "nl": { // Dutch
+    "off": "Moglie is gestrand. De internetverbinding is verbroken!",
+    "rain": "Het lijkt te gaan regenen, ik pak mijn jas!",
+    "cold": "Brrr! Het is ijskoud buiten!",
+    "hot": "Het is bloedheet! Ik heb een bananensmoothie nodig.",
+    "dis": "Systeem uit! De troep is aan het ontspannen.",
+    "home": "De troep is thuis.",
+    "away": "De troep is weg. We houden de bomen in de gaten!",
+    "night": "De troep slaapt in de boomkruinen...",
+    "morning": "Goedemorgen! Ik heb bananenkoffie nodig. ",
+    "afternoon": "De middagwacht is rustig. ",
+    "evening": "De zon gaat onder. ",
+    "p_patrol": "(Primaten op patrouille)",
+    "p_off": "(Primaten buiten dienst)",
+    "p_alert": "(HOOGSTE ALARM!)",
+    "error": "Ik denk dat de primaten een probleem hebben gevonden. Controleer je YAML!",
+    "day_morning": "de primaten en ik maken ons klaar voor de dag!",
+    "day_afternoon": "het is een prachtige middag voor wat bananensnacks!",
+    "day_evening": "het wordt rustig in de boomkruinen."
+  },
+  "ru": { // Russian
+    "off": "Moglie застрял. Соединение с интернетом потеряно!",
+    "rain": "Кажется, собирается дождь, беру пальто!",
+    "cold": "Бррр! На улице очень холодно!",
+    "hot": "Очень жарко! Нужен банановый смузи.",
+    "dis": "Система выключена! Стая отдыхает.",
+    "home": "Стая дома.",
+    "away": "Стая ушла. Следим за деревьями!",
+    "night": "Стая спит в кронах деревьев...",
+    "morning": "Доброе утро! Мне нужен банановый кофе. ",
+    "afternoon": "Дневной дозор проходит спокойно. ",
+    "evening": "Солнце садится. ",
+    "p_patrol": "(Приматы патрулируют периметр)",
+    "p_off": "(Приматы свободны от дежурства)",
+    "p_alert": "(ВЫСОКАЯ ТРЕВОГА!)",
+    "error": "Кажется, приматы нашли проблему в конфигурации. Проверьте ваш YAML!",
+    "day_morning": "приматы и я готовимся к новому дню!",
+    "day_afternoon": "прекрасный день для банановых закусок!",
+    "day_evening": "в кронах деревьев становится тихо."
+  },
+  "ja": { // Japanese
+    "off": "モーグリは孤立しています。WAN接続が失われました！",
+    "rain": "雨が降りそうだ、コートを取ってくる！",
+    "cold": "ブルブル！外は凍えるほど寒い！",
+    "hot": "茹だるような暑さだ！バナナスムージーが必要だ。",
+    "dis": "システムはオフ！群れはリラックスしています。",
+    "home": "群れは家にいます。",
+    "away": "群れは外出中です。木々を見張っています！",
+    "night": "群れは林冠で眠っています...",
+    "morning": "おはよう！バナナコーヒーが必要だ。 ",
+    "afternoon": "午後の見張りは異常なし。 ",
+    "evening": "日が暮れてきた。 ",
+    "p_patrol": "（霊長類が周辺をパトロール中）",
+    "p_off": "（霊長類は非番です）",
+    "p_alert": "（厳戒態勢！）",
+    "error": "霊長類が設定に問題を見つけたようです。YAMLを確認してください！",
+    "day_morning": "霊長類と私は一日の準備をしています！",
+    "day_afternoon": "バナナスナックにぴったりの美しい午後です！",
+    "day_evening": "林冠は静かになりつつあります。"
+  },
+  "zh-CN": { // Chinese (Simplified)
+    "off": "Moglie 搁浅了。WAN 连接已断开！",
+    "rain": "好像要下雨了，拿上我的外套！",
+    "cold": "冷死了！外面冻僵了！",
+    "hot": "热死了！需要一杯香蕉冰沙。",
+    "dis": "系统关闭！猴群正在休息。",
+    "home": "猴群在家。",
+    "away": "猴群外出了。正在看守树木！",
+    "night": "猴群在树冠上睡觉...",
+    "morning": "早上好！我需要一杯香蕉咖啡。 ",
+    "afternoon": "下午值班一切正常。 ",
+    "evening": "太阳快下山了。 ",
+    "p_patrol": "（灵长类动物在周边巡逻）",
+    "p_off": "（灵长类动物下班）",
+    "p_alert": "（高度警戒！）",
+    "error": "我想灵长类动物在你的配置中发现了问题。请检查你的 YAML！",
+    "day_morning": "灵长类动物和我正在为新的一天做准备！",
+    "day_afternoon": "这是一个吃香蕉零食的美丽下午！",
+    "day_evening": "树冠里安静下来了。"
   }
-
-  setConfig(config) {
-    this.config = { ...config };
-    this._last = null;
-    this._typing = false;
-
-    if (!this.cont) {
-      this.innerHTML = `
-        <style>
-          .anti-gravity { transform: rotate(180deg); }
-          #m-cont { padding: 16px; border-radius: 10px; text-align: center; transition: all 0.3s ease; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-          #m-img { width: 100%; max-width: 150px; height: auto; aspect-ratio: 1/1; object-fit: contain; transition: transform 0.5s ease; z-index: 1; }
-          #m-txt { margin-bottom: 15px; font-weight: bold; min-height: 3.5em; width: 95%; line-height: 1.4; color: var(--primary-text-color); display: flex; flex-direction: column; align-items: center; justify-content: center; }
-          .rtl { direction: rtl; text-align: right; }
-          .hidden { display: none !important; }
-        </style>
-        <ha-card>
-          <div id="m-cont">
-            <div id="m-txt"></div>
-            <img id="m-img" src="${n_b64}" />
-          </div>
-        </ha-card>`;
-      this.cont = this.querySelector('#m-cont');
-      this.img = this.querySelector('#m-img');
-      this.txt = this.querySelector('#m-txt');
-
-      let isHold = false;
-      let pressTimer;
-
-      const startPress = () => {
-        isHold = false;
-        pressTimer = setTimeout(() => {
-          isHold = true;
-          this.img.style.transform = "scale(1.1) rotate(-5deg)";
-          setTimeout(() => { this.img.style.transform = "scale(1) rotate(0deg)"; }, 200);
-          this.handleAct('hold');
-        }, 500); 
-      };
-
-      const endPress = () => {
-        if (pressTimer) clearTimeout(pressTimer);
-      };
-
-      this.cont.addEventListener('mousedown', startPress);
-      this.cont.addEventListener('mouseup', endPress);
-      this.cont.addEventListener('mouseleave', endPress);
-      this.cont.addEventListener('touchstart', startPress, { passive: true });
-      this.cont.addEventListener('touchend', endPress);
-
-      this.cont.addEventListener('click', () => {
-        if (isHold) return; 
-        this.img.style.transform = "scale(1.1) rotate(5deg)";
-        setTimeout(() => { this.img.style.transform = "scale(1) rotate(0deg)"; }, 200);
-        this.handleAct('tap');
-      });
-    }
-  }
-
-  typeMessage(message) {
-    if (this._typing) return;
-    this._typing = true;
-    this.txt.innerHTML = "";
-    let i = 0;
-    const type = () => {
-      if (i < message.length) {
-        if (message.charAt(i) === '<') {
-          let end = message.indexOf('>', i);
-          this.txt.innerHTML += message.substring(i, end + 1);
-          i = end + 1;
-        } else {
-          this.txt.innerHTML += message.charAt(i);
-          i++;
-        }
-        setTimeout(type, 30);
-      } else {
-        this._typing = false;
-      }
-    };
-    type();
-  }
-
-  showErr(m) {
-    this.img.setAttribute('src', n_b64);
-    this.img.style.filter = "grayscale(100%) opacity(0.6)";
-    this.txt.innerHTML = `<span style="color: #ff5252;">${m}</span>`;
-    this.cont.style.border = "2px dashed #ff5252";
-  }
-
-  set hass(hass) {
-    if (!this.config) return;
-    const c = this.config;
-    const lang = (hass.language || "en").split("-")[0];
-    const defaultQuotes = MOGLIE_TRANSLATIONS[lang] || MOGLIE_TRANSLATIONS["en"];
-    
-    if (lang === "he" || lang === "ar") this.txt.classList.add('rtl'); else this.txt.classList.remove('rtl');
-    if (c.hide_moglie) this.img.classList.add('hidden'); else this.img.classList.remove('hidden');
-
-    const wan = (c.use_wan && c.wan_entity) ? hass.states[c.wan_entity] : null;
-    const alrm = (c.use_alarm && c.alarm_entity) ? hass.states[c.alarm_entity] : null;
-    const wthr = (c.use_weather && c.weather_entity) ? hass.states[c.weather_entity] : null;
-
-    if ((c.use_wan && !wan) || (c.use_alarm && !alrm) || (c.use_weather && !wthr)) {
-        return this.showErr(defaultQuotes.error);
-    }
-
-    const wState = wan ? wan.state.toLowerCase() : 'on';
-    const aState = alrm ? alrm.state.toLowerCase() : 'disarmed';
-    const weState = wthr ? wthr.state.toLowerCase() : 'unknown';
-
-    const d = new Date();
-    const hr = d.getHours();
-    const sHash = `${wState}|${aState}|${weState}|${hr}|${lang}|${c.hide_moglie}`;
-    if (this._last === sHash) return; 
-    this._last = sHash;
-
-    const wanOk = /on|connected|true/.test(wState);
-    const aOff = /disarmed|off/.test(aState);
-    const aHome = /home|stay|night/.test(aState);
-    
-    let t = null, h = null, isRain = /(rain|pour|storm)/.test(weState);
-    if (wthr) {
-      t = parseFloat(wthr.attributes?.temperature ?? 70);
-      h = parseFloat(wthr.attributes?.humidity ?? 0);
-    }
-
-    const nS = parseInt(c.night_start || 22);
-    const nE = parseInt(c.night_end || 6);
-    const isNight = nS > nE ? (hr >= nS || hr < nE) : (hr >= nS && hr < nE);
-    const showNight = c.enable_night_mode !== false && isNight;
-
-    let greet = "";
-    if (!showNight) {
-        if (hr >= 6 && hr < 11) greet = defaultQuotes.morning;
-        else if (hr >= 11 && hr < 17) greet = defaultQuotes.afternoon;
-        else if (hr >= 17 && hr < nS) greet = defaultQuotes.evening;
-    }
-
-    const uQ = c.use_custom_quotes;
-    
-    // THE FIX: Appended 'greet +' to both the custom evaluation and the default evaluation!
-    const q = {
-      off: (uQ && c.quote_offline) || defaultQuotes.off,
-      rain: (uQ && c.quote_rain) || defaultQuotes.rain,
-      dis: greet + ((uQ && c.quote_disarmed) || defaultQuotes.dis),
-      home: greet + ((uQ && c.quote_armed_home) || defaultQuotes.home),
-      away: (uQ && c.quote_armed_away) || defaultQuotes.away,
-      night: (uQ && c.quote_night) || defaultQuotes.night,
-      hot: (uQ && c.quote_hot) || defaultQuotes.hot,
-      cold: (uQ && c.quote_cold) || defaultQuotes.cold
-    };
-
-    let outfit = n_b64, quote = q.home, border = "2px solid #4CAF50", isGrayscale = false;
-
-    if (!wanOk) { 
-        outfit = n_b64; quote = q.off; border = "2px solid gray"; isGrayscale = true; 
-    } else if (showNight) { 
-        outfit = sl_b64; quote = q.night; border = "2px solid #673AB7"; 
-    } else if (isRain) { 
-        outfit = r_b64; quote = q.rain; border = "2px solid #2196F3"; 
-    } else if (t !== null && t < 50) { 
-        outfit = w_b64; quote = q.cold; border = "2px solid #00BCD4"; 
-    } else if (t !== null && t > 80) { 
-        outfit = (h > 70) ? sw_b64 : s_b64; quote = q.hot; border = "2px solid #FF9800"; 
-    } else if (aOff) { 
-        outfit = n_b64; quote = q.dis; border = "2px solid orange"; 
-    } else if (!aHome) {
-        outfit = n_b64; quote = q.away; border = "2px solid #F44336";
-    }
-
-    let patrolTxt = "";
-    if (alrm && wanOk) {
-      if (aHome) patrolTxt = `<br><small style="color:#4CAF50;">${defaultQuotes.p_patrol}</small>`;
-      else if (aOff) patrolTxt = `<br><small style="color:orange;">${defaultQuotes.p_off}</small>`;
-      else patrolTxt = `<br><small style="color:#F44336;">${defaultQuotes.p_alert}</small>`;
-    }
-
-    this.img.src = outfit;
-    this.img.style.filter = isGrayscale ? "grayscale(100%)" : "none";
-    this.cont.style.border = border;
-    this.typeMessage(quote + patrolTxt);
-  }
-  
-  handleAct(a) {
-    const act = this.config[a + '_action'];
-    
-    // Determine which entity to inject based on the action type
-    let targetEntity = "";
-    if (a === 'tap' && this.config.use_tap_entity) targetEntity = this.config.tap_entity;
-    if (a === 'hold' && this.config.use_hold_entity) targetEntity = this.config.hold_entity;
-
-    // Trick HA into thinking our specific tap/hold entity is the main entity 
-    const actionConfig = { ...this.config, entity: targetEntity };
-    
-    if (act && act.action && act.action !== 'none') {
-      this.dispatchEvent(new CustomEvent('hass-action', {
-        bubbles: true,
-        composed: true,
-        detail: { config: actionConfig, action: a }
-      }));
-    } 
-    else if (!act && a === 'tap' && this.config.alarm_entity) {
-      this.dispatchEvent(new CustomEvent('hass-more-info', { 
-        bubbles: true, 
-        composed: true, 
-        detail: { entityId: this.config.alarm_entity } 
-      }));
-    }
-  }
-}
-
-class MoglieCardEditor extends HTMLElement {
-  setConfig(config) { 
-    this._cfg = config; 
-    this.render(); 
-  }
-  
-  set hass(hass) { 
-    this._h = hass;
-    const lang = (hass.language || "en").split("-")[0];
-    if (lang === "he" || lang === "ar") this.style.direction = "rtl";
-    
-    if (this._f) {
-      this._f.hass = hass;
-    }
-    this.render();
-  }
-
-  _computeSchema() {
-    const c = this._cfg || {};
-
-    return [
-      {
-        type: "grid",
-        name: "",
-        schema: [
-          { name: "use_wan", selector: { boolean: {} } },
-          { name: "use_alarm", selector: { boolean: {} } },
-          { name: "use_weather", selector: { boolean: {} } }
-        ]
-      },
-      
-      ...(c.use_wan ? [{ name: "wan_entity", selector: { entity: { domain: "binary_sensor" } } }] : []),
-      ...(c.use_alarm ? [{ name: "alarm_entity", selector: { entity: { domain: "alarm_control_panel" } } }] : []),
-      ...(c.use_weather ? [{ name: "weather_entity", selector: { entity: { domain: "weather" } } }] : []),
-      
-      {
-        type: "grid",
-        name: "",
-        schema: [
-          { name: "use_tap_entity", selector: { boolean: {} } },
-          { name: "use_hold_entity", selector: { boolean: {} } }
-        ]
-      },
-      
-      ...(c.use_tap_entity || c.use_hold_entity ? [
-        {
-          type: "grid",
-          name: "",
-          schema: [
-            ...(c.use_tap_entity ? [{ name: "tap_entity", selector: { entity: {} } }] : []),
-            ...(c.use_hold_entity ? [{ name: "hold_entity", selector: { entity: {} } }] : [])
-          ]
-        }
-      ] : []),
-
-      {
-        type: "grid",
-        name: "",
-        schema: [
-          { name: "tap_action", selector: { ui_action: {} } },
-          { name: "hold_action", selector: { ui_action: {} } }
-        ]
-      },
-      
-      {
-        type: "grid",
-        name: "",
-        schema: [
-          { name: "enable_night_mode", selector: { boolean: {} } },
-          { name: "hide_moglie", selector: { boolean: {} } },
-          ...(c.enable_night_mode !== false ? [
-            { name: "night_start", selector: { number: { min: 0, max: 23, mode: "box" } } },
-            { name: "night_end", selector: { number: { min: 0, max: 23, mode: "box" } } }
-          ] : [])
-        ]
-      },
-      
-      { name: "use_custom_quotes", selector: { boolean: {} } },
-      ...(c.use_custom_quotes ? [
-        {
-          type: "grid",
-          name: "",
-          schema: [
-            { name: "quote_offline", selector: { text: {} } },
-            { name: "quote_rain", selector: { text: {} } },
-            { name: "quote_cold", selector: { text: {} } },
-            { name: "quote_hot", selector: { text: {} } },
-            { name: "quote_disarmed", selector: { text: {} } },
-            { name: "quote_armed_home", selector: { text: {} } },
-            { name: "quote_armed_away", selector: { text: {} } },
-            { name: "quote_night", selector: { text: {} } }
-          ]
-        }
-      ] : [])
-    ];
-  }
-  
-  render() {
-    if (!this._h) return;
-    
-    if (this._f) {
-      this._f.data = this._cfg;
-      this._f.schema = this._computeSchema(); 
-      return;
-    }
-
-    this._f = document.createElement("ha-form");
-    this._f.hass = this._h;
-    this._f.data = this._cfg;
-    this._f.schema = this._computeSchema();
-
-    this._f.addEventListener("value-changed", (e) => {
-      this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: e.detail.value }, bubbles: true, composed: true }));
-    });
-    this.appendChild(this._f);
-  }
-}
-
-customElements.define("moglie-card-editor", MoglieCardEditor);
-customElements.define('moglie-card', MoglieCard);
-
-window.customCards = window.customCards || [];
-window.customCards.push({ type: "moglie-card", name: "Moglie HA", description: "Smart Mascot Monitor", preview: true });
+};
