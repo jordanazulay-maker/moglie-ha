@@ -81,7 +81,9 @@ class MoglieCard extends HTMLElement {
     const defaultQuotes = MOGLIE_TRANSLATIONS[lang] || MOGLIE_TRANSLATIONS["en"];
     
     if (lang === "he" || lang === "ar") this.txt.classList.add('rtl'); else this.txt.classList.remove('rtl');
-    if (c.hide_moglie) this.txt.classList.add('hidden'); else this.txt.classList.remove('hidden');
+    
+    // THE FIX IS HERE: Target this.img instead of this.txt
+    if (c.hide_moglie) this.img.classList.add('hidden'); else this.img.classList.remove('hidden');
 
     const wan = (c.use_wan && c.wan_entity) ? hass.states[c.wan_entity] : null;
     const alrm = (c.use_alarm && c.alarm_entity) ? hass.states[c.alarm_entity] : null;
@@ -174,7 +176,6 @@ class MoglieCard extends HTMLElement {
   }
 }
 
-// Editor handles RTL setup automatically
 class MoglieCardEditor extends HTMLElement {
   setConfig(config) { 
     this._cfg = config; 
@@ -186,14 +187,12 @@ class MoglieCardEditor extends HTMLElement {
     const lang = (hass.language || "en").split("-")[0];
     if (lang === "he" || lang === "ar") this.style.direction = "rtl";
     
-    // Update the form's hass object if the form exists
     if (this._f) {
       this._f.hass = hass;
     }
     this.render();
   }
 
-  // Generate the schema dynamically based on current configuration
   _computeSchema() {
     return [
       { name: "wan_entity", selector: { entity: { domain: "binary_sensor" } } },
@@ -206,7 +205,6 @@ class MoglieCardEditor extends HTMLElement {
         schema: [
           { name: "enable_night_mode", selector: { boolean: {} } },
           { name: "hide_moglie", selector: { boolean: {} } },
-          // Conditionally inject night start/end inputs if night mode is enabled
           ...(this._cfg?.enable_night_mode !== false ? [
             { name: "night_start", selector: { number: { min: 0, max: 23, mode: "box" } } },
             { name: "night_end", selector: { number: { min: 0, max: 23, mode: "box" } } }
@@ -214,7 +212,6 @@ class MoglieCardEditor extends HTMLElement {
         ]
       },
       { name: "use_custom_quotes", selector: { boolean: {} } },
-      // Conditionally inject the custom quote fields if the toggle is true
       ...(this._cfg?.use_custom_quotes ? [
         {
           type: "grid",
@@ -235,10 +232,8 @@ class MoglieCardEditor extends HTMLElement {
   }
   
   render() {
-    // If hass isn't ready yet, wait.
     if (!this._h) return;
     
-    // If the form already exists, update its data AND dynamic schema, then return
     if (this._f) {
       this._f.data = this._cfg;
       this._f.schema = this._computeSchema(); 
