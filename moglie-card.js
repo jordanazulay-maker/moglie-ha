@@ -5,7 +5,7 @@ import { summer_monkey as s_b64 } from './summer-monkey.js';
 import { sweaty_monkey as sw_b64 } from './sweaty-monkey.js';
 import { sleepy_monkey as sl_b64 } from './sleepy-monkey.js';
 import { festive_monkey as f_b64 } from './festive-monkey.js';
-import { festive_monkey_1 as f1_b64 } from './festive-monkey-1.js'; // NEW: Imported festive-monkey-1
+import { festive_monkey_1 as f1_b64 } from './festive-monkey-1.js'; // Imported festive-monkey-1
 import { MOGLIE_TRANSLATIONS } from './moglie-localization.js';
 
 class MoglieCard extends HTMLElement {
@@ -110,7 +110,7 @@ class MoglieCard extends HTMLElement {
         this.txt.innerHTML = message.substring(0, i);
         this._typeTimer = setTimeout(type, 30);
       }
-    };
+    }
     type();
   }
 
@@ -145,7 +145,9 @@ class MoglieCard extends HTMLElement {
 
     const d = new Date();
     const hr = d.getHours();
-    const sHash = `${wState}|${aState}|${weState}|${hr}|${lang}|${c.hide_moglie}`;
+    const month = d.getMonth(); // January is 0, October is 9
+    const day = d.getDate();
+    const sHash = `${wState}|${aState}|${weState}|${hr}|${day}|${lang}|${c.hide_moglie}`;
     if (this._last === sHash) return; 
     this._last = sHash;
 
@@ -220,8 +222,10 @@ class MoglieCard extends HTMLElement {
       else patrolTxt = `<br><small style="color:#F44336;">${safeStr(defaultQuotes.p_alert)}</small>`;
     }
 
-    // NEW: Hard override to show the festive monkey 1 at all times for testing
-    outfit = f1_b64;
+    // Override outfit if it is Halloween (October 31st)
+    if (month === 9 && day === 31) {
+        outfit = f1_b64;
+    }
 
     this.img.src = outfit;
     this.img.style.filter = isGrayscale ? "grayscale(100%)" : "none";
