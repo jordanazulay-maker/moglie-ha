@@ -32,6 +32,12 @@ class MoglieCard extends HTMLElement {
     }; 
   }
 
+  // --- ADDED FIX FOR HA GRID COMPLIANCE ---
+  getCardSize() {
+    return 3; 
+  }
+  // ----------------------------------------
+
   setConfig(config) {
     this.config = { ...config };
     this._last = null;
