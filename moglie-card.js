@@ -148,7 +148,10 @@ class MoglieCard extends HTMLElement {
     const month = d.getMonth(); 
     const day = d.getDate();
 
-    // WEATHER LOGIC FIX: Extract temp and humidity BEFORE taking the snapshot hash
+    // Weather unit detection logic
+    const unit = hass.config?.unit_system?.temperature || '°C';
+
+    // WEATHER LOGIC: Extract temp and humidity BEFORE taking the snapshot hash
     let t = null, h = null, isRain = false;
     if (c.use_weather && wthr) {
       isRain = /(rain|pour|storm)/.test(weState);
@@ -156,7 +159,10 @@ class MoglieCard extends HTMLElement {
       h = parseFloat(wthr.attributes?.humidity ?? 0);
     }
     
-    // WEATHER LOGIC FIX: Added 't' and 'h' to the hash
+    // Evaluate temperature thresholds correctly based on unit
+    const isCold = t !== null && ((unit === '°F' && t < 50) || (unit !== '°F' && t < 10));
+    const isHot = t !== null && ((unit === '°F' && t > 80) || (unit !== '°F' && t > 26));
+
     const sHash = `${wState}|${aState}|${weState}|${t}|${h}|${hr}|${month}|${day}|${lang}|${c.hide_moglie}`;
     if (this._last === sHash) return; 
     this._last = sHash;
@@ -165,7 +171,7 @@ class MoglieCard extends HTMLElement {
     const aOff = c.use_alarm ? /disarmed|off/.test(aState) : false;
     const aHome = c.use_alarm ? /home|stay|night/.test(aState) : false;
 
-    // TIME LOGIC FIXES: Falsy zero and evening wrap-around applied
+    // TIME LOGIC
     const nS = isNaN(parseInt(c.night_start)) ? 22 : parseInt(c.night_start);
     const nE = isNaN(parseInt(c.night_end)) ? 6 : parseInt(c.night_end);
     const isNight = nS > nE ? (hr >= nS || hr < nE) : (hr >= nS && hr < nE);
@@ -180,18 +186,27 @@ class MoglieCard extends HTMLElement {
         else greet = safeStr(defaultQuotes.evening); 
     }
 
-    // Custom Quote Configuration Override
+    // Custom Quote Configuration Override with Blank String Support
     const uQ = c.use_custom_quotes;
+    const checkQ = (key, defaultText, useGreet = false) => {
+      if (uQ && typeof c[key] !== 'undefined') {
+        return c[key] === "" ? "" : (useGreet ? greet + c[key] : c[key]);
+      }
+      return useGreet ? greet + safeStr(defaultText) : safeStr(defaultText);
+    };
+
     const q = {
-      nice_day: (uQ && c.quote_nice_day),
-      off: (uQ && c.quote_offline) || safeStr(defaultQuotes.off),
-      rain: greet + ((uQ && c.quote_rain) || safeStr(defaultQuotes.rain)),
-      dis: greet + ((uQ && c.quote_disarmed) || safeStr(defaultQuotes.dis)), 
-      home: greet + ((uQ && c.quote_armed_home) || safeStr(defaultQuotes.home)), 
-      away: greet + ((uQ && c.quote_armed_away) || safeStr(defaultQuotes.away)),
-      night: (uQ && c.quote_night) || safeStr(defaultQuotes.night),
-      hot: greet + ((uQ && c.quote_hot) || safeStr(defaultQuotes.hot)),
-      cold: greet + ((uQ && c.quote_cold) || safeStr(defaultQuotes.cold))
+      nice_day: (uQ && typeof c.quote_nice_day !== 'undefined') 
+                  ? (c.quote_nice_day === "" ? "" : greet + c.quote_nice_day) 
+                  : (greet ? greet.trim() : "Hello!"),
+      off: checkQ('quote_offline', defaultQuotes.off),
+      rain: checkQ('quote_rain', defaultQuotes.rain, true),
+      dis: checkQ('quote_disarmed', defaultQuotes.dis, true), 
+      home: checkQ('quote_armed_home', defaultQuotes.home, true), 
+      away: checkQ('quote_armed_away', defaultQuotes.away, true),
+      night: checkQ('quote_night', defaultQuotes.night),
+      hot: checkQ('quote_hot', defaultQuotes.hot, true),
+      cold: checkQ('quote_cold', defaultQuotes.cold, true)
     };
 
     let outfit = n_b64, quote = "", border = "2px solid #4CAF50", isGrayscale = false;
@@ -202,9 +217,9 @@ class MoglieCard extends HTMLElement {
         outfit = sl_b64; quote = q.night; border = "2px solid #673AB7"; 
     } else if (c.use_weather && isRain) { 
         outfit = r_b64; quote = q.rain; border = "2px solid #2196F3"; 
-    } else if (c.use_weather && t !== null && t < 50) { 
+    } else if (c.use_weather && isCold) { 
         outfit = w_b64; quote = q.cold; border = "2px solid #00BCD4"; 
-    } else if (c.use_weather && t !== null && t > 80) { 
+    } else if (c.use_weather && isHot) { 
         outfit = (h !== null && h > 70) ? sw_b64 : s_b64; quote = q.hot; border = "2px solid #FF9800"; 
     } else if (c.use_alarm) { 
         if (aOff) { 
@@ -217,7 +232,7 @@ class MoglieCard extends HTMLElement {
     } else {
       outfit = n_b64; 
       border = "2px solid #4CAF50";
-      quote = q.nice_day ? (greet + q.nice_day) : (greet ? greet.trim() : "Hello!");
+      quote = q.nice_day;
     }
 
     let patrolTxt = "";
