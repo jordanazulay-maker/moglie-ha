@@ -208,7 +208,7 @@ class MoglieCard extends HTMLElement {
                   : (greet ? greet.trim() : "Hello!"),
       off: checkQ('quote_offline', defaultQuotes.off),
       rain: checkQ('quote_rain', defaultQuotes.rain, true),
-      thunder: checkQ('quote_thunder', safeThunder, true), // Uses fallback just in case
+      thunder: checkQ('quote_thunder', safeThunder, false), // <--- FALSE ensures no greeting is prepended
       dis: checkQ('quote_disarmed', defaultQuotes.dis, true), 
       home: checkQ('quote_armed_home', defaultQuotes.home, true), 
       away: checkQ('quote_armed_away', defaultQuotes.away, true),
