@@ -3,6 +3,7 @@ export const MOGLIE_TRANSLATIONS = {
   "en": { // English
     "off": "Moglie is stranded. The WAN connection has been lost!",
     "rain": "Looks like rain. Grabbing my coat!",
+    "thunder": "Thunder and lightning! Hiding under the biggest banana leaf I can find!",
     "cold": "Brrr! It's freezing out there!",
     "hot": "It's boiling! Need a banana smoothie.",
     "dis": "System's off! The troop is relaxing.",
@@ -20,6 +21,7 @@ export const MOGLIE_TRANSLATIONS = {
   "he": { // Hebrew
     "off": "מוליה מנותק. חיבור האינטרנט אבד!",
     "rain": "נראה שעומד לרדת גשם. לוקח את המעיל שלי!",
+    "thunder": "רעמים וברקים! מסתתר תחת עלה הבננה הכי גדול שאמצא!",
     "cold": "בררר! קפוא בחוץ!",
     "hot": "לוהט בחוץ! צריך שייק בננה קר.",
     "dis": "המערכת כבויה! הלהקה נחה.",
@@ -37,6 +39,7 @@ export const MOGLIE_TRANSLATIONS = {
   "ar": { // Arabic
     "off": "موجلي عالق. فُقد الاتصال بالإنترنت!",
     "rain": "يبدو أنها ستمطر. سأحضر معطفي!",
+    "thunder": "رعد وبرق! سأختبئ تحت أكبر ورقة موز أستطيع العثور عليها!",
     "cold": "الجو بارد جداً في الخارج!",
     "hot": "الجو حار جداً! أحتاج لمشروب موز بارد.",
     "dis": "النظام متوقف! الفريق في استراحة.",
@@ -54,6 +57,7 @@ export const MOGLIE_TRANSLATIONS = {
   "es": { // Spanish
     "off": "¡Moglie está desconectado! ¡Se perdió la conexión!",
     "rain": "Parece que va a llover. ¡Buscaré mi abrigo!",
+    "thunder": "¡Truenos y relámpagos! ¡Me escondo bajo la hoja de plátano más grande que encuentre!",
     "cold": "¡Brrr! ¡Hace un frío polar afuera!",
     "hot": "¡Qué calor! Necesito un batido de banana.",
     "dis": "¡Sistema apagado! La tropa está descansando.",
@@ -71,6 +75,7 @@ export const MOGLIE_TRANSLATIONS = {
   "fr": { // French
     "off": "Moglie est isolé. La connexion est perdue !",
     "rain": "On dirait qu'il pleut. Je prends mon manteau !",
+    "thunder": "Orage et éclairs ! Je me cache sous la plus grande feuille de bananier que je puisse trouver !",
     "cold": "Brrr ! Il fait glacial dehors !",
     "hot": "C'est la canicule ! J'ai besoin d'un smoothie à la banane.",
     "dis": "Système désactivé ! La troupe se repose.",
@@ -88,6 +93,7 @@ export const MOGLIE_TRANSLATIONS = {
   "de": { // German
     "off": "Moglie ist isoliert. Die Internetverbindung ist verloren!",
     "rain": "Es regnet wohl. Ich schnappe mir meine Jacke!",
+    "thunder": "Donner und Blitz! Ich verstecke mich unter dem größten Bananenblatt, das ich finden kann!",
     "cold": "Brrr! Es ist eiskalt draußen!",
     "hot": "Es ist kochend heiß! Ich brauche einen Bananen-Smoothie.",
     "dis": "System aus! Die Truppe entspannt sich.",
@@ -105,6 +111,7 @@ export const MOGLIE_TRANSLATIONS = {
   "it": { // Italian
     "off": "Moglie è isolato. La connessione è persa!",
     "rain": "Sembra che piova. Prendo il cappotto!",
+    "thunder": "Tuoni e fulmini! Mi nascondo sotto la foglia di banano più grande che riesco a trovare!",
     "cold": "Brrr! Si gela fuori!",
     "hot": "Si bolle! Voglio uno smoothie alla banana.",
     "dis": "Sistema spento! Il branco si riposa.",
@@ -122,6 +129,7 @@ export const MOGLIE_TRANSLATIONS = {
   "pt": { // Portuguese
     "off": "Moglie está isolado. A conexão foi perdida!",
     "rain": "Parece que vai chover. Vou buscar meu casaco!",
+    "thunder": "Trovões e relâmpagos! Me escondendo debaixo da maior folha de bananeira que encontrar!",
     "cold": "Brrr! Está um gelo lá fora!",
     "hot": "Que calor! Preciso de um batido de banana.",
     "dis": "Sistema desligado! A tropa está relaxando.",
@@ -139,6 +147,7 @@ export const MOGLIE_TRANSLATIONS = {
   "nl": { // Dutch
     "off": "Moglie is gestrand. De internetverbinding is verbroken!",
     "rain": "Het lijkt te gaan regenen. Ik pak mijn jas!",
+    "thunder": "Onweer en bliksem! Ik verstop me onder het grootste bananenblad dat ik kan vinden!",
     "cold": "Brrr! Het is ijskoud buiten!",
     "hot": "Het is bloedheet! Ik heb een bananensmoothie nodig.",
     "dis": "Systeem uit! De troep is aan het ontspannen.",
@@ -156,6 +165,7 @@ export const MOGLIE_TRANSLATIONS = {
   "ru": { // Russian
     "off": "Moglie застрял. Соединение с интернетом потеряно!",
     "rain": "Кажется, собирается дождь. Беру пальто!",
+    "thunder": "Гром и молния! Прячусь под самым большим банановым листом, который только смогу найти!",
     "cold": "Бррр! На улице очень холодно!",
     "hot": "Очень жарко! Нужен банановый смузи.",
     "dis": "Система выключена! Стая отдыхает.",
@@ -173,6 +183,7 @@ export const MOGLIE_TRANSLATIONS = {
   "ja": { // Japanese
     "off": "モーグリは孤立しています。WAN接続が失われました！",
     "rain": "雨が降りそうだ。コートを取ってくる！",
+    "thunder": "雷と稲妻だ！見つけられる一番大きなバナナの葉の下に隠れるよ！",
     "cold": "ブルブル！外は凍えるほど寒い！",
     "hot": "茹だるような暑さだ！バナナスムージーが必要だ。",
     "dis": "システムはオフ！群れはリラックスしています。",
@@ -190,6 +201,7 @@ export const MOGLIE_TRANSLATIONS = {
   "zh-CN": { // Chinese (Simplified)
     "off": "Moglie 搁浅了。WAN 连接已断开！",
     "rain": "好像要下雨了。拿上我的外套！",
+    "thunder": "打雷闪电了！我要躲在我能找到的最大的香蕉叶下面！",
     "cold": "冷死了！外面冻僵了！",
     "hot": "热死了！需要一杯香蕉冰沙。",
     "dis": "系统关闭！猴群正在休息。",
