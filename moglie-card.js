@@ -193,6 +193,7 @@ class MoglieCard extends HTMLElement {
 
     let outfit = n_b64, quote = "", border = "2px solid #4CAF50", isGrayscale = false;
 
+    // This ensures we properly map back to the `q` dictionary for custom overrides!
     if (c.use_wan && !wanOk) { 
         outfit = n_b64; quote = q.off; border = "2px solid gray"; isGrayscale = true; 
     } else if (showNight) { 
