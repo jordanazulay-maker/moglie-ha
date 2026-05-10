@@ -32,11 +32,9 @@ class MoglieCard extends HTMLElement {
     }; 
   }
 
-  // --- ADDED FIX FOR HA GRID COMPLIANCE ---
   getCardSize() {
     return 3; 
   }
-  // ----------------------------------------
 
   setConfig(config) {
     this.config = { ...config };
@@ -154,18 +152,19 @@ class MoglieCard extends HTMLElement {
     const month = d.getMonth(); 
     const day = d.getDate();
 
-    // Weather unit detection logic
     const unit = hass.config?.unit_system?.temperature || '°C';
 
-    // WEATHER LOGIC: Extract temp and humidity BEFORE taking the snapshot hash
-    let t = null, h = null, isRain = false;
+    // WEATHER LOGIC: Extract temp, humidity, and detect rain/thunder
+    let t = null, h = null, isRain = false, isThunder = false;
     if (c.use_weather && wthr) {
-      isRain = /(rain|pour|storm)/.test(weState);
+      // Thunder logic taking precedence over simple rain
+      isThunder = /(thunder|storm|lightning|tornado)/.test(weState);
+      isRain = /(rain|pour|drizzle|shower)/.test(weState) && !isThunder; 
+      
       t = parseFloat(wthr.attributes?.temperature ?? 70);
       h = parseFloat(wthr.attributes?.humidity ?? 0);
     }
     
-    // Evaluate temperature thresholds correctly based on unit
     const isCold = t !== null && ((unit === '°F' && t < 50) || (unit !== '°F' && t < 10));
     const isHot = t !== null && ((unit === '°F' && t > 80) || (unit !== '°F' && t > 26));
 
@@ -192,7 +191,6 @@ class MoglieCard extends HTMLElement {
         else greet = safeStr(defaultQuotes.evening); 
     }
 
-    // Custom Quote Configuration Override with Blank String Support
     const uQ = c.use_custom_quotes;
     const checkQ = (key, defaultText, useGreet = false) => {
       if (uQ && typeof c[key] !== 'undefined') {
@@ -207,6 +205,7 @@ class MoglieCard extends HTMLElement {
                   : (greet ? greet.trim() : "Hello!"),
       off: checkQ('quote_offline', defaultQuotes.off),
       rain: checkQ('quote_rain', defaultQuotes.rain, true),
+      thunder: checkQ('quote_thunder', defaultQuotes.thunder, true),
       dis: checkQ('quote_disarmed', defaultQuotes.dis, true), 
       home: checkQ('quote_armed_home', defaultQuotes.home, true), 
       away: checkQ('quote_armed_away', defaultQuotes.away, true),
@@ -221,6 +220,8 @@ class MoglieCard extends HTMLElement {
         outfit = n_b64; quote = q.off; border = "2px solid gray"; isGrayscale = true; 
     } else if (showNight) { 
         outfit = sl_b64; quote = q.night; border = "2px solid #673AB7"; 
+    } else if (c.use_weather && isThunder) { 
+        outfit = r_b64; quote = q.thunder; border = "2px solid #607D8B"; // Rainy monkey + Stormy Blue-Grey border
     } else if (c.use_weather && isRain) { 
         outfit = r_b64; quote = q.rain; border = "2px solid #2196F3"; 
     } else if (c.use_weather && isCold) { 
@@ -248,10 +249,9 @@ class MoglieCard extends HTMLElement {
       else patrolTxt = `<br><small style="color:#F44336;">${safeStr(defaultQuotes.p_alert)}</small>`;
     }
 
-    // Holiday Overrides
-    if (month === 9 && day === 31) { // October 31st
+    if (month === 9 && day === 31) { 
         outfit = f1_b64;
-    } else if (month === 11 && day === 25) { // December 25th
+    } else if (month === 11 && day === 25) { 
         outfit = f_b64; 
     }
 
@@ -362,6 +362,7 @@ class MoglieCardEditor extends HTMLElement {
             { name: "quote_nice_day", selector: { text: {} } },
             { name: "quote_offline", selector: { text: {} } },
             { name: "quote_rain", selector: { text: {} } },
+            { name: "quote_thunder", selector: { text: {} } }, // Added Thunder custom quote
             { name: "quote_cold", selector: { text: {} } },
             { name: "quote_hot", selector: { text: {} } },
             { name: "quote_disarmed", selector: { text: {} } },
