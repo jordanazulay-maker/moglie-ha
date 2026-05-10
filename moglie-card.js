@@ -5,8 +5,7 @@ import { summer_monkey as s_b64 } from './summer-monkey.js';
 import { sweaty_monkey as sw_b64 } from './sweaty-monkey.js';
 import { sleepy_monkey as sl_b64 } from './sleepy-monkey.js';
 import { festive_monkey as f_b64 } from './festive-monkey.js';
-// NEW: Import for Halloween testing
-import { festive_monkey_1 as h_b64 } from './festive-monkey-1.js';
+import { festive_monkey_1 as f1_b64 } from './festive-monkey-1.js'; // NEW: Imported festive-monkey-1
 import { MOGLIE_TRANSLATIONS } from './moglie-localization.js';
 
 class MoglieCard extends HTMLElement {
@@ -146,11 +145,7 @@ class MoglieCard extends HTMLElement {
 
     const d = new Date();
     const hr = d.getHours();
-    
-    // TEST MODE OVERRIDE: Always Halloween
-    const isHalloween = true;
-
-    const sHash = `halloween_test|${wState}|${aState}|${weState}|${hr}|${lang}|${c.hide_moglie}`;
+    const sHash = `${wState}|${aState}|${weState}|${hr}|${lang}|${c.hide_moglie}`;
     if (this._last === sHash) return; 
     this._last = sHash;
 
@@ -189,18 +184,12 @@ class MoglieCard extends HTMLElement {
       away: greet + ((uQ && c.quote_armed_away) || safeStr(defaultQuotes.away)),
       night: (uQ && c.quote_night) || safeStr(defaultQuotes.night),
       hot: greet + ((uQ && c.quote_hot) || safeStr(defaultQuotes.hot)),
-      cold: greet + ((uQ && c.quote_cold) || safeStr(defaultQuotes.cold)),
-      halloween: (uQ && c.quote_halloween) || "Happy Halloween! 🎃"
+      cold: greet + ((uQ && c.quote_cold) || safeStr(defaultQuotes.cold))
     };
 
     let outfit = n_b64, quote = "", border = "2px solid #4CAF50", isGrayscale = false;
 
-    // Halloween takes priority in Test Mode
-    if (isHalloween) {
-        outfit = h_b64;
-        quote = q.halloween;
-        border = "2px solid #af601a"; // Halloween Orange
-    } else if (c.use_wan && !wanOk) { 
+    if (c.use_wan && !wanOk) { 
         outfit = n_b64; quote = q.off; border = "2px solid gray"; isGrayscale = true; 
     } else if (showNight) { 
         outfit = sl_b64; quote = q.night; border = "2px solid #673AB7"; 
@@ -230,6 +219,9 @@ class MoglieCard extends HTMLElement {
       else if (aOff) patrolTxt = `<br><small style="color:orange;">${safeStr(defaultQuotes.p_off)}</small>`;
       else patrolTxt = `<br><small style="color:#F44336;">${safeStr(defaultQuotes.p_alert)}</small>`;
     }
+
+    // NEW: Hard override to show the festive monkey 1 at all times for testing
+    outfit = f1_b64;
 
     this.img.src = outfit;
     this.img.style.filter = isGrayscale ? "grayscale(100%)" : "none";
@@ -322,7 +314,7 @@ class MoglieCardEditor extends HTMLElement {
         schema: [
           { name: "enable_night_mode", selector: { boolean: {} } },
           { name: "hide_moglie", selector: { boolean: {} } },
-          { name: "enable_typing", selector: { boolean: {} } },
+          { name: "enable_typing", selector: { boolean: {} } }, 
           ...(c.enable_night_mode !== false ? [
             { name: "night_start", selector: { number: { min: 0, max: 23, mode: "box" } } },
             { name: "night_end", selector: { number: { min: 0, max: 23, mode: "box" } } }
@@ -343,8 +335,7 @@ class MoglieCardEditor extends HTMLElement {
             { name: "quote_disarmed", selector: { text: {} } },
             { name: "quote_armed_home", selector: { text: {} } },
             { name: "quote_armed_away", selector: { text: {} } },
-            { name: "quote_night", selector: { text: {} } },
-            { name: "quote_halloween", selector: { text: {} } }
+            { name: "quote_night", selector: { text: {} } }
           ]
         }
       ] : [])
