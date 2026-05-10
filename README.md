@@ -18,12 +18,12 @@
 * **🎛️ Modular & Dynamic Editor:** Build the card your way. WAN, Alarm, and Weather are now individual toggles! The smart UI automatically groups and hides advanced options (like entities, custom quotes, and night mode) until you actually enable them.
 * **🕒 Daily Routines:** Moglie has his own schedule! When the weather is nice, he will prepare for the day in the morning, enjoy banana snacks in the afternoon, and quiet down in the canopy by evening.
 * **👆 Interactive Tap & Hold Actions:** Click or long-press on Moglie to trigger native Home Assistant actions. You can even bind these actions to completely custom, independent entities without cluttering the UI!
-* **💬 Custom Quotes:** Don't like the default phrases? Override any state (Rain, Cold, Night, Armed, etc.) with your own custom text directly from the UI.
+* **💬 Custom Quotes:** Don't like the default phrases? Override any state (Rain, Thunder, Cold, Night, Armed, etc.) with your own custom text directly from the UI.
 * **✍️ Interactive Typewriter:** Status updates appear word-by-word with a sleek typewriter animation (now fully optimized to prevent ghost-typing on rapid state changes).
 * **🌐 Offline-Proof (Base64):** Moglie is built to survive network drops. Since all image data is baked into the code (Base64), he will stay rendered even if your internet is completely severed.
 * **🛡️ Security Patrol:** Moglie watches your Alarm Control Panel. He changes border colors and adds specific "patrol" sub-texts depending on whether the "troop" is home or away.
 * **🇮🇱 RTL Auto-Detection:** For Right-to-Left languages like Hebrew and Arabic, Moglie automatically flips the entire UI, alignment, and setup interface for a native experience.
-* **🌦️ Environmental Outfits:** Watch Moglie change clothes! He reacts to rain, snow, and extreme temperatures. He even starts to sweat if it’s over 80°F (27°C) with high humidity.
+* **🌦️ Environmental Outfits:** Watch Moglie change clothes! He reacts to rain, snow, thunderstorms, and extreme temperatures. He even starts to sweat if it’s over 80°F (27°C) with high humidity.
 * **📱 Mobile Optimized:** Features intelligent touch-tracking to prevent ghost-clicks and double-fires on mobile companion apps.
 * **🎨 Clean & Modern UI:** No clunky speech bubbles. Status messages float elegantly above Moglie for a polished, subtitle-style look that fits any dashboard theme.
 * **👻 Stealth Mode:** Need a minimalist dashboard? Toggle "Hide Moglie" to keep his intelligent status text but hide the monkey image.
@@ -60,6 +60,7 @@ Moglie uses a smart priority engine to decide what's most important:
 
 ### ⛅ Environmental Outfits
 * 🌙 **Night:** Sleepy Monkey + Purple border.
+* ⛈️ **Thunderstorm:** Raincoat + Stormy Blue-Grey border.
 * ☔ **Rain:** Raincoat + Blue border.
 * ❄️ **Cold/Snow:** Winter Gear + Cyan border.
 * 😎 **Hot:** Sunglasses + Orange border.
