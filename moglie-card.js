@@ -199,13 +199,16 @@ class MoglieCard extends HTMLElement {
       return useGreet ? greet + safeStr(defaultText) : safeStr(defaultText);
     };
 
+    // Cache-busting fallback for Thunder!
+    const safeThunder = defaultQuotes.thunder || "Thunder and lightning! Grabbing my raincoat!";
+
     const q = {
       nice_day: (uQ && typeof c.quote_nice_day !== 'undefined') 
                   ? (c.quote_nice_day === "" ? "" : greet + c.quote_nice_day) 
                   : (greet ? greet.trim() : "Hello!"),
       off: checkQ('quote_offline', defaultQuotes.off),
       rain: checkQ('quote_rain', defaultQuotes.rain, true),
-      thunder: checkQ('quote_thunder', defaultQuotes.thunder, true),
+      thunder: checkQ('quote_thunder', safeThunder, true), // Uses fallback just in case
       dis: checkQ('quote_disarmed', defaultQuotes.dis, true), 
       home: checkQ('quote_armed_home', defaultQuotes.home, true), 
       away: checkQ('quote_armed_away', defaultQuotes.away, true),
@@ -362,7 +365,7 @@ class MoglieCardEditor extends HTMLElement {
             { name: "quote_nice_day", selector: { text: {} } },
             { name: "quote_offline", selector: { text: {} } },
             { name: "quote_rain", selector: { text: {} } },
-            { name: "quote_thunder", selector: { text: {} } }, // Added Thunder custom quote
+            { name: "quote_thunder", selector: { text: {} } }, 
             { name: "quote_cold", selector: { text: {} } },
             { name: "quote_hot", selector: { text: {} } },
             { name: "quote_disarmed", selector: { text: {} } },
