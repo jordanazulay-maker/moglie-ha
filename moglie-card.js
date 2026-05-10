@@ -147,23 +147,25 @@ class MoglieCard extends HTMLElement {
     const hr = d.getHours();
     const month = d.getMonth(); 
     const day = d.getDate();
-    
-    const sHash = `${wState}|${aState}|${weState}|${hr}|${month}|${day}|${lang}|${c.hide_moglie}`;
-    if (this._last === sHash) return; 
-    this._last = sHash;
 
-    const wanOk = c.use_wan ? /on|connected|true/.test(wState) : true;
-    const aOff = c.use_alarm ? /disarmed|off/.test(aState) : false;
-    const aHome = c.use_alarm ? /home|stay|night/.test(aState) : false;
-    
+    // WEATHER LOGIC FIX: Extract temp and humidity BEFORE taking the snapshot hash
     let t = null, h = null, isRain = false;
     if (c.use_weather && wthr) {
       isRain = /(rain|pour|storm)/.test(weState);
       t = parseFloat(wthr.attributes?.temperature ?? 70);
       h = parseFloat(wthr.attributes?.humidity ?? 0);
     }
+    
+    // WEATHER LOGIC FIX: Added 't' and 'h' to the hash
+    const sHash = `${wState}|${aState}|${weState}|${t}|${h}|${hr}|${month}|${day}|${lang}|${c.hide_moglie}`;
+    if (this._last === sHash) return; 
+    this._last = sHash;
 
-    // NEW: Safely parse numbers so that 0 (midnight) is handled, and empty fields fall back to defaults
+    const wanOk = c.use_wan ? /on|connected|true/.test(wState) : true;
+    const aOff = c.use_alarm ? /disarmed|off/.test(aState) : false;
+    const aHome = c.use_alarm ? /home|stay|night/.test(aState) : false;
+
+    // TIME LOGIC FIXES: Falsy zero and evening wrap-around applied
     const nS = isNaN(parseInt(c.night_start)) ? 22 : parseInt(c.night_start);
     const nE = isNaN(parseInt(c.night_end)) ? 6 : parseInt(c.night_end);
     const isNight = nS > nE ? (hr >= nS || hr < nE) : (hr >= nS && hr < nE);
@@ -173,8 +175,6 @@ class MoglieCard extends HTMLElement {
 
     let greet = "";
     if (!showNight) {
-        // FIX: Removed the hardcoded 6 AM start! Morning now automatically covers any 
-        // time between your night_end and 11 AM. 
         if (hr < 11) greet = safeStr(defaultQuotes.morning);
         else if (hr >= 11 && hr < 17) greet = safeStr(defaultQuotes.afternoon);
         else greet = safeStr(defaultQuotes.evening); 
