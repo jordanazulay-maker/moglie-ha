@@ -5,7 +5,7 @@ import { summer_monkey as s_b64 } from './summer-monkey.js';
 import { sweaty_monkey as sw_b64 } from './sweaty-monkey.js';
 import { sleepy_monkey as sl_b64 } from './sleepy-monkey.js';
 import { festive_monkey as f_b64 } from './festive-monkey.js';
-import { festive_monkey_1 as f1_b64 } from './festive-monkey-1.js'; // Imported festive-monkey-1
+import { festive_monkey_1 as f1_b64 } from './festive-monkey-1.js';
 import { MOGLIE_TRANSLATIONS } from './moglie-localization.js';
 
 class MoglieCard extends HTMLElement {
@@ -110,7 +110,7 @@ class MoglieCard extends HTMLElement {
         this.txt.innerHTML = message.substring(0, i);
         this._typeTimer = setTimeout(type, 30);
       }
-    }
+    };
     type();
   }
 
@@ -145,9 +145,10 @@ class MoglieCard extends HTMLElement {
 
     const d = new Date();
     const hr = d.getHours();
-    const month = d.getMonth(); // January is 0, October is 9
+    const month = d.getMonth(); // January is 0, October is 9, December is 11
     const day = d.getDate();
-    const sHash = `${wState}|${aState}|${weState}|${hr}|${day}|${lang}|${c.hide_moglie}`;
+    
+    const sHash = `${wState}|${aState}|${weState}|${hr}|${month}|${day}|${lang}|${c.hide_moglie}`;
     if (this._last === sHash) return; 
     this._last = sHash;
 
@@ -176,6 +177,7 @@ class MoglieCard extends HTMLElement {
         else if (hr >= 17 && hr < nS) greet = safeStr(defaultQuotes.evening);
     }
 
+    // Custom Quote Configuration Override
     const uQ = c.use_custom_quotes;
     const q = {
       nice_day: (uQ && c.quote_nice_day),
@@ -222,9 +224,11 @@ class MoglieCard extends HTMLElement {
       else patrolTxt = `<br><small style="color:#F44336;">${safeStr(defaultQuotes.p_alert)}</small>`;
     }
 
-    // Override outfit if it is Halloween (October 31st)
-    if (month === 9 && day === 31) {
+    // Holiday Overrides
+    if (month === 9 && day === 31) { // October 31st
         outfit = f1_b64;
+    } else if (month === 11 && day === 25) { // December 25th
+        outfit = f_b64; 
     }
 
     this.img.src = outfit;
