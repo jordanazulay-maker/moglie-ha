@@ -145,7 +145,7 @@ class MoglieCard extends HTMLElement {
 
     const d = new Date();
     const hr = d.getHours();
-    const month = d.getMonth(); // January is 0, October is 9, December is 11
+    const month = d.getMonth(); 
     const day = d.getDate();
     
     const sHash = `${wState}|${aState}|${weState}|${hr}|${month}|${day}|${lang}|${c.hide_moglie}`;
@@ -163,8 +163,9 @@ class MoglieCard extends HTMLElement {
       h = parseFloat(wthr.attributes?.humidity ?? 0);
     }
 
-    const nS = parseInt(c.night_start || 22);
-    const nE = parseInt(c.night_end || 6);
+    // NEW: Safely parse numbers so that 0 (midnight) is handled, and empty fields fall back to defaults
+    const nS = isNaN(parseInt(c.night_start)) ? 22 : parseInt(c.night_start);
+    const nE = isNaN(parseInt(c.night_end)) ? 6 : parseInt(c.night_end);
     const isNight = nS > nE ? (hr >= nS || hr < nE) : (hr >= nS && hr < nE);
     const showNight = c.enable_night_mode !== false && isNight;
 
@@ -172,9 +173,11 @@ class MoglieCard extends HTMLElement {
 
     let greet = "";
     if (!showNight) {
-        if (hr >= 6 && hr < 11) greet = safeStr(defaultQuotes.morning);
+        // FIX: Removed the hardcoded 6 AM start! Morning now automatically covers any 
+        // time between your night_end and 11 AM. 
+        if (hr < 11) greet = safeStr(defaultQuotes.morning);
         else if (hr >= 11 && hr < 17) greet = safeStr(defaultQuotes.afternoon);
-        else if (hr >= 17 && hr < nS) greet = safeStr(defaultQuotes.evening);
+        else greet = safeStr(defaultQuotes.evening); 
     }
 
     // Custom Quote Configuration Override
@@ -193,7 +196,6 @@ class MoglieCard extends HTMLElement {
 
     let outfit = n_b64, quote = "", border = "2px solid #4CAF50", isGrayscale = false;
 
-    // This ensures we properly map back to the `q` dictionary for custom overrides!
     if (c.use_wan && !wanOk) { 
         outfit = n_b64; quote = q.off; border = "2px solid gray"; isGrayscale = true; 
     } else if (showNight) { 
