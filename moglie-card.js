@@ -309,7 +309,13 @@ class MoglieCard extends HTMLElement {
 
 class MoglieCardEditor extends HTMLElement {
   setConfig(config) { 
-    this._cfg = config; 
+    // Create a virtual array for the dropdown based on the booleans
+    const active_features = [];
+    if (config.use_wan) active_features.push("wan");
+    if (config.use_alarm) active_features.push("alarm");
+    if (config.use_weather) active_features.push("weather");
+
+    this._cfg = { ...config, active_features }; 
     this.render(); 
   }
   
@@ -323,25 +329,33 @@ class MoglieCardEditor extends HTMLElement {
 
   _computeSchema() {
     const c = this._cfg || {};
+    const feats = c.active_features || []; // Helper for conditional rendering
+    
     return [
       {
-        type: "grid",
-        name: "",
-        schema: [
-          { name: "use_wan", selector: { boolean: {} } },
-          { name: "use_alarm", selector: { boolean: {} } },
-          { name: "use_weather", selector: { boolean: {} } }
-        ]
+        name: "active_features",
+        label: "Active Features",
+        selector: {
+          select: {
+            multiple: true,
+            mode: "dropdown",
+            options: [
+              { label: "Internet / WAN Monitor", value: "wan" },
+              { label: "Security Alarm", value: "alarm" },
+              { label: "Weather", value: "weather" }
+            ]
+          }
+        }
       },
-      ...(c.use_wan ? [{ name: "wan_entity", selector: { entity: { domain: "binary_sensor" } } }] : []),
-      ...(c.use_alarm ? [{ name: "alarm_entity", selector: { entity: { domain: "alarm_control_panel" } } }] : []),
-      ...(c.use_weather ? [{ name: "weather_entity", selector: { entity: { domain: "weather" } } }] : []),
+      ...(feats.includes("wan") ? [{ name: "wan_entity", label: "WAN Entity (Binary Sensor)", selector: { entity: { domain: "binary_sensor" } } }] : []),
+      ...(feats.includes("alarm") ? [{ name: "alarm_entity", label: "Alarm Entity", selector: { entity: { domain: "alarm_control_panel" } } }] : []),
+      ...(feats.includes("weather") ? [{ name: "weather_entity", label: "Weather Entity", selector: { entity: { domain: "weather" } } }] : []),
       {
         type: "grid",
         name: "",
         schema: [
-          { name: "use_tap_entity", selector: { boolean: {} } },
-          { name: "use_hold_entity", selector: { boolean: {} } }
+          { name: "use_tap_entity", label: "Use Custom Tap Entity", selector: { boolean: {} } },
+          { name: "use_hold_entity", label: "Use Custom Hold Entity", selector: { boolean: {} } }
         ]
       },
       ...(c.use_tap_entity || c.use_hold_entity ? [
@@ -349,8 +363,8 @@ class MoglieCardEditor extends HTMLElement {
           type: "grid",
           name: "",
           schema: [
-            ...(c.use_tap_entity ? [{ name: "tap_entity", selector: { entity: {} } }] : []),
-            ...(c.use_hold_entity ? [{ name: "hold_entity", selector: { entity: {} } }] : [])
+            ...(c.use_tap_entity ? [{ name: "tap_entity", label: "Tap Entity", selector: { entity: {} } }] : []),
+            ...(c.use_hold_entity ? [{ name: "hold_entity", label: "Hold Entity", selector: { entity: {} } }] : [])
           ]
         }
       ] : []),
@@ -358,39 +372,39 @@ class MoglieCardEditor extends HTMLElement {
         type: "grid",
         name: "",
         schema: [
-          { name: "tap_action", selector: { ui_action: {} } },
-          { name: "hold_action", selector: { ui_action: {} } }
+          { name: "tap_action", label: "Tap Action", selector: { ui_action: {} } },
+          { name: "hold_action", label: "Hold Action", selector: { ui_action: {} } }
         ]
       },
       {
         type: "grid",
         name: "",
         schema: [
-          { name: "enable_night_mode", selector: { boolean: {} } },
-          { name: "hide_moglie", selector: { boolean: {} } },
-          { name: "enable_typing", selector: { boolean: {} } }, 
+          { name: "enable_night_mode", label: "Enable Night Mode", selector: { boolean: {} } },
+          { name: "hide_moglie", label: "Hide Moglie (Stealth Mode)", selector: { boolean: {} } },
+          { name: "enable_typing", label: "Enable Typing Animation", selector: { boolean: {} } }, 
           ...(c.enable_night_mode !== false ? [
-            { name: "night_start", selector: { number: { min: 0, max: 23, mode: "box" } } },
-            { name: "night_end", selector: { number: { min: 0, max: 23, mode: "box" } } }
+            { name: "night_start", label: "Night Mode Start (Hour)", selector: { number: { min: 0, max: 23, mode: "box" } } },
+            { name: "night_end", label: "Night Mode End (Hour)", selector: { number: { min: 0, max: 23, mode: "box" } } }
           ] : [])
         ]
       },
-      { name: "use_custom_quotes", selector: { boolean: {} } },
+      { name: "use_custom_quotes", label: "Enable Custom Quotes", selector: { boolean: {} } },
       ...(c.use_custom_quotes ? [
         {
           type: "grid",
           name: "",
           schema: [
-            { name: "quote_nice_day", selector: { text: {} } },
-            { name: "quote_offline", selector: { text: {} } },
-            { name: "quote_rain", selector: { text: {} } },
-            { name: "quote_thunder", selector: { text: {} } }, 
-            { name: "quote_cold", selector: { text: {} } },
-            { name: "quote_hot", selector: { text: {} } },
-            { name: "quote_disarmed", selector: { text: {} } },
-            { name: "quote_armed_home", selector: { text: {} } },
-            { name: "quote_armed_away", selector: { text: {} } },
-            { name: "quote_night", selector: { text: {} } }
+            { name: "quote_nice_day", label: "Quote: Nice Day", selector: { text: {} } },
+            { name: "quote_offline", label: "Quote: Offline", selector: { text: {} } },
+            { name: "quote_rain", label: "Quote: Rain", selector: { text: {} } },
+            { name: "quote_thunder", label: "Quote: Thunder", selector: { text: {} } }, 
+            { name: "quote_cold", label: "Quote: Cold", selector: { text: {} } },
+            { name: "quote_hot", label: "Quote: Hot", selector: { text: {} } },
+            { name: "quote_disarmed", label: "Quote: Disarmed", selector: { text: {} } },
+            { name: "quote_armed_home", label: "Quote: Armed Home", selector: { text: {} } },
+            { name: "quote_armed_away", label: "Quote: Armed Away", selector: { text: {} } },
+            { name: "quote_night", label: "Quote: Night", selector: { text: {} } }
           ]
         }
       ] : [])
@@ -408,8 +422,23 @@ class MoglieCardEditor extends HTMLElement {
     this._f.hass = this._h;
     this._f.data = this._cfg;
     this._f.schema = this._computeSchema();
+    
+    // GUARANTEE: If a field somehow doesn't get our explicit label, remove underscores and capitalize it anyway
+    this._f.computeLabel = (s) => s.label || s.name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    
     this._f.addEventListener("value-changed", (e) => {
-      this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: e.detail.value }, bubbles: true, composed: true }));
+      const newConfig = { ...e.detail.value };
+      const feats = newConfig.active_features || [];
+
+      // Convert the dropdown array back into standard booleans
+      newConfig.use_wan = feats.includes("wan");
+      newConfig.use_alarm = feats.includes("alarm");
+      newConfig.use_weather = feats.includes("weather");
+
+      // Delete the virtual property so it doesn't bloat the user's YAML config
+      delete newConfig.active_features;
+
+      this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: newConfig }, bubbles: true, composed: true }));
     });
     this.appendChild(this._f);
   }
