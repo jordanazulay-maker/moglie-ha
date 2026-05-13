@@ -44,8 +44,15 @@ class MoglieCard extends HTMLElement {
       this.innerHTML = `
         <style>
           .anti-gravity { transform: rotate(180deg); }
-          #m-cont { padding: 16px; border-radius: 10px; text-align: center; transition: all 0.3s ease; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-          #m-img { width: 100%; max-width: 150px; height: auto; aspect-ratio: 1/1; object-fit: contain; transition: transform 0.5s ease; z-index: 1; }
+          #m-cont { 
+            padding: 16px; border-radius: 10px; text-align: center; transition: all 0.3s ease; 
+            cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+          }
+          #m-img { 
+            width: 100%; max-width: 150px; height: auto; aspect-ratio: 1/1; object-fit: contain; 
+            transition: transform 0.5s ease; z-index: 1; pointer-events: none;
+          }
           #m-txt { margin-bottom: 15px; font-weight: bold; min-height: 3.5em; width: 95%; line-height: 1.4; color: var(--primary-text-color); display: flex; flex-direction: column; align-items: center; justify-content: center; }
           .rtl { direction: rtl; text-align: right; }
           .hidden { display: none !important; }
@@ -81,9 +88,12 @@ class MoglieCard extends HTMLElement {
 
       this.cont.addEventListener('touchstart', () => { isTouch = true; startPress(); }, { passive: true });
       this.cont.addEventListener('touchend', endPress);
+      this.cont.addEventListener('touchmove', endPress, { passive: true });
+      this.cont.addEventListener('touchcancel', endPress);
       this.cont.addEventListener('mousedown', () => { if (!isTouch) startPress(); });
       this.cont.addEventListener('mouseup', () => { if (!isTouch) endPress(); });
       this.cont.addEventListener('mouseleave', () => { if (!isTouch) endPress(); });
+      this.cont.addEventListener('contextmenu', (e) => e.preventDefault());
 
       this.cont.addEventListener('click', () => {
         if (isHold) return; 
@@ -266,10 +276,19 @@ class MoglieCard extends HTMLElement {
   
   handleAct(a) {
     const act = this.config[a + '_action'];
-    let targetEntity = "";
+    
+    // Provide a logical fallback so HA always has an entity to default to
+    let targetEntity = this.config.alarm_entity || this.config.wan_entity || ""; 
+
     if (a === 'tap' && this.config.use_tap_entity) targetEntity = this.config.tap_entity;
     if (a === 'hold' && this.config.use_hold_entity) targetEntity = this.config.hold_entity;
-    const actionConfig = { ...this.config, entity: targetEntity };
+    
+    const actionConfig = { ...this.config };
+    
+    // Only assign the entity if it isn't an empty string
+    if (targetEntity) {
+      actionConfig.entity = targetEntity;
+    }
     
     if (act && act.action && act.action !== 'none') {
       this.dispatchEvent(new CustomEvent('hass-action', {
