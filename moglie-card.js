@@ -309,13 +309,21 @@ class MoglieCard extends HTMLElement {
 
 class MoglieCardEditor extends HTMLElement {
   setConfig(config) { 
-    // Create a virtual array for the dropdown based on the booleans
+    // Create virtual arrays for the dropdowns based on the booleans
     const active_features = [];
     if (config.use_wan) active_features.push("wan");
     if (config.use_alarm) active_features.push("alarm");
     if (config.use_weather) active_features.push("weather");
 
-    this._cfg = { ...config, active_features }; 
+    const advanced_features = [];
+    if (config.use_tap_entity) advanced_features.push("tap");
+    if (config.use_hold_entity) advanced_features.push("hold");
+    if (config.enable_night_mode !== false) advanced_features.push("night"); // defaults to true
+    if (config.hide_moglie) advanced_features.push("stealth");
+    if (config.enable_typing !== false) advanced_features.push("typing"); // defaults to true
+    if (config.use_custom_quotes) advanced_features.push("quotes");
+
+    this._cfg = { ...config, active_features, advanced_features }; 
     this.render(); 
   }
   
@@ -329,12 +337,13 @@ class MoglieCardEditor extends HTMLElement {
 
   _computeSchema() {
     const c = this._cfg || {};
-    const feats = c.active_features || []; // Helper for conditional rendering
+    const feats = c.active_features || []; 
+    const adv = c.advanced_features || []; 
     
     return [
       {
         name: "active_features",
-        label: "Active Features",
+        label: "Active Core Features",
         selector: {
           select: {
             multiple: true,
@@ -347,27 +356,12 @@ class MoglieCardEditor extends HTMLElement {
           }
         }
       },
+      // Conditional Core Entities
       ...(feats.includes("wan") ? [{ name: "wan_entity", label: "WAN Entity (Binary Sensor)", selector: { entity: { domain: "binary_sensor" } } }] : []),
       ...(feats.includes("alarm") ? [{ name: "alarm_entity", label: "Alarm Entity", selector: { entity: { domain: "alarm_control_panel" } } }] : []),
       ...(feats.includes("weather") ? [{ name: "weather_entity", label: "Weather Entity", selector: { entity: { domain: "weather" } } }] : []),
-      {
-        type: "grid",
-        name: "",
-        schema: [
-          { name: "use_tap_entity", label: "Use Custom Tap Entity", selector: { boolean: {} } },
-          { name: "use_hold_entity", label: "Use Custom Hold Entity", selector: { boolean: {} } }
-        ]
-      },
-      ...(c.use_tap_entity || c.use_hold_entity ? [
-        {
-          type: "grid",
-          name: "",
-          schema: [
-            ...(c.use_tap_entity ? [{ name: "tap_entity", label: "Tap Entity", selector: { entity: {} } }] : []),
-            ...(c.use_hold_entity ? [{ name: "hold_entity", label: "Hold Entity", selector: { entity: {} } }] : [])
-          ]
-        }
-      ] : []),
+      
+      // Standard Actions (Always visible)
       {
         type: "grid",
         name: "",
@@ -376,21 +370,53 @@ class MoglieCardEditor extends HTMLElement {
           { name: "hold_action", label: "Hold Action", selector: { ui_action: {} } }
         ]
       },
+
+      // Advanced Options Dropdown
       {
-        type: "grid",
-        name: "",
-        schema: [
-          { name: "enable_night_mode", label: "Enable Night Mode", selector: { boolean: {} } },
-          { name: "hide_moglie", label: "Hide Moglie (Stealth Mode)", selector: { boolean: {} } },
-          { name: "enable_typing", label: "Enable Typing Animation", selector: { boolean: {} } }, 
-          ...(c.enable_night_mode !== false ? [
+        name: "advanced_features",
+        label: "Advanced Options",
+        selector: {
+          select: {
+            multiple: true,
+            mode: "dropdown",
+            options: [
+              { label: "Use Custom Tap Entity", value: "tap" },
+              { label: "Use Custom Hold Entity", value: "hold" },
+              { label: "Enable Night Mode", value: "night" },
+              { label: "Hide Moglie (Stealth Mode)", value: "stealth" },
+              { label: "Enable Typing Animation", value: "typing" },
+              { label: "Enable Custom Quotes", value: "quotes" }
+            ]
+          }
+        }
+      },
+
+      // Conditional Custom Entities
+      ...(adv.includes("tap") || adv.includes("hold") ? [
+        {
+          type: "grid",
+          name: "",
+          schema: [
+            ...(adv.includes("tap") ? [{ name: "tap_entity", label: "Custom Tap Entity", selector: { entity: {} } }] : []),
+            ...(adv.includes("hold") ? [{ name: "hold_entity", label: "Custom Hold Entity", selector: { entity: {} } }] : [])
+          ]
+        }
+      ] : []),
+
+      // Conditional Night Mode settings
+      ...(adv.includes("night") ? [
+        {
+          type: "grid",
+          name: "",
+          schema: [
             { name: "night_start", label: "Night Mode Start (Hour)", selector: { number: { min: 0, max: 23, mode: "box" } } },
             { name: "night_end", label: "Night Mode End (Hour)", selector: { number: { min: 0, max: 23, mode: "box" } } }
-          ] : [])
-        ]
-      },
-      { name: "use_custom_quotes", label: "Enable Custom Quotes", selector: { boolean: {} } },
-      ...(c.use_custom_quotes ? [
+          ]
+        }
+      ] : []),
+
+      // Conditional Custom Quotes settings
+      ...(adv.includes("quotes") ? [
         {
           type: "grid",
           name: "",
@@ -423,20 +449,26 @@ class MoglieCardEditor extends HTMLElement {
     this._f.data = this._cfg;
     this._f.schema = this._computeSchema();
     
-    // GUARANTEE: If a field somehow doesn't get our explicit label, remove underscores and capitalize it anyway
+    // GUARANTEE: If a field somehow doesn't get our explicit label, format it beautifully anyway
     this._f.computeLabel = (s) => s.label || s.name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     
     this._f.addEventListener("value-changed", (e) => {
       const newConfig = { ...e.detail.value };
+      
       const feats = newConfig.active_features || [];
-
-      // Convert the dropdown array back into standard booleans
       newConfig.use_wan = feats.includes("wan");
       newConfig.use_alarm = feats.includes("alarm");
       newConfig.use_weather = feats.includes("weather");
-
-      // Delete the virtual property so it doesn't bloat the user's YAML config
       delete newConfig.active_features;
+
+      const adv = newConfig.advanced_features || [];
+      newConfig.use_tap_entity = adv.includes("tap");
+      newConfig.use_hold_entity = adv.includes("hold");
+      newConfig.enable_night_mode = adv.includes("night");
+      newConfig.hide_moglie = adv.includes("stealth");
+      newConfig.enable_typing = adv.includes("typing");
+      newConfig.use_custom_quotes = adv.includes("quotes");
+      delete newConfig.advanced_features;
 
       this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: newConfig }, bubbles: true, composed: true }));
     });
