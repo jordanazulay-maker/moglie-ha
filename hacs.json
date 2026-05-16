@@ -1,6 +1,5 @@
 {
   "name": "Moglie HA",
-  "description": "An interactive dashboard mascot that dynamically reacts to your home's weather, security, and network status.",
   "render_readme": true,
   "filename": "moglie-card.js"
 }
