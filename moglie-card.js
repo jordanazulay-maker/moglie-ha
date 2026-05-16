@@ -24,8 +24,8 @@ class MoglieCard extends HTMLElement {
       tap_entity: "", 
       hold_entity: "",
       enable_night_mode: true, 
-      night_start: 22, 
-      night_end: 6, 
+      night_start: "", 
+      night_end: "", 
       enable_typing: true,
       use_custom_quotes: false, 
       hide_moglie: false 
@@ -187,9 +187,13 @@ class MoglieCard extends HTMLElement {
     const aHome = c.use_alarm ? /home|stay|night/.test(aState) : false;
 
     // TIME LOGIC
-    const nS = isNaN(parseInt(c.night_start)) ? 22 : parseInt(c.night_start);
-    const nE = isNaN(parseInt(c.night_end)) ? 6 : parseInt(c.night_end);
-    const isNight = nS > nE ? (hr >= nS || hr < nE) : (hr >= nS && hr < nE);
+    const nS = parseInt(c.night_start);
+    const nE = parseInt(c.night_end);
+    
+    let isNight = false;
+    if (!isNaN(nS) && !isNaN(nE)) {
+      isNight = nS > nE ? (hr >= nS || hr < nE) : (hr >= nS && hr < nE);
+    }
     const showNight = c.enable_night_mode !== false && isNight;
 
     const safeStr = (s) => s || "";
