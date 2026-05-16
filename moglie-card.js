@@ -36,9 +36,16 @@ class MoglieCard extends HTMLElement {
     return 3; 
   }
 
+  // Prevent memory leaks when the card is removed from the dashboard
+  disconnectedCallback() {
+    if (this._typeTimer) clearTimeout(this._typeTimer);
+    if (this.pressTimer) clearTimeout(this.pressTimer);
+  }
+
   setConfig(config) {
     this.config = { ...config };
     this._last = null;
+    this._currentAlertEntity = null;
     
     if (!this.cont) {
       this.innerHTML = `
@@ -67,15 +74,14 @@ class MoglieCard extends HTMLElement {
       this.img = this.querySelector('#m-img');
       this.txt = this.querySelector('#m-txt');
 
-      let isHold = false;
+      this.isHold = false;
       let isTouch = false;
-      let pressTimer;
 
       const startPress = () => {
-        isHold = false;
-        if (pressTimer) clearTimeout(pressTimer);
-        pressTimer = setTimeout(() => {
-          isHold = true;
+        this.isHold = false;
+        if (this.pressTimer) clearTimeout(this.pressTimer);
+        this.pressTimer = setTimeout(() => {
+          this.isHold = true;
           this.img.style.transform = "scale(1.1) rotate(-5deg)";
           setTimeout(() => { this.img.style.transform = "scale(1) rotate(0deg)"; }, 200);
           this.handleAct('hold');
@@ -83,7 +89,7 @@ class MoglieCard extends HTMLElement {
       };
 
       const endPress = () => {
-        if (pressTimer) clearTimeout(pressTimer);
+        if (this.pressTimer) clearTimeout(this.pressTimer);
       };
 
       this.cont.addEventListener('touchstart', () => { isTouch = true; startPress(); }, { passive: true });
@@ -96,7 +102,7 @@ class MoglieCard extends HTMLElement {
       this.cont.addEventListener('contextmenu', (e) => e.preventDefault());
 
       this.cont.addEventListener('click', () => {
-        if (isHold) return; 
+        if (this.isHold) return; 
         this.img.style.transform = "scale(1.1) rotate(5deg)";
         setTimeout(() => { this.img.style.transform = "scale(1) rotate(0deg)"; }, 200);
         this.handleAct('tap');
@@ -190,10 +196,12 @@ class MoglieCard extends HTMLElement {
     const nS = parseInt(c.night_start);
     const nE = parseInt(c.night_end);
     
+    // Only calculate night mode if BOTH start and end times are valid numbers
     let isNight = false;
     if (!isNaN(nS) && !isNaN(nE)) {
       isNight = nS > nE ? (hr >= nS || hr < nE) : (hr >= nS && hr < nE);
     }
+    
     const showNight = c.enable_night_mode !== false && isNight;
 
     const safeStr = (s) => s || "";
@@ -233,18 +241,25 @@ class MoglieCard extends HTMLElement {
 
     let outfit = n_b64, quote = "", border = "2px solid #4CAF50", isGrayscale = false;
 
+    // Determine the most relevant entity to show on tap (Improvement #3)
     if (c.use_wan && !wanOk) { 
         outfit = n_b64; quote = q.off; border = "2px solid gray"; isGrayscale = true; 
+        this._currentAlertEntity = c.wan_entity;
     } else if (showNight) { 
         outfit = sl_b64; quote = q.night; border = "2px solid #673AB7"; 
+        this._currentAlertEntity = c.alarm_entity || c.weather_entity || c.wan_entity;
     } else if (c.use_weather && isThunder) { 
         outfit = r_b64; quote = q.thunder; border = "2px solid #607D8B"; // Rainy monkey + Stormy Blue-Grey border
+        this._currentAlertEntity = c.weather_entity;
     } else if (c.use_weather && isRain) { 
         outfit = r_b64; quote = q.rain; border = "2px solid #2196F3"; 
+        this._currentAlertEntity = c.weather_entity;
     } else if (c.use_weather && isCold) { 
         outfit = w_b64; quote = q.cold; border = "2px solid #00BCD4"; 
+        this._currentAlertEntity = c.weather_entity;
     } else if (c.use_weather && isHot) { 
         outfit = (h !== null && h > 70) ? sw_b64 : s_b64; quote = q.hot; border = "2px solid #FF9800"; 
+        this._currentAlertEntity = c.weather_entity;
     } else if (c.use_alarm) { 
         if (aOff) { 
             outfit = n_b64; quote = q.dis; border = "2px solid orange"; 
@@ -253,10 +268,12 @@ class MoglieCard extends HTMLElement {
         } else {
             outfit = n_b64; quote = q.home; border = "2px solid #4CAF50";
         }
+        this._currentAlertEntity = c.alarm_entity;
     } else {
       outfit = n_b64; 
       border = "2px solid #4CAF50";
       quote = q.nice_day;
+      this._currentAlertEntity = c.alarm_entity || c.weather_entity || c.wan_entity || null;
     }
 
     let patrolTxt = "";
@@ -282,7 +299,7 @@ class MoglieCard extends HTMLElement {
     const act = this.config[a + '_action'];
     
     // Provide a logical fallback so HA always has an entity to default to
-    let targetEntity = this.config.alarm_entity || this.config.wan_entity || ""; 
+    let targetEntity = this._currentAlertEntity || this.config.alarm_entity || this.config.wan_entity || ""; 
 
     if (a === 'tap' && this.config.use_tap_entity) targetEntity = this.config.tap_entity;
     if (a === 'hold' && this.config.use_hold_entity) targetEntity = this.config.hold_entity;
@@ -301,11 +318,12 @@ class MoglieCard extends HTMLElement {
         detail: { config: actionConfig, action: a }
       }));
     } 
-    else if (!act && a === 'tap' && this.config.alarm_entity) {
+    else if (!act && a === 'tap' && this._currentAlertEntity) {
+      // Improved Fallback: Dynamic more-info popup based on current state
       this.dispatchEvent(new CustomEvent('hass-more-info', { 
         bubbles: true, 
         composed: true, 
-        detail: { entityId: this.config.alarm_entity } 
+        detail: { entityId: this._currentAlertEntity } 
       }));
     }
   }
