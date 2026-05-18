@@ -14,7 +14,7 @@
 
 ## 🌟 Enhanced Features
 
-* **🌍 Fully Multilingual:** Moglie speaks your language! He automatically detects your Home Assistant profile settings and translates all quotes and setup menus. Currently supporting **12 languages**.
+* **🌍 Fully Multilingual:** Moglie speaks your language! He automatically detects your Home Assistant profile settings and translates all quotes and setup menus. Currently supporting **13 languages**.
 * **🎛️ Modular & Dynamic Editor:** Build the card your way. WAN, Alarm, and Weather are now individual toggles! The smart UI automatically groups and hides advanced options (like entities, custom quotes, and night mode) until you actually enable them.
 * **🕒 Daily Routines:** Moglie has his own schedule! When the weather is nice, he will prepare for the day in the morning, enjoy banana snacks in the afternoon, and quiet down in the canopy by evening.
 * **👆 Interactive Tap & Hold Actions:** Click or long-press on Moglie to trigger native Home Assistant actions. You can even bind these actions to completely custom, independent entities without cluttering the UI!
