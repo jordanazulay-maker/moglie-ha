@@ -1,14 +1,15 @@
 import { normal_monkey as n_b64 } from './normal-monkey.js';
 import { MOGLIE_TRANSLATIONS } from './moglie-localization.js';
 
-// Dynamically load the PNG files relative to this script's directory for the environmental outfits
-const w_png = new URL('./winter.png', import.meta.url).href;
-const r_png = new URL('./rainy.png', import.meta.url).href;
-const s_png = new URL('./summer.png', import.meta.url).href;
-const sw_png = new URL('./sweaty.png', import.meta.url).href;
-const sl_png = new URL('./sleepy.png', import.meta.url).href;
-const f_png = new URL('./festive.png', import.meta.url).href;
-const f1_png = new URL('./festive1.png', import.meta.url).href;
+// Load PNG files using absolute paths for Home Assistant to correctly resolve the assets.
+// These paths assume the standard HACS installation directory.
+const w_png = '/hacsfiles/moglie-ha/winter.png';
+const r_png = '/hacsfiles/moglie-ha/rainy.png';
+const s_png = '/hacsfiles/moglie-ha/summer.png';
+const sw_png = '/hacsfiles/moglie-ha/sweaty.png';
+const sl_png = '/hacsfiles/moglie-ha/sleepy.png';
+const f_png = '/hacsfiles/moglie-ha/festive.png';
+const f1_png = '/hacsfiles/moglie-ha/festive1.png';
 
 class MoglieCard extends HTMLElement {
   static getConfigElement() { return document.createElement("moglie-card-editor"); }
