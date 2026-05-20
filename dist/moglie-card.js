@@ -125,8 +125,12 @@ class MoglieCard extends HTMLElement {
     let i = 0;
     const type = () => {
       if (i < message.length) {
+        // FIX: Account for both HTML Tags AND encoded HTML entities/emojis
         if (message.charAt(i) === '<') {
           let end = message.indexOf('>', i);
+          i = end !== -1 ? end + 1 : i + 1;
+        } else if (message.charAt(i) === '&') {
+          let end = message.indexOf(';', i);
           i = end !== -1 ? end + 1 : i + 1;
         } else {
           i++;
@@ -142,9 +146,10 @@ class MoglieCard extends HTMLElement {
     if (this._typeTimer) clearTimeout(this._typeTimer);
     this.img.setAttribute('src', n_b64);
     this.img.style.filter = "grayscale(100%) opacity(0.6)";
-    // FIX: Added missing backticks here
     this.txt.innerHTML = `<span style="color: #ff5252;">${m}</span>`;
     this.cont.style.border = "2px dashed #ff5252";
+    // FIX: Clear the cache so it forces a re-render when the error resolves
+    this._last = null; 
   }
 
   set hass(hass) {
@@ -183,8 +188,9 @@ class MoglieCard extends HTMLElement {
       isThunder = /(thunder|storm|lightning|tornado)/.test(weState);
       isRain = /(rain|pour|drizzle|shower)/.test(weState) && !isThunder; 
       
-      t = parseFloat(wthr.attributes?.temperature ?? 70);
-      h = parseFloat(wthr.attributes?.humidity ?? 0);
+      // FIX: Ensure temp doesn't default to 70 and melt a celsius user's dashboard
+      t = wthr.attributes?.temperature !== undefined ? parseFloat(wthr.attributes.temperature) : null;
+      h = wthr.attributes?.humidity !== undefined ? parseFloat(wthr.attributes.humidity) : null;
     }
 
     const isCold = t !== null && ((unit === '°F' && t < 50) || (unit !== '°F' && t < 10));
@@ -298,7 +304,8 @@ class MoglieCard extends HTMLElement {
   }
 
   handleAct(a) {
-    const act = this.config[a + '_action'];
+    // FIX: Provide a default action so 'hass-action' opens 'more-info' natively on click
+    const act = this.config[a + '_action'] || { action: 'more-info' };
 
     let targetEntity = this._currentAlertEntity || this.config.alarm_entity || this.config.wan_entity || ""; 
 
@@ -311,8 +318,10 @@ class MoglieCard extends HTMLElement {
       actionConfig.entity = targetEntity;
     }
 
-    // FIX: Properly completed the event dispatching, closed the method and class
     if (act && act.action && act.action !== 'none') {
+      // Apply the defaulted or defined action string to pass cleanly to HA handler
+      actionConfig[a + '_action'] = act;
+      
       this.dispatchEvent(new CustomEvent('hass-action', {
         bubbles: true,
         composed: true,
@@ -323,12 +332,10 @@ class MoglieCard extends HTMLElement {
       }));
     }
   }
-} // End of MoglieCard class
+}
 
-// FIX: Added the missing definition so Home Assistant loads the card
 customElements.define('moglie-card', MoglieCard);
 
-// Optional: Register in the Custom Card picker for HACS/Home Assistant
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: "moglie-card",
