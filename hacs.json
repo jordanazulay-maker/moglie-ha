@@ -1,4 +1,5 @@
 {
   "name": "Moglie HA",
-  "render_readme": true
+  "render_readme": true,
+  "filename": "moglie-card.js"
 }
