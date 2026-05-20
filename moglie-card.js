@@ -1,12 +1,14 @@
 import { normal_monkey as n_b64 } from './normal-monkey.js';
-import { winter_monkey as w_b64 } from './winter-monkey.js';
-import { rainy_monkey as r_b64 } from './rainy-monkey.js';
-import { summer_monkey as s_b64 } from './summer-monkey.js';
-import { sweaty_monkey as sw_b64 } from './sweaty-monkey.js';
-import { sleepy_monkey as sl_b64 } from './sleepy-monkey.js';
-import { festive_monkey as f_b64 } from './festive-monkey.js';
-import { festive_monkey_1 as f1_b64 } from './festive-monkey-1.js';
 import { MOGLIE_TRANSLATIONS } from './moglie-localization.js';
+
+// Dynamically load the PNG files relative to this script's directory for the environmental outfits
+const w_png = new URL('./winter.png', import.meta.url).href;
+const r_png = new URL('./rainy.png', import.meta.url).href;
+const s_png = new URL('./summer.png', import.meta.url).href;
+const sw_png = new URL('./sweaty.png', import.meta.url).href;
+const sl_png = new URL('./sleepy.png', import.meta.url).href;
+const f_png = new URL('./festive.png', import.meta.url).href;
+const f1_png = new URL('./festive1.png', import.meta.url).href;
 
 class MoglieCard extends HTMLElement {
   static getConfigElement() { return document.createElement("moglie-card-editor"); }
@@ -239,26 +241,27 @@ class MoglieCard extends HTMLElement {
       cold: checkQ('quote_cold', defaultQuotes.cold, true)
     };
 
+    // n_b64 handles the base, but other states will use the loaded PNGs
     let outfit = n_b64, quote = "", border = "2px solid #4CAF50", isGrayscale = false;
 
-    // Determine the most relevant entity to show on tap (Improvement #3)
+    // Determine the most relevant entity to show on tap
     if (c.use_wan && !wanOk) { 
         outfit = n_b64; quote = q.off; border = "2px solid gray"; isGrayscale = true; 
         this._currentAlertEntity = c.wan_entity;
     } else if (showNight) { 
-        outfit = sl_b64; quote = q.night; border = "2px solid #673AB7"; 
+        outfit = sl_png; quote = q.night; border = "2px solid #673AB7"; 
         this._currentAlertEntity = c.alarm_entity || c.weather_entity || c.wan_entity;
     } else if (c.use_weather && isThunder) { 
-        outfit = r_b64; quote = q.thunder; border = "2px solid #607D8B"; // Rainy monkey + Stormy Blue-Grey border
+        outfit = r_png; quote = q.thunder; border = "2px solid #607D8B"; // Rainy monkey + Stormy Blue-Grey border
         this._currentAlertEntity = c.weather_entity;
     } else if (c.use_weather && isRain) { 
-        outfit = r_b64; quote = q.rain; border = "2px solid #2196F3"; 
+        outfit = r_png; quote = q.rain; border = "2px solid #2196F3"; 
         this._currentAlertEntity = c.weather_entity;
     } else if (c.use_weather && isCold) { 
-        outfit = w_b64; quote = q.cold; border = "2px solid #00BCD4"; 
+        outfit = w_png; quote = q.cold; border = "2px solid #00BCD4"; 
         this._currentAlertEntity = c.weather_entity;
     } else if (c.use_weather && isHot) { 
-        outfit = (h !== null && h > 70) ? sw_b64 : s_b64; quote = q.hot; border = "2px solid #FF9800"; 
+        outfit = (h !== null && h > 70) ? sw_png : s_png; quote = q.hot; border = "2px solid #FF9800"; 
         this._currentAlertEntity = c.weather_entity;
     } else if (c.use_alarm) { 
         if (aOff) { 
@@ -284,9 +287,9 @@ class MoglieCard extends HTMLElement {
     }
 
     if (month === 9 && day === 31) { 
-        outfit = f1_b64;
+        outfit = f1_png;
     } else if (month === 11 && day === 25) { 
-        outfit = f_b64; 
+        outfit = f_png; 
     }
 
     this.img.src = outfit;
