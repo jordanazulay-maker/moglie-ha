@@ -1,17 +1,20 @@
 import { normal_monkey as n_b64 } from './normal-monkey.js';
 import { MOGLIE_TRANSLATIONS } from './moglie-localization.js';
 
-// DYNAMIC ZERO-CONFIG PATH RESOLUTION:
-// Automatically detects the installation path (HACS or Manual) and strips cache-busting query parameters.
-const basePath = import.meta.url.replace(/moglie-card\.js.*$/, '');
+// Get the exact directory this script is running from
+const basePath = new URL('.', import.meta.url).href;
 
-const w_png = basePath + 'winter.png';
-const r_png = basePath + 'rainy.png';
-const s_png = basePath + 'summer.png';
-const sw_png = basePath + 'sweaty.png';
-const sl_png = basePath + 'sleepy.png';
-const f_png = basePath + 'festive.png';
-const f1_png = basePath + 'festive1.png';
+// Create a unique string to bust the browser cache
+const cb = '?v=' + Date.now(); 
+
+// Append the cache-buster to every image path to force the browser to load the fresh images
+const w_png = basePath + 'winter.png' + cb;
+const r_png = basePath + 'rainy.png' + cb;
+const s_png = basePath + 'summer.png' + cb;
+const sw_png = basePath + 'sweaty.png' + cb;
+const sl_png = basePath + 'sleepy.png' + cb;
+const f_png = basePath + 'festive.png' + cb;
+const f1_png = basePath + 'festive1.png' + cb;
 
 class MoglieCard extends HTMLElement {
   static getConfigElement() { return document.createElement("moglie-card-editor"); }
