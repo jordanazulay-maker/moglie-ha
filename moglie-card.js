@@ -1,15 +1,17 @@
 import { normal_monkey as n_b64 } from './normal-monkey.js';
 import { MOGLIE_TRANSLATIONS } from './moglie-localization.js';
 
-// Load PNG files using absolute paths for Home Assistant to correctly resolve the assets.
-// These paths assume the standard HACS installation directory.
-const w_png = '/hacsfiles/moglie-ha/winter.png';
-const r_png = '/hacsfiles/moglie-ha/rainy.png';
-const s_png = '/hacsfiles/moglie-ha/summer.png';
-const sw_png = '/hacsfiles/moglie-ha/sweaty.png';
-const sl_png = '/hacsfiles/moglie-ha/sleepy.png';
-const f_png = '/hacsfiles/moglie-ha/festive.png';
-const f1_png = '/hacsfiles/moglie-ha/festive1.png';
+// DYNAMIC ZERO-CONFIG PATH RESOLUTION:
+// Automatically detects the installation path (HACS or Manual) and strips cache-busting query parameters.
+const basePath = import.meta.url.replace(/moglie-card\.js.*$/, '');
+
+const w_png = basePath + 'winter.png';
+const r_png = basePath + 'rainy.png';
+const s_png = basePath + 'summer.png';
+const sw_png = basePath + 'sweaty.png';
+const sl_png = basePath + 'sleepy.png';
+const f_png = basePath + 'festive.png';
+const f1_png = basePath + 'festive1.png';
 
 class MoglieCard extends HTMLElement {
   static getConfigElement() { return document.createElement("moglie-card-editor"); }
