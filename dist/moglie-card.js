@@ -2,8 +2,8 @@ import { normal_monkey as n_b64 } from './normal-monkey.js';
 import { MOGLIE_TRANSLATIONS } from './moglie-localization.js';
 
 // DYNAMIC ZERO-CONFIG PATH RESOLUTION:
-// Automatically detects the installation path (HACS or Manual) and strips cache-busting query parameters.
-const basePath = import.meta.url.replace(/moglie-card\.js.*$/, '');
+// Automatically detects the installation directory (HACS or Manual) to load external assets.
+const basePath = new URL('.', import.meta.url).href;
 
 const w_png = basePath + 'winter.png';
 const r_png = basePath + 'rainy.png';
