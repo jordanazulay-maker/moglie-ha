@@ -20,7 +20,7 @@
 * **👆 Interactive Tap & Hold Actions:** Click or long-press on Moglie to trigger native Home Assistant actions. You can even bind these actions to completely custom, independent entities without cluttering the UI!
 * **💬 Custom Quotes:** Don't like the default phrases? Override any state (Rain, Thunder, Cold, Night, Armed, etc.) with your own custom text directly from the UI.
 * **✍️ Interactive Typewriter:** Status updates appear word-by-word with a sleek typewriter animation (now fully optimized to prevent ghost-typing on rapid state changes).
-* **🌐 Offline-Proof (Base64):** Moglie is built to survive network drops. Since all image data is baked into the code (Base64), he will stay rendered even if your internet is completely severed.
+* **🌐 Offline-Ready & Locally Hosted:** Moglie is built to survive external network drops. His default image is baked directly into the code (Base64), and his environmental outfits are loaded locally from your Home Assistant instance. This means he stays fully rendered even if your internet connection is severed!
 * **🛡️ Security Patrol:** Moglie watches your Alarm Control Panel. He changes border colors and adds specific "patrol" sub-texts depending on whether the "troop" is home or away.
 * **🇮🇱 RTL Auto-Detection:** For Right-to-Left languages like Hebrew and Arabic, Moglie automatically flips the entire UI, alignment, and setup interface for a native experience.
 * **🌦️ Environmental Outfits:** Watch Moglie change clothes! He reacts to rain, snow, thunderstorms, and extreme temperatures. He even starts to sweat if it’s over 80°F (27°C) with high humidity.
@@ -74,22 +74,4 @@ Moglie is easily installed via the Home Assistant Community Store (HACS).
 2. Click on the 3 dots in the top right corner and select **Custom repositories**.
 3. Add the URL of this repository: `https://github.com/jordanazulay-maker/moglie-ha`
 4. Select **Dashboard** as the category and click **Add**.
-5. Close the popup, search for "Moglie HA" in HACS, and click **Download**.
-6. Refresh your browser window. You can now add the "Moglie HA" card to your dashboard!
-
-## 📄 License & Copyright
-
-**Copyright (c) 2026 Jordan Azulay**
-
-This project is licensed under the **PolyForm Noncommercial License 1.0.0**. 
-
-You are free to use, modify, and distribute this software for personal and non-commercial purposes.
-
-**Permitted Uses Include:**
-* Personal use for research, experimentation, and private study.
-* Use by charitable organizations, educational institutions, public research organizations, public safety/health organizations, environmental protection organizations, or government institutions, provided they receive no payment in connection with the software.
-
-**Strictly Prohibited:**
-* Use by any commercial entity or for commercial purposes (including paid smart home installations and consulting) is strictly prohibited without prior permission.
-
-Please see the `LICENSE.txt` file in this repository for the full legal text.
+5. Close the popup, search for "Moglie HA" in
