@@ -324,12 +324,12 @@ class MoglieCard extends HTMLElement {
         detail: { config: actionConfig, action: a }
       }));
     } 
-    else if (!act && a === 'tap' && this._currentAlertEntity) {
-      // Improved Fallback: Dynamic more-info popup based on current state
+    else if (!act && a === 'tap' && targetEntity) {
+      // FIXED FALLBACK: Dynamic more-info popup based on current state, using correctly resolved target
       this.dispatchEvent(new CustomEvent('hass-more-info', { 
         bubbles: true, 
         composed: true, 
-        detail: { entityId: this._currentAlertEntity } 
+        detail: { entityId: targetEntity } 
       }));
     }
   }
