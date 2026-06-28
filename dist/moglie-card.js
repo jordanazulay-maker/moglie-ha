@@ -386,7 +386,8 @@ class MoglieCardEditor extends HTMLElement {
       },
       // Conditional Core Entities
       ...(feats.includes("wan") ? [{ name: "wan_entity", label: "WAN Entity (Binary Sensor)", selector: { entity: { domain: "binary_sensor" } } }] : []),
-      ...(feats.includes("alarm") ? [{ name: "alarm_entity", label: "Alarm Entity", selector: { entity: { domain: "alarm_control_panel" } } }] : []),
+      // FIXED: Removed the restrictive domain from alarm_entity so any entity can be selected in UI
+      ...(feats.includes("alarm") ? [{ name: "alarm_entity", label: "Alarm Entity", selector: { entity: {} } }] : []),
       ...(feats.includes("weather") ? [{ name: "weather_entity", label: "Weather Entity", selector: { entity: { domain: "weather" } } }] : []),
       
       // Standard Actions (Always visible)
